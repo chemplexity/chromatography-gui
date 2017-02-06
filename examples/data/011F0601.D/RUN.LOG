@@ -1,0 +1,32 @@
+ 443 41e0 56625153  1ff
+Method       Method started: (F) line# 6 vial# 11 inj# 1    18:52:03 12/04/15
+ 443 41e0 56625153  1ff
+Method       Method started: (B) line# 6 vial# 10 inj# 1    18:52:03 12/04/15
+  67 41e0 56625154    0
+Method       Instrument running sample  thod                18:52:04 12/04/15
+  67 41e0 56625154    0
+Method       Instrument running sample  thod                18:52:04 12/04/15
+   0 1da4 566265bb  300
+6890A      1 Not ready:Oven temp 227 at runtime 5.49        20:19:07 12/04/15
+   0 1da4 566265bc  300
+6890A      1 Not ready:Oven temp 228 at runtime 5.50        20:19:08 12/04/15
+   0 1da4 566265bc  300
+6890A      1 Not ready:Oven temp 228 at runtime 5.51        20:19:08 12/04/15
+   0 1da4 566265bc  300
+6890A      1 Not ready:Oven temp 256 at runtime 6.35        20:19:08 12/04/15
+  70 41de 566265bd    0
+CP Macro     Analyzing rawdata 011F0601.D                   20:19:09 12/04/15
+  67 41e0 566265c2    0
+Method       Instrument run completed                       20:19:14 12/04/15
+  70 41de 566265d1    0
+CP Macro     Custom Data Analysis on rawdata 011F0601.D     20:19:29 12/04/15
+  70 41de 56626605    0
+CP Macro     Loading Data Analysis Method of FLRAMP9.M      20:20:21 12/04/15
+  70 41de 56626606    0
+CP Macro     Analyzing rawdata 010B0601.D                   20:20:22 12/04/15
+  70 41de 56626617    0
+CP Macro     Custom Data Analysis on rawdata 010B0601.D     20:20:39 12/04/15
+  70 41de 5662666d    0
+CP Macro     Loading Data Analysis Method of FLRAMP9.M      20:22:05 12/04/15
+  67 41e0 5662666f    0
+Method       Method completed                               20:22:07 12/04/15
