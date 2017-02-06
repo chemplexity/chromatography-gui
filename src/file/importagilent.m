@@ -619,8 +619,8 @@ switch data.file_version
         data.intensity = farray(f, offset + 8, 'int32', scans, 8);
         data.time      = farray(f, offset + 4, 'int32', scans, 8) ./ 60000;
         
-        offset = farray(f, offset, 'int32', scans, 8) * 2 - 2;
-        data   = fpacket(f, data, offset);
+        %offset = farray(f, offset, 'int32', scans, 8) * 2 - 2;
+        %data   = fpacket(f, data, offset);
         
     case {'8', '30', '130'}
         
