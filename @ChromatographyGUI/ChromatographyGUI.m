@@ -2,6 +2,7 @@ classdef ChromatographyGUI < handle
     
     properties (Constant = true)
         name        = 'Chromatography Toolbox';
+        url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.1';
         date        = '20170206';
         platform    = ChromatographyGUI.getPlatform();

@@ -128,15 +128,16 @@ obj.menu.view.label = uimenu(...
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
-%obj.menu.help.main = uimenu(...
-%    'parent',   obj.figure,...
-%    'label',    'Help',...
-%    'tag',      'helpmenu');
+obj.menu.help.main = uimenu(...
+    'parent',   obj.figure,...
+    'label',    'Help',...
+    'tag',      'helpmenu');
 
-%obj.menu.help.update = uimenu(...
-%    'parent',   obj.menu.help.main,...
-%    'label',    'Check for updates...',...
-%    'tag',      'updatemenu');
+obj.menu.help.update = uimenu(...
+    'parent',   obj.menu.help.main,...
+    'label',    'Check for updates...',...
+    'tag',      'updatemenu',...
+    'callback', @(src, event) updateToolboxCallback(obj, src, event));
 
 %obj.menu.help.about = uimenu(...
 %    'parent',   obj.menu.help.main,...
@@ -683,5 +684,189 @@ switch evt.EventName
                 obj.plotPeaks();
         end     
 end
+
+end
+
+function updateToolboxCallback(obj, ~, ~)
+
+% ---------------------------------------
+% Options
+% ---------------------------------------
+link.windows = 'https://git-scm.com/download/windows';
+link.mac     = 'https://git-scm.com/download/mac';
+link.linux   = 'https://git-scm.com/download/linux';
+
+option.git     = [];
+option.branch  = 'master';
+option.force   = false;
+option.verbose = true;
+
+% ---------------------------------------
+% Path
+% ---------------------------------------
+fprintf(['\n', repmat('-',1,50), '\n']);
+fprintf(' %s', 'UPDATE');
+fprintf(['\n', repmat('-',1,50), '\n\n']);
+
+fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
+
+fprintf(' STATUS  %s \n', 'Checking online for updates...');
+
+sourceFile = fileparts(mfilename('fullpath'));
+[sourcePath, sourceFile] = fileparts(sourceFile);
+
+if ~strcmpi(sourceFile, '@ChromatographyGUI')
+    sourcePath = [sourcePath, filesep, sourceFile];
+end
+
+cd(sourcePath);
+
+% ---------------------------------------
+% Locate git
+% ---------------------------------------
+if ispc
+    
+    [gitStatus, gitPath] = system('where git');
+    
+    if gitStatus
+        
+        fprintf(' STATUS  %s \n', 'Searching system for ''git.exe''...');
+        
+        [gitStatus, gitPath] = system('dir C:\Users\*git.exe /s');
+        
+        if gitStatus
+            
+            msg = ['Visit ', link.windows, ' to and install Git for Windows...'];
+            
+            fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
+            fprintf(' STATUS  %s \n', msg);
+            
+            fprintf(['\n', repmat('-',1,50), '\n']);
+            fprintf(' %s', 'EXIT');
+            fprintf(['\n', repmat('-',1,50), '\n\n']);
+            
+            return
+            
+        end
+        
+        gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
+        gitPath = [gitPath{1}, filesep, 'git.exe'];
+        
+    end
+    
+    option.git = deblank(strtrim(gitPath));
+    
+elseif isunix
+    
+    [gitStatus, gitPath] = system('which git');
+    
+    if gitStatus
+        
+        if ismac
+            msg = ['Visit ', link.mac, ' to and install Git for OSX...'];
+        else
+            msg = ['Visit ', link.linux, ' to and install Git for Linux...'];
+        end
+        
+        fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
+        fprintf(' STATUS  %s \n', msg);
+        
+        fprintf(['\n', repmat('-',1,50), '\n']);
+        fprintf(' %s', 'EXIT');
+        fprintf(['\n', repmat('-',1,50), '\n\n']);
+        
+        return
+        
+    end
+    
+    option.git = deblank(strtrim(gitPath));
+    
+end
+
+fprintf(' STATUS  %s \n', ['Using ', option.git, '...']);
+
+% ---------------------------------------
+% Check permissions
+% ---------------------------------------
+if ispc
+    [~, ~] = system(['icacls "', option.git, '\" /grant Users:(OI)(CI)F']);
+end
+
+% ---------------------------------------
+% Check system git
+% ---------------------------------------
+[gitTest, ~] = system(['"', option.git, '" --version']);
+
+if gitTest
+    
+    fprintf(2, ' ERROR  ');
+    fprintf('%s \n', 'Error executing ''git --version''...');
+    
+    fprintf(['\n', repmat('-',1,50), '\n']);
+    fprintf(' %s', 'EXIT');
+    fprintf(['\n', repmat('-',1,50), '\n\n']);
+    
+    return
+    
+end
+
+% ---------------------------------------
+% Check git repository
+% ---------------------------------------
+[gitTest, ~] = system(['"', option.git, '" status']);
+
+if gitTest
+    
+    fprintf(' STATUS  %s \n', 'Initializing git repository...');
+    
+    [~,~] = system(['"', git, '" init']);
+    [~,~] = system(['"', git, '" remote add origin ', obj.url, '.git']);
+    
+end
+
+% ---------------------------------------
+% Fetch latest updates
+% ---------------------------------------
+fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
+
+[~,~] = system(['"', option.git, '" pull']);
+
+if gitTest
+    
+    if option.force
+        gitCmd = '" checkout -f master';
+    else
+        gitCmd = '" checkout master';
+    end
+    
+    [~,~] = system(['"', option.git, gitCmd]);
+    
+end
+
+% ---------------------------------------
+% Checkout branch
+% ---------------------------------------
+if ~isempty(option.branch)
+    
+    if option.force
+        gitCmd = ['" checkout -f ', option.branch];
+    else
+        gitCmd = ['" checkout ', option.branch];
+    end
+    
+    [~,~] = system(['"', option.git, gitCmd]);
+    
+end
+
+% ---------------------------------------
+% Status
+% ---------------------------------------
+fprintf(' STATUS  %s \n', 'Update complete!');
+fprintf('\n');
+fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
+
+fprintf(['\n', repmat('-',1,50), '\n']);
+fprintf(' %s', 'EXIT');
+fprintf(['\n', repmat('-',1,50), '\n\n']);
 
 end
