@@ -701,6 +701,9 @@ option.branch  = 'master';
 option.force   = false;
 option.verbose = true;
 
+msg = 'Updating toolbox...';
+h = waitbar(0, msg);
+        
 % ---------------------------------------
 % Path
 % ---------------------------------------
@@ -708,7 +711,7 @@ fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'UPDATE');
 fprintf(['\n', repmat('-',1,50), '\n\n']);
 
-fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
+fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n\n']);
 
 fprintf(' STATUS  %s \n', 'Checking online for updates...');
 
@@ -720,6 +723,10 @@ if ~strcmpi(sourceFile, '@ChromatographyGUI')
 end
 
 cd(sourcePath);
+
+if ishandle(h)
+    waitbar(0.2, h, msg);
+end
 
 % ---------------------------------------
 % Locate git
@@ -744,6 +751,11 @@ if ispc
             fprintf(['\n', repmat('-',1,50), '\n']);
             fprintf(' %s', 'EXIT');
             fprintf(['\n', repmat('-',1,50), '\n\n']);
+            
+            if ishandle(h)
+                waitbar(1, h, msg);
+                close(h);
+            end
             
             return
             
@@ -775,6 +787,11 @@ elseif isunix
         fprintf(' %s', 'EXIT');
         fprintf(['\n', repmat('-',1,50), '\n\n']);
         
+        if ishandle(h)
+            waitbar(1, h, msg);
+            close(h);
+        end
+            
         return
         
     end
@@ -784,6 +801,10 @@ elseif isunix
 end
 
 fprintf(' STATUS  %s \n', ['Using ', option.git, '...']);
+
+if ishandle(h)
+    waitbar(0.4, h, msg);
+end
 
 % ---------------------------------------
 % Check permissions
@@ -806,8 +827,17 @@ if gitTest
     fprintf(' %s', 'EXIT');
     fprintf(['\n', repmat('-',1,50), '\n\n']);
     
+    if ishandle(h)
+        waitbar(1, h, msg);
+        close(h);
+    end
+    
     return
     
+end
+
+if ishandle(h)
+    waitbar(0.6, h, msg);
 end
 
 % ---------------------------------------
@@ -822,6 +852,10 @@ if gitTest
     [~,~] = system(['"', git, '" init']);
     [~,~] = system(['"', git, '" remote add origin ', obj.url, '.git']);
     
+end
+
+if ishandle(h)
+    waitbar(0.8, h, msg);
 end
 
 % ---------------------------------------
@@ -843,6 +877,10 @@ if gitTest
     
 end
 
+if ishandle(h)
+    waitbar(0.9, h, msg);
+end
+
 % ---------------------------------------
 % Checkout branch
 % ---------------------------------------
@@ -858,6 +896,10 @@ if ~isempty(option.branch)
     
 end
 
+if ishandle(h)
+    waitbar(0.9, h, msg);
+end
+
 % ---------------------------------------
 % Status
 % ---------------------------------------
@@ -868,5 +910,10 @@ fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
 fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'EXIT');
 fprintf(['\n', repmat('-',1,50), '\n\n']);
+
+if ishandle(h)
+    waitbar(1.0, h, msg);
+    close(h)
+end
 
 end
