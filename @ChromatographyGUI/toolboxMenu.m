@@ -849,8 +849,8 @@ if gitTest
     
     fprintf(' STATUS  %s \n', 'Initializing git repository...');
     
-    [~,~] = system(['"', git, '" init']);
-    [~,~] = system(['"', git, '" remote add origin ', obj.url, '.git']);
+    [~,~] = system(['"', option.git, '" init']);
+    [~,~] = system(['"', option.git, '" remote add origin ', obj.url, '.git']);
     
 end
 

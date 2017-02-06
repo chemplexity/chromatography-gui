@@ -73,21 +73,27 @@ end
 
 function tablePosition(obj, varargin)
 
-set(obj.table.main,  'units', 'pixels');
-set(obj.panel.table, 'units', 'pixels');
+tableProperties = properties(obj.panel.table);
 
-x1 = get(obj.panel.table, 'innerposition');
-x2 = get(obj.panel.table, 'position');
-
-x(1) = x1(1) - x2(1);
-x(2) = x1(2) - x2(2);
-x(3) = x1(3);
-x(4) = x1(4);
-
-set(obj.table.main, 'position', x);
-
-set(obj.table.main,  'units', 'normalized');
-set(obj.panel.table, 'units', 'normalized');
+if any(strcmpi(tableProperties, 'innerposition'))
+    
+    set(obj.table.main,  'units', 'pixels');
+    set(obj.panel.table, 'units', 'pixels');
+    
+    x1 = get(obj.panel.table, 'innerposition');
+    x2 = get(obj.panel.table, 'position');
+    
+    x(1) = x1(1) - x2(1);
+    x(2) = x1(2) - x2(2);
+    x(3) = x1(3);
+    x(4) = x1(4);
+    
+    set(obj.table.main, 'position', x);
+    
+    set(obj.table.main,  'units', 'normalized');
+    set(obj.panel.table, 'units', 'normalized');
+    
+end
 
 end
 
