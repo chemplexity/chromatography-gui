@@ -1,2 +1,1 @@
-# chromatography-gui
-MATLAB GUI for chromatography data analysis
+# Chromatography Toolbox - GUI
