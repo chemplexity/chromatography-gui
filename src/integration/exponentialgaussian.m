@@ -49,6 +49,8 @@ function varargout = exponentialgaussian(varargin)
 default.center = 0;
 default.width  = 1;
 
+default.cutoff.area = 1E-3;
+
 varargout{1} = [];
 
 % ---------------------------------------
@@ -315,72 +317,10 @@ for i = 1:length(y(1,:))
     yfit(yfit(:,7) < h(3) * 10^-9 | yfit(:,7) > h(3) * 10, 7) = 0;
     yfit(yfit(:,8) < h(4) * 10^-9 | yfit(:,8) > h(4) * 10, 8) = 0;
     
-    % Calculate residuals
-    r = repmat(y(:,i), [1,8]) - yfit;
-    
-    xIndex = find(x>=mean(c),1);
-    xMax = x(xIndex);
-    xMin = x(xIndex);
-    xCounter = 0;
-    yCounter = y(xIndex,i);
-    
-    for j = xIndex:length(x)
-        if y(j,i) < yCounter && y(j,i) >= y(xIndex,i) * 0.05
-            xMax = x(j,1);
-            yCounter = y(j,i);
-            xCounter = 0;
-        elseif y(j,i) > yCounter
-            if xCounter + 1 > 5
-                break
-            else
-                xCounter = xCounter + 1;
-            end
-        elseif y(j,i) < y(xIndex,i) * 0.05
-            break
-        end
+    for j = 1:size(yfit,2)
+        rmsd(j) = peakError(y(:,i), yfit(:,j));
     end
     
-    xCounter = 0;
-    yCounter = y(xIndex,i);
-        
-    for j = xIndex:-1:1
-        if y(j,i) < yCounter && y(j,i) >= y(xIndex,i) * 0.05
-            xMin = x(j,1);
-            yCounter = y(j,i);
-            xCounter = 0;
-        elseif y(j,i) > yCounter
-            if xCounter + 1 > 5
-                break
-            else
-                xCounter = xCounter + 1;
-            end
-        elseif y(j,i) < y(xIndex,i) * 0.05
-            break
-        end
-    end
-     
-    lim(:,1) = x >= xMin & x <= xMax;
-    lim(:,2) = x >= xMin & x <= xMax;
-    lim(:,3) = x >= xMin & x <= xMax;
-    lim(:,4) = x >= xMin & x <= xMax;
-    lim(:,5) = x >= xMin & x <= xMax;
-    lim(:,6) = x >= xMin & x <= xMax;
-    lim(:,7) = x >= xMin & x <= xMax;
-    lim(:,8) = x >= xMin & x <= xMax;
-    
-    % Determine fit error
-    ymin = min(min(y));
-    
-    rmsd(1) = sqrt(sum(r(lim(:,1),1).^2) ./ sum(lim(:,1))) / (h(1) - ymin) * 100;
-    rmsd(2) = sqrt(sum(r(lim(:,2),2).^2) ./ sum(lim(:,2))) / (h(2) - ymin) * 100;
-    rmsd(3) = sqrt(sum(r(lim(:,3),3).^2) ./ sum(lim(:,3))) / (h(3) - ymin) * 100;
-    rmsd(4) = sqrt(sum(r(lim(:,4),4).^2) ./ sum(lim(:,4))) / (h(4) - ymin) * 100;
-    rmsd(5) = sqrt(sum(r(lim(:,5),5).^2) ./ sum(lim(:,5))) / (h(1) - ymin) * 100;
-    rmsd(6) = sqrt(sum(r(lim(:,6),6).^2) ./ sum(lim(:,6))) / (h(2) - ymin) * 100;
-    rmsd(7) = sqrt(sum(r(lim(:,7),7).^2) ./ sum(lim(:,7))) / (h(3) - ymin) * 100;
-    rmsd(8) = sqrt(sum(r(lim(:,8),8).^2) ./ sum(lim(:,8))) / (h(4) - ymin) * 100;
-    
-    % Determine best fit
     [~, index] = min(rmsd);
     yIndex = index;
     
@@ -391,30 +331,115 @@ for i = 1:length(y(1,:))
         e = e(index);
     end
     
-    % Determine area
-    t    = EGH.t(w(index), e);
-    e0   = EGH.c(t);
-    area = EGH.a(h(index), w(index), e, e0);
-    
-    if isnan(area) || isnan(rmsd(index))
+    if isnan(rmsd(yIndex))
         continue
     end
     
-    if ~strcmpi(type, 'double')
-        yfit(:,index) = cast(yfit(:,index), type);
-    end
-    
-    % Update values
     peaks.time(i)   = c(index);
     peaks.height(i) = h(index);
-    peaks.width(i)  = w(index);
-    peaks.area(i)   = area;
-    peaks.fit(:,i)  = yfit(:,yIndex);
     peaks.error(i)  = rmsd(yIndex);
+    peaks.fit(:,i) = yfit(:,yIndex);
+    
+    if size(x,1) == size(peaks.fit(:,i), 1)
+        peaks.width(i) = peakWidth(x, peaks.fit(:,i));
+        peaks.area(i) = peakArea(x, peaks.fit(:,i));
+    else
+        peaks.width(i) = w(index);
+        peaks.area(i) = EGH.a(h(index), w(index), e, EGH.c(EGH.t(w(index), e)));
+    end
+    
+    if peaks.area(i) < std(y) * default.cutoff.area
+        peaks.time(i)   = 0;
+        peaks.width(i)  = 0;
+        peaks.height(i) = 0;
+        peaks.area(i)   = 0;
+        peaks.fit(:,i)  = zeros(size(y,1), 1, type);
+        peaks.error(i)  = 0;
+    end
     
 end
 
+if ~strcmpi(type, 'double')
+    peaks.fit = cast(peaks.fit, type);
+end
+    
 varargout{1} = peaks;
+
+end
+
+function w = peakWidth(x,y)
+
+f0 = 1000;
+f1 = 1 / mean(diff(x));
+
+if f1 < 1000
+    
+    xi = min(x) : 1/f0 : max(x);
+    yi = interp1(x, y, xi, 'pchip');
+    
+    [ymax, i] = max(yi);
+    
+    ri = find(yi(i:end) <= ymax / 2, 1);
+    li = find(fliplr(yi(1:i)) <= ymax / 2, 1);
+    
+    if ~isempty(ri) && ~isempty(li)
+        w = xi(i+ri-1) - xi(i-li+1);
+    else
+        w = 0;
+    end
+    
+else
+    x = x(y >= max(y) / 2);
+    w = max(x) - min(x);
+end
+
+end
+
+function rmsd = peakError(y1,y2)
+
+ymin = min(y2);
+ymax = max(y2);
+
+y1 = y1(y2 >= ymin + 0.05 * (ymax-ymin));
+y2 = y2(y2 >= ymin + 0.05 * (ymax-ymin));
+
+rmsd = sqrt(sum((y2 - y1).^2) / numel(y2));
+rmsd = rmsd / (ymax - ymin) * 100;
+
+end
+
+function area = peakArea(x,y)
+
+ymin = min(y);
+ymax = max(y);
+
+x = x(y >= ymin + 0.001 * (ymax-ymin));
+y = y(y >= ymin + 0.001 * (ymax-ymin));
+
+if length(y) <= 1 || length(x) ~= length(y)
+    area = 0;
+    return
+end
+
+f0 = 5000;
+f1 = 1/mean(diff(x));
+
+if f1 < f0
+    xi = min(x) : 1/f0 : max(x);
+    yi = interp1(x, y, xi, 'pchip');
+else
+    xi = x;
+    yi = y;
+end
+
+dx = diff(xi);
+dy = 0.5 * (yi(1:end-1) .* yi(2:end));
+
+if length(dx) == length(dy)
+    area = sum(dx.*dy);
+else
+    area = 0;
+end
 
 end
 
@@ -422,8 +447,13 @@ function peak = addParameters(x, y, peak)
 
 t = mean(peak.center);
 
-xx = x(x <= t+0.5 & x >= t-0.5);
-yy = y(x <= t+0.5 & x >= t-0.5);
+if 1 / mean(diff(x)) < 200
+    xi = min(x) : 1/200 : max(x);
+    y = interp1(x, y, xi, 'pchip');
+end
+
+xx = x(x <= t+1 & x >= t-1);
+yy = y(x <= t+1 & x >= t-1);
 
 counterMax = 25;
 
