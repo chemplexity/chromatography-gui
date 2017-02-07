@@ -1,12 +1,14 @@
 classdef ChromatographyGUI < handle
     
     properties (Constant = true)
+        
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.1';
-        date        = '20170206';
+        version     = '0.0.2';
+        date        = '20170207';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
+        
     end
     
     properties
@@ -23,6 +25,12 @@ classdef ChromatographyGUI < handle
         axes
         controls
         view
+        
+    end
+    
+    properties (Hidden = true)
+        
+        font = ChromatographyGUI.getFont();
         
     end
     
@@ -65,7 +73,7 @@ classdef ChromatographyGUI < handle
             obj.table.selection = [];
             
             obj.peaks.name = {...
-                'C35'; 'C36';...
+                'C36'; 'C37';...
                 'C37:3 Me'; 'C37:2 Me';...
                 'C38:3 Et'; 'C38:2 Et';...
                 'C38:3 Me'; 'C38:2 Me';...
@@ -153,13 +161,13 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(x)
                 if isempty(obj.axes.xlim) || strcmpi(obj.axes.xmode, 'auto')
-                    obj.xlimUpdate();
+                    obj.updateAxesXLim();
                 end
             end
             
             if ~isempty(y)
                 if isempty(obj.axes.ylim) || strcmpi(obj.axes.ymode, 'auto')
-                    obj.ylimUpdate();
+                    obj.updateAxesYLim();
                 end
             end
             
@@ -196,7 +204,7 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function xlimUpdate(obj, varargin)
+        function updateAxesXLim(obj, varargin)
             
             if obj.view.index ~= 0
                 x = obj.data(obj.view.index).time;
@@ -224,7 +232,7 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function ylimUpdate(obj, varargin)
+        function updateAxesYLim(obj, varargin)
             
             if obj.view.index ~= 0
                 x = obj.data(obj.view.index).time;
@@ -256,6 +264,102 @@ classdef ChromatographyGUI < handle
             end
             
             obj.updateAxesLimitEditText();
+            
+        end
+        
+        function updateAxesLimitMode(obj, varargin)
+            
+            if get(obj.controls.xManual, 'value')
+                obj.axes.xmode = 'manual';
+            else
+                obj.axes.xmode = 'auto';
+            end
+            
+            if get(obj.controls.yManual, 'value')
+                obj.axes.ymode = 'manual';
+            else
+                obj.axes.ymode = 'auto';
+            end
+            
+        end
+        
+        function updateAxesLimitToggle(obj, varargin)
+            
+            switch obj.axes.xmode
+                case 'manual'
+                    set(obj.controls.xManual, 'value', 1);
+                    set(obj.controls.xAuto, 'value', 0);
+                case 'auto'
+                    set(obj.controls.xManual, 'value', 0);
+                    set(obj.controls.xAuto, 'value', 1);
+            end
+            
+            switch obj.axes.ymode
+                case 'manual'
+                    set(obj.controls.yManual, 'value', 1);
+                    set(obj.controls.yAuto, 'value', 0);
+                case 'auto'
+                    set(obj.controls.yManual, 'value', 0);
+                    set(obj.controls.yAuto, 'value', 1);
+            end
+            
+        end
+        
+        function updateAxesLimitEditText(obj, varargin)
+            
+            getStr = @(x) sprintf('%.3f', x);
+            
+            set(obj.controls.xMin, 'string', getStr(obj.axes.xlim(1)));
+            set(obj.controls.xMax, 'string', getStr(obj.axes.xlim(2)));
+            set(obj.controls.yMin, 'string', getStr(obj.axes.ylim(1)));
+            set(obj.controls.yMax, 'string', getStr(obj.axes.ylim(2)));
+            
+        end
+        
+        function updatePeakEditText(obj, varargin)
+            
+            getStr = @(x) sprintf('%.3f', x);
+            
+            col = get(obj.controls.peakList, 'value');
+            row = obj.view.index;
+            
+            if ~isempty(obj.data) && size(obj.peaks.time, 1) < length(obj.data)
+                if ~isempty(obj.peaks.name)
+                    obj.peaks.time{length(obj.data), length(obj.peaks.name)} = [];
+                end
+            end
+            
+            if ~isempty(obj.peaks.name) && size(obj.peaks.time, 2) < length(obj.peaks.name)
+                if ~isempty(obj.data)
+                    obj.peaks.time{length(obj.data), length(obj.peaks.name)} = [];
+                end
+            end
+            
+            if isempty(col) || col == 0
+                id     = '';
+                time   = '';
+                width  = '';
+                height = '';
+                area   = '';
+            elseif col ~= 0 && (row == 0 || isempty(obj.data))
+                id     = obj.peaks.name{col};
+                time   = '';
+                width  = '';
+                height = '';
+                area   = '';
+            else
+                id     = obj.peaks.name{col};
+                time   = getStr(obj.peaks.time{row,col});
+                width  = getStr(obj.peaks.width{row,col});
+                height = getStr(obj.peaks.height{row,col});
+                area   = getStr(obj.peaks.area{row,col});
+            end
+            
+            set(obj.controls.peakIDEdit,     'string', id);
+            set(obj.controls.peakTimeEdit,   'string', time);
+            set(obj.controls.peakWidthEdit,  'string', width);
+            set(obj.controls.peakHeightEdit, 'string', height);
+            set(obj.controls.peakAreaEdit,   'string', area);
             
         end
         
@@ -534,6 +638,99 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function getPeakFit(obj, varargin)
+            
+            row = obj.view.index;
+            col = get(obj.controls.peakList, 'value');
+            
+            if isempty(col) || isempty(obj.data) || row == 0 || col == 0
+                return
+            end
+            
+            time  = str2double(get(obj.controls.peakTimeEdit, 'string'));
+            width = diff(obj.axes.xlim) * 0.02;
+            
+            if isempty(time) || isnan(time) || isinf(time)
+                time = [];
+            end
+            
+            x = obj.data(row).time;
+            y = obj.data(row).intensity(:,1);
+            
+            if isempty(x) || isempty(y)
+                return
+            else
+                y(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
+                x(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
+            end
+            
+            if time > max(x) || time < min(x)
+                return
+            end
+            
+            if isempty(obj.data(row).baseline) || length(obj.data(row).baseline(:,1)) ~= length(y(:,1))
+                obj.getBaseline();
+            end
+            
+            b = obj.data(row).baseline;
+            
+            if length(b(:,1)) == length(y(:,1))
+                y = y - b(:,2);
+            end
+            
+            peak = exponentialgaussian(x, y, 'center', time, 'width', width);
+            
+            if ~isempty(peak)
+                
+                if length(peak.fit) == length(x)
+                    
+                    x = x(peak.fit ~= 0);
+                    y = peak.fit(peak.fit ~= 0);
+                    
+                    if length(peak.fit) == length(b(:,1))
+                        b = b(peak.fit ~= 0, 2);
+                        y = y + b;
+                    end
+                    
+                    filter = x > peak.time+peak.width*5 | x < peak.time-peak.width*5;
+                    
+                    if any(filter)
+                        x(filter) = [];
+                        y(filter) = [];
+                    end
+                    
+                    if length(x) == length(y)
+                        peak.fit = [x,y];
+                    end
+                    
+                end
+                
+                obj.peaks.time{row,col}   = peak.time;
+                obj.peaks.width{row,col}  = peak.width;
+                obj.peaks.height{row,col} = peak.height;
+                obj.peaks.area{row,col}   = peak.area;
+                obj.peaks.error{row,col}  = peak.error;
+                obj.peaks.fit{row,col}    = peak.fit;
+                
+                obj.updatePeakEditText();
+                
+                offset = length(obj.peaks.name);
+                
+                obj.table.main.Data{row, col+14 + offset*0} = peak.time;
+                obj.table.main.Data{row, col+14 + offset*1} = peak.area;
+                obj.table.main.Data{row, col+14 + offset*2} = peak.height;
+                obj.table.main.Data{row, col+14 + offset*3} = peak.width;
+                
+                if get(obj.controls.showPeak, 'value')
+                    obj.plotPeaks();
+                end
+                
+            end
+            
+            obj.view.selection = 0;
+            
+        end
+        
         function tableDeleteRow(obj, varargin)
             
             if ~isempty(obj.table.selection)
@@ -565,113 +762,9 @@ classdef ChromatographyGUI < handle
                 set(obj.controls.editID, 'string', obj.view.id);
                 set(obj.controls.editName, 'string', obj.view.name);
                 
-                obj.updatePlot();
+                obj.updatePlot(); 
                 
             end
-            
-        end
-        
-        function peakDeleteRow(obj, row)
-            
-            if length(obj.peaks.time(:,1)) >= row
-                obj.peaks.time(row, :)   = [];
-                obj.peaks.width(row, :)  = [];
-                obj.peaks.height(row, :) = [];
-                obj.peaks.area(row, :)   = [];
-                obj.peaks.error(row, :)  = [];
-                obj.peaks.fit(row, :)    = [];
-            end
-            
-        end
-        
-        function peakDeleteColumn(obj, m)
-            
-            if m == 0
-                return
-            end
-            
-            offset = length(obj.peaks.name);
-            
-            tableData = obj.table.main.Data;
-            tableHeader = obj.table.main.ColumnName;
-            
-            obj.peaks.name(m) = [];
-            
-            if ~isempty(obj.peaks.time) && length(obj.peaks.time(1,:)) >= m
-                obj.peaks.time(:,m)   = [];
-                obj.peaks.width(:,m)  = [];
-                obj.peaks.height(:,m) = [];
-                obj.peaks.area(:,m)   = [];
-                obj.peaks.error(:,m)  = [];
-                obj.peaks.fit(:,m)    = [];
-            end
-            
-            if isempty(tableData) || length(tableData(1,:)) < length(tableHeader)
-                if ~isempty(obj.data)
-                    tableData{end, length(tableHeader)} = [];
-                end
-            end
-            
-            if length(tableHeader) >= m
-                tableHeader(m+14 + offset*0 - 0) = [];
-                tableHeader(m+14 + offset*1 - 1) = [];
-                tableHeader(m+14 + offset*2 - 2) = [];
-                tableHeader(m+14 + offset*3 - 3) = [];
-            end
-            
-            if ~isempty(tableData) && length(tableData(1,:)) >= m
-                tableData(:, m+14 + offset*0 - 0) = [];
-                tableData(:, m+14 + offset*1 - 1) = [];
-                tableData(:, m+14 + offset*2 - 2) = [];
-                tableData(:, m+14 + offset*3 - 3) = [];
-            end
-            
-            obj.table.main.Data = tableData;
-            obj.table.main.ColumnName = tableHeader;
-            
-            if isempty(obj.controls.peakList.String) && ~isempty(obj.peaks.name)
-                if isempty(obj.controls.peakList.Value) || obj.controls.peakList.Value == 0
-                    obj.controls.peakList.Value = 1;
-                end
-            end
-            
-            set(obj.controls.peakList, 'string', obj.peaks.name);
-            
-            if obj.controls.peakList.Value > length(obj.peaks.name)
-                obj.controls.peakList.Value = length(obj.peaks.name);
-            end
-            
-            if ~isempty(obj.data)
-                obj.plotPeaks();
-            end
-            
-        end
-        
-        function peakEditColumn(obj, m, str)
-            
-            if m == 0
-                return
-            end
-            
-            offset = length(obj.peaks.name);
-            
-            tableHeader = obj.table.main.ColumnName;
-            
-            if length(obj.peaks.name) >= m
-                obj.peaks.name(m,1) = str;
-            end
-            
-            if length(tableHeader) >= m
-                tableHeader{m+14 + offset*0} = ['Time (', obj.peaks.name{m}, ')'];
-                tableHeader{m+14 + offset*1} = ['Area (', obj.peaks.name{m}, ')'];
-                tableHeader{m+14 + offset*2} = ['Height (', obj.peaks.name{m}, ')'];
-                tableHeader{m+14 + offset*3} = ['Width (', obj.peaks.name{m}, ')'];
-            end
-            
-            set(obj.controls.peakList, 'string', obj.peaks.name);
-            obj.table.main.ColumnName = tableHeader;
-            
-            obj.plotPeaks();
             
         end
         
@@ -691,7 +784,7 @@ classdef ChromatographyGUI < handle
             if isempty(obj.peaks.name)
                 obj.peaks.name(1,1) = str;
             else
-                obj.peaks.name(end+1,1) = str;    
+                obj.peaks.name(end+1,1) = str;
             end
             
             if ~isempty(obj.peaks.time) && ~isempty(obj.data)
@@ -758,102 +851,110 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function updateAxesLimitMode(obj, varargin)
+        function peakEditColumn(obj, m, str)
             
-            if get(obj.controls.xManual, 'value')
-                obj.axes.xmode = 'manual';
-            else
-                obj.axes.xmode = 'auto';
+            if m == 0
+                return
             end
             
-            if get(obj.controls.yManual, 'value')
-                obj.axes.ymode = 'manual';
-            else
-                obj.axes.ymode = 'auto';
+            offset = length(obj.peaks.name);
+            
+            tableHeader = obj.table.main.ColumnName;
+            
+            if length(obj.peaks.name) >= m
+                obj.peaks.name(m,1) = str;
             end
+            
+            if length(tableHeader) >= m
+                tableHeader{m+14 + offset*0} = ['Time (', obj.peaks.name{m}, ')'];
+                tableHeader{m+14 + offset*1} = ['Area (', obj.peaks.name{m}, ')'];
+                tableHeader{m+14 + offset*2} = ['Height (', obj.peaks.name{m}, ')'];
+                tableHeader{m+14 + offset*3} = ['Width (', obj.peaks.name{m}, ')'];
+            end
+            
+            set(obj.controls.peakList, 'string', obj.peaks.name);
+            obj.table.main.ColumnName = tableHeader;
+            
+            obj.plotPeaks();
             
         end
         
-        function updateAxesLimitToggle(obj, varargin)
+        function peakDeleteColumn(obj, m)
             
-            switch obj.axes.xmode
-                case 'manual'
-                    set(obj.controls.xManual, 'value', 1);
-                    set(obj.controls.xAuto, 'value', 0);
-                case 'auto'
-                    set(obj.controls.xManual, 'value', 0);
-                    set(obj.controls.xAuto, 'value', 1);
+            if m == 0
+                return
             end
             
-            switch obj.axes.ymode
-                case 'manual'
-                    set(obj.controls.yManual, 'value', 1);
-                    set(obj.controls.yAuto, 'value', 0);
-                case 'auto'
-                    set(obj.controls.yManual, 'value', 0);
-                    set(obj.controls.yAuto, 'value', 1);
+            offset = length(obj.peaks.name);
+            
+            tableData = obj.table.main.Data;
+            tableHeader = obj.table.main.ColumnName;
+            
+            obj.peaks.name(m) = [];
+            
+            if ~isempty(obj.peaks.time) && length(obj.peaks.time(1,:)) >= m
+                obj.peaks.time(:,m)   = [];
+                obj.peaks.width(:,m)  = [];
+                obj.peaks.height(:,m) = [];
+                obj.peaks.area(:,m)   = [];
+                obj.peaks.error(:,m)  = [];
+                obj.peaks.fit(:,m)    = [];
             end
             
-        end
-        
-        function updateAxesLimitEditText(obj, varargin)
-            
-            getStr = @(x) sprintf('%.3f', x);
-            
-            set(obj.controls.xMin, 'string', getStr(obj.axes.xlim(1)));
-            set(obj.controls.xMax, 'string', getStr(obj.axes.xlim(2)));
-            set(obj.controls.yMin, 'string', getStr(obj.axes.ylim(1)));
-            set(obj.controls.yMax, 'string', getStr(obj.axes.ylim(2)));
-            
-        end
-        
-        function updatePeakEditText(obj, varargin)
-            
-            getStr = @(x) sprintf('%.3f', x);
-            
-            col = get(obj.controls.peakList, 'value');
-            row = obj.view.index;
-            
-            if ~isempty(obj.data) && size(obj.peaks.time, 1) < length(obj.data)
-                if ~isempty(obj.peaks.name)
-                    obj.peaks.time{length(obj.data), length(obj.peaks.name)} = [];
-                end
-            end
-            
-            if ~isempty(obj.peaks.name) && size(obj.peaks.time, 2) < length(obj.peaks.name)
+            if isempty(tableData) || length(tableData(1,:)) < length(tableHeader)
                 if ~isempty(obj.data)
-                    obj.peaks.time{length(obj.data), length(obj.peaks.name)} = [];
+                    tableData{end, length(tableHeader)} = [];
                 end
             end
             
-            if isempty(col) || col == 0
-                id     = '';
-                time   = '';
-                width  = '';
-                height = '';
-                area   = '';
-            elseif col ~= 0 && (row == 0 || isempty(obj.data))
-                id     = obj.peaks.name{col};
-                time   = '';
-                width  = '';
-                height = '';
-                area   = '';
-            else
-                id     = obj.peaks.name{col};
-                time   = getStr(obj.peaks.time{row,col});
-                width  = getStr(obj.peaks.width{row,col});
-                height = getStr(obj.peaks.height{row,col});
-                area   = getStr(obj.peaks.area{row,col}); 
+            if length(tableHeader) >= m
+                tableHeader(m+14 + offset*0 - 0) = [];
+                tableHeader(m+14 + offset*1 - 1) = [];
+                tableHeader(m+14 + offset*2 - 2) = [];
+                tableHeader(m+14 + offset*3 - 3) = [];
             end
             
-            set(obj.controls.peakIDEdit,     'string', id);
-            set(obj.controls.peakTimeEdit,   'string', time);
-            set(obj.controls.peakWidthEdit,  'string', width);
-            set(obj.controls.peakHeightEdit, 'string', height);
-            set(obj.controls.peakAreaEdit,   'string', area);
+            if ~isempty(tableData) && length(tableData(1,:)) >= m
+                tableData(:, m+14 + offset*0 - 0) = [];
+                tableData(:, m+14 + offset*1 - 1) = [];
+                tableData(:, m+14 + offset*2 - 2) = [];
+                tableData(:, m+14 + offset*3 - 3) = [];
+            end
+            
+            obj.table.main.Data = tableData;
+            obj.table.main.ColumnName = tableHeader;
+            
+            if isempty(obj.controls.peakList.String) && ~isempty(obj.peaks.name)
+                if isempty(obj.controls.peakList.Value) || obj.controls.peakList.Value == 0
+                    obj.controls.peakList.Value = 1;
+                end
+            end
+            
+            set(obj.controls.peakList, 'string', obj.peaks.name);
+            
+            if obj.controls.peakList.Value > length(obj.peaks.name)
+                obj.controls.peakList.Value = length(obj.peaks.name);
+            end
+            
+            if ~isempty(obj.data)
+                obj.plotPeaks();
+            end
             
         end
         
+        function peakDeleteRow(obj, row)
+            
+            if length(obj.peaks.time(:,1)) >= row
+                obj.peaks.time(row, :)   = [];
+                obj.peaks.width(row, :)  = [];
+                obj.peaks.height(row, :) = [];
+                obj.peaks.area(row, :)   = [];
+                obj.peaks.error(row, :)  = [];
+                obj.peaks.fit(row, :)    = [];
+            end
+            
+        end
+  
         function figureMotionCallback(obj, src, ~)
             
             xObj = get(src, 'currentobject');
@@ -893,7 +994,6 @@ classdef ChromatographyGUI < handle
                     if ~isempty(get(obj.axes.main, 'buttondownfcn')) && obj.view.selection == 0
                         set(obj.axes.main, 'buttondownfcn', '');
                     end
-                    
             end
             
         end
@@ -936,101 +1036,6 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function getPeakFit(obj, varargin)
-            
-            row = obj.view.index;
-            col = get(obj.controls.peakList, 'value');
-            
-            if isempty(col) || isempty(obj.data) || row == 0 || col == 0 
-                return
-            end
-            
-            time  = str2double(get(obj.controls.peakTimeEdit, 'string'));
-            width = diff(obj.axes.xlim) * 0.02;
-            
-            if isempty(time) || isnan(time) || isinf(time)
-                time = [];
-            end
-            
-            x = obj.data(row).time;
-            y = obj.data(row).intensity(:,1);
-            
-            if isempty(x) || isempty(y)
-                return
-            else
-                y(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
-                x(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
-            end
-            
-            if time > max(x) || time < min(x)
-                return
-            end
-            
-            if isempty(obj.data(row).baseline) || length(obj.data(row).baseline(:,1)) ~= length(y(:,1))
-                obj.getBaseline();
-            end
-            
-            b = obj.data(row).baseline;
-            
-            if length(b(:,1)) == length(y(:,1))
-                y = y - b(:,2);
-            end
-            
-            peak = exponentialgaussian(x, y,...
-                'center', time,...
-                'width', width);
-            
-            if ~isempty(peak)
-                
-                if length(peak.fit) == length(x)
-                    
-                    x = x(peak.fit ~= 0);
-                    y = peak.fit(peak.fit ~= 0);
-                    
-                    if length(peak.fit) == length(b(:,1))
-                        b = b(peak.fit ~= 0, 2);
-                        y = y + b;
-                    end
-                    
-                    filter = x > peak.time+peak.width*5 | x < peak.time-peak.width*5;
-                    
-                    if any(filter)
-                        x(filter) = [];
-                        y(filter) = [];
-                    end
-                    
-                    if length(x) == length(y)
-                        peak.fit = [x,y];
-                    end
-                    
-                end
-                
-                obj.peaks.time{row,col}   = peak.time;
-                obj.peaks.width{row,col}  = peak.width;
-                obj.peaks.height{row,col} = peak.height;
-                obj.peaks.area{row,col}   = peak.area;
-                obj.peaks.error{row,col}  = peak.error;
-                obj.peaks.fit{row,col}    = peak.fit;
-                
-                obj.updatePeakEditText();
-                
-                offset = length(obj.peaks.name);
-                
-                obj.table.main.Data{row, col+14 + offset*0} = peak.time;
-                obj.table.main.Data{row, col+14 + offset*1} = peak.area;
-                obj.table.main.Data{row, col+14 + offset*2} = peak.height;
-                obj.table.main.Data{row, col+14 + offset*3} = peak.width;
-                
-                if get(obj.controls.showPeak, 'value')
-                    obj.plotPeaks();
-                end
-                
-            end
-            
-            obj.view.selection = 0;
-            
-        end
-        
         function zoomCallback(obj, varargin)
             
             if obj.view.index ~= 0
@@ -1040,8 +1045,8 @@ classdef ChromatographyGUI < handle
                 obj.axes.ylim = varargin{1,2}.Axes.YLim;
                 obj.updateAxesLimitToggle();
                 obj.updateAxesLimitEditText();
-                obj.xlimUpdate();
-                obj.ylimUpdate();
+                obj.updateAxesXLim();
+                obj.updateAxesYLim();
             else
                 set(obj.axes.main, 'xlim', obj.axes.xlim);
                 set(obj.axes.main, 'ylim', obj.axes.ylim);
@@ -1050,7 +1055,6 @@ classdef ChromatographyGUI < handle
         end
         
     end
-    
     
     methods (Access = private)
         
@@ -1062,6 +1066,7 @@ classdef ChromatographyGUI < handle
             obj.toolboxTable();
             obj.toolboxAxes();
             obj.toolboxButton();
+            obj.toolboxResize();
             
             obj.axes.zoom = zoom(obj.figure);
             
@@ -1079,6 +1084,7 @@ classdef ChromatographyGUI < handle
     methods (Static = true)
         
         function x = getPlatform()
+            
             if ismac()
                 x = 'mac';
             elseif isunix()
@@ -1088,9 +1094,11 @@ classdef ChromatographyGUI < handle
             else
                 x = 'unknown';
             end
+            
         end
         
         function x = getEnvironment()
+            
             if ~isempty(ver('MATLAB'))
                 x = ver('MATLAB');
                 x = ['matlab (',  x.Version, ')'];
@@ -1099,6 +1107,25 @@ classdef ChromatographyGUI < handle
             else
                 x = 'unknown';
             end
+            
+        end
+        
+        function x = getFont()
+            
+            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue'; 
+                'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
+            
+            sysFonts = listfonts;
+            
+            for i = 1:length(fontPref)
+                if any(strcmpi(fontPref{i}, sysFonts))
+                    x = fontPref{i};
+                    return
+                end
+            end
+            
+            x = 'FixedWidth';
+            
         end
         
     end

@@ -5,14 +5,13 @@ function toolboxTable(obj, varargin)
 % ---------------------------------------
 backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 10;
 
 % ---------------------------------------
 % Table Columns (metadata)
 % ---------------------------------------
 columnParameters = {...
-    'ID',         36,    false,   'numeric';...
+    'ID',         35,    false,   'numeric';...
     'Filepath',   125,   false,   'char';...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
@@ -28,19 +27,30 @@ columnParameters = {...
     'InjVol',     75,    true,    'numeric'};
 
 % ---------------------------------------
-% Table Columns (default peaks)
+% Table Columns (peak data)
 % ---------------------------------------
-for i = 1:length(obj.peaks.name)
-    columnParameters(end+1, 1:4) = {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
-end
-for i = 1:length(obj.peaks.name)
-    columnParameters(end+1, 1:4) = {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
-end
-for i = 1:length(obj.peaks.name)
-    columnParameters(end+1, 1:4) = {['Height (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
-end
-for i = 1:length(obj.peaks.name)
-    columnParameters(end+1, 1:4) = {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+if ~isempty(obj.peaks.name)
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
+            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
+            {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
+            {['Height (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
+            {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+
 end
 
 % ---------------------------------------
@@ -52,14 +62,14 @@ obj.table.main = uitable(...
     'rowname',               [],...
     'rowstriping',           'off',...
     'units',                 'normalized',...
-    'position',              [0.02, 0.17, 0.96, 0.81],...
+    'position',              [0,0,1,1],...
     'columnname',            columnParameters(:,1),...
     'columnwidth',           columnParameters(:,2)',...
     'columneditable',        [columnParameters{:,3}],...
     'columnformat',          columnParameters(:,4)',...
     'backgroundcolor',       backgroundColor,....
     'foregroundcolor',       foregroundColor,...
-    'fontname',              fontName,...
+    'fontname',              obj.font,...
     'fontSize',              fontSize,...
     'rearrangeablecolumns',  'off',....
     'selectionhighlight',    'off',...
@@ -67,36 +77,11 @@ obj.table.main = uitable(...
     'cellselectioncallback', @(src, event) tableSelectCallback(obj, src, event),...
     'keypressfcn',           @(src, event) tableKeyDownCallback(obj, src, event));
 
-tablePosition(obj);
-
 end
 
-function tablePosition(obj, varargin)
-
-tableProperties = properties(obj.panel.table);
-
-if any(strcmpi(tableProperties, 'innerposition'))
-    
-    set(obj.table.main,  'units', 'pixels');
-    set(obj.panel.table, 'units', 'pixels');
-    
-    x1 = get(obj.panel.table, 'innerposition');
-    x2 = get(obj.panel.table, 'position');
-    
-    x(1) = x1(1) - x2(1);
-    x(2) = x1(2) - x2(2);
-    x(3) = x1(3);
-    x(4) = x1(4);
-    
-    set(obj.table.main, 'position', x);
-    
-    set(obj.table.main,  'units', 'normalized');
-    set(obj.panel.table, 'units', 'normalized');
-    
-end
-
-end
-
+% ---------------------------------------
+% Table Edit Callback
+% ---------------------------------------
 function tableEditCallback(obj, src, evt)
 
 if isempty(src.Data)
@@ -123,12 +108,18 @@ src.Data(evt.Indices(1), evt.Indices(2)) = evt.NewData;
 
 end
 
+% ---------------------------------------
+% Table Selection Callback
+% ---------------------------------------
 function tableSelectCallback(obj, ~, evt)
 
 obj.table.selection = evt.Indices;
 
 end
 
+% ---------------------------------------
+% Table Key Press Callback
+% ---------------------------------------
 function tableKeyDownCallback(obj, ~, evt)
 
 if strcmpi(evt.EventName, 'KeyPress')
@@ -201,6 +192,9 @@ end
 
 end
 
+% ---------------------------------------
+% Table Delete Row
+% ---------------------------------------
 function message = tableDeleteMessage(obj)
 
 row = '';

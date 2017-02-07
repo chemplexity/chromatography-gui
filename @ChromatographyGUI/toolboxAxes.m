@@ -25,7 +25,7 @@ default.ticklength  = [0.007, 0.0075];
 default.tickdir     = 'out';
 default.xgrid       = 'off';
 default.ygrid       = 'off';
-default.fontname    = 'arial';
+default.fontname    = obj.font;
 default.fontsize    = 11;
 default.fontweight  = 'normal';
 default.xlabel      = 'Time (min)';
@@ -112,6 +112,7 @@ catch
 end
 
 try
+    
     if verLessThan('matlab', 'R2014b')
         set(obj.figure,...
             'resizefcn', @(varargin) set(obj.axes.secondary,...
@@ -125,7 +126,9 @@ try
         set(get(get(obj.axes.main, 'xruler'), 'axle'), 'visible', 'off');
         set(get(get(obj.axes.main, 'ybaseline'), 'axle'), 'visible', 'off');
     end
+    
 catch
+    
 end
 
 updateAxesPosition(obj);

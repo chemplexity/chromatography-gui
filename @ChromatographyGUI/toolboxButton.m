@@ -15,8 +15,8 @@ p2(2) = p1(2);
 p2(3) = p1(3);
 p2(4) = p1(4);
 
-obj.controls.next = newPushButton(obj.panel.selectTab, 'Next',     'nextsample', p1);
-obj.controls.prev = newPushButton(obj.panel.selectTab, 'Previous', 'prevsample', p2);
+obj.controls.next = newPushButton(obj, obj.panel.selectTab, 'Next',     'nextsample', p1);
+obj.controls.prev = newPushButton(obj, obj.panel.selectTab, 'Previous', 'prevsample', p2);
 
 % Integrate Tab --> Peak List --> Add, Edit, Delete
 pl1(1) = 0.6 + 0.01 * 2;
@@ -34,9 +34,9 @@ pl3(2) = pl2(2) - pl2(4) - 0.05;
 pl3(3) = pl1(3);
 pl3(4) = pl1(4);
 
-obj.controls.addPeak  = newPushButton(obj.panel.peakList, 'Add',    'addpeak',  pl1);
-obj.controls.editPeak = newPushButton(obj.panel.peakList, 'Edit',   'editpeak', pl2);
-obj.controls.delPeak  = newPushButton(obj.panel.peakList, 'Delete', 'delpeak',  pl3);
+obj.controls.addPeak  = newPushButton(obj, obj.panel.peakList, 'Add',    'addpeak',  pl1);
+obj.controls.editPeak = newPushButton(obj, obj.panel.peakList, 'Edit',   'editpeak', pl2);
+obj.controls.delPeak  = newPushButton(obj, obj.panel.peakList, 'Delete', 'delpeak',  pl3);
 
 % Integrate Tab --> Baseline --> Refresh, Clear
 b2(1) = 0.50 - 0.15;
@@ -49,8 +49,8 @@ b3(2) = b2(2);
 b3(3) = b2(3);
 b3(4) = b2(4);
 
-obj.controls.applyBaseline = newPushButton(obj.panel.baseline, 'Apply', 'applybaseline', b2);
-obj.controls.clearBaseline = newPushButton(obj.panel.baseline, 'Clear', 'clearbaseline', b3);
+obj.controls.applyBaseline = newPushButton(obj, obj.panel.baseline, 'Apply', 'applybaseline', b2);
+obj.controls.clearBaseline = newPushButton(obj, obj.panel.baseline, 'Clear', 'clearbaseline', b3);
 
 % ---------------------------------------
 % Static Text
@@ -67,8 +67,8 @@ t2(2) = t1(2) - t1(4) - 0.10;
 t2(3) = t1(3);
 t2(4) = t1(4);
 
-obj.controls.selectID   = newStaticText(obj.panel.selectTab, 'ID',     'idtext',   t1);
-obj.controls.selectName = newStaticText(obj.panel.selectTab, 'Sample', 'nametext', t2);
+obj.controls.selectID   = newStaticText(obj, obj.panel.selectTab, 'ID',     'idtext',   t1);
+obj.controls.selectName = newStaticText(obj, obj.panel.selectTab, 'Sample', 'nametext', t2);
 
 correctPosition(obj.controls.selectID);
 correctPosition(obj.controls.selectName);
@@ -79,8 +79,8 @@ t3(2) = (0.15 + 0.25) / 2;
 t3(3) = 0.10;
 t3(4) = 0.25 / 2;
 
-obj.controls.xSeparator = newStaticText(obj.panel.xlim, '-', 'xdash', t3);
-obj.controls.ySeparator = newStaticText(obj.panel.ylim, '-', 'ydash', t3);
+obj.controls.xSeparator = newStaticText(obj, obj.panel.xlim, '-', 'xdash', t3);
+obj.controls.ySeparator = newStaticText(obj, obj.panel.ylim, '-', 'ydash', t3);
 
 % Integrate Tab --> Options
 i1(1) = 0.075;
@@ -108,11 +108,11 @@ i5(2) = 0.02 * 1 + 0.15 * 0 + 0.075;
 i5(3) = i1(3);
 i5(4) = i1(4);
 
-obj.controls.peakIDText     = newStaticText(obj.panel.integrate, 'ID',     'peakidtext',     i1);
-obj.controls.peakTimeText   = newStaticText(obj.panel.integrate, 'Time',   'peaktimetext',   i2);
-obj.controls.peakWidthText  = newStaticText(obj.panel.integrate, 'Width',  'peakwidthtext',  i3);
-obj.controls.peakHeightText = newStaticText(obj.panel.integrate, 'Height', 'peakheighttext', i4);
-obj.controls.peakAreaText   = newStaticText(obj.panel.integrate, 'Area',   'peakareatext',   i5);
+obj.controls.peakIDText     = newStaticText(obj, obj.panel.integrate, 'ID',     'peakidtext',     i1);
+obj.controls.peakTimeText   = newStaticText(obj, obj.panel.integrate, 'Time',   'peaktimetext',   i2);
+obj.controls.peakWidthText  = newStaticText(obj, obj.panel.integrate, 'Width',  'peakwidthtext',  i3);
+obj.controls.peakHeightText = newStaticText(obj, obj.panel.integrate, 'Height', 'peakheighttext', i4);
+obj.controls.peakAreaText   = newStaticText(obj, obj.panel.integrate, 'Area',   'peakareatext',   i5);
 
 % ---------------------------------------
 % Edit Text
@@ -129,8 +129,8 @@ e2(2) = 0.10 + 0.25 + 0.025 + 0.25 + 0.025;
 e2(3) = 1.00 - e1(1) - 0.10;
 e2(4) = e1(4);
 
-obj.controls.editID   = newEditText(obj.panel.selectTab, obj.view.id,   'idedit',   e2);
-obj.controls.editName = newEditText(obj.panel.selectTab, obj.view.name, 'nameedit', e1);
+obj.controls.editID   = newEditText(obj, obj.panel.selectTab, obj.view.id,   'idedit',   e2);
+obj.controls.editName = newEditText(obj, obj.panel.selectTab, obj.view.name, 'nameedit', e1);
 
 % View Tab --> X-Limits, Y-Limits
 e3(1) = 0.50 - 0.35 - 0.05;
@@ -143,10 +143,10 @@ e4(2) = e3(2);
 e4(3) = e3(3);
 e4(4) = e3(4);
 
-obj.controls.xMin = newEditText(obj.panel.xlim, num2str(obj.axes.xlim(1)), 'xminedit', e3);
-obj.controls.xMax = newEditText(obj.panel.xlim, num2str(obj.axes.xlim(2)), 'xmaxedit', e4);
-obj.controls.yMin = newEditText(obj.panel.ylim, num2str(obj.axes.ylim(1)), 'yminedit', e3);
-obj.controls.yMax = newEditText(obj.panel.ylim, num2str(obj.axes.ylim(2)), 'ymaxedit', e4);
+obj.controls.xMin = newEditText(obj, obj.panel.xlim, num2str(obj.axes.xlim(1)), 'xminedit', e3);
+obj.controls.xMax = newEditText(obj, obj.panel.xlim, num2str(obj.axes.xlim(2)), 'xmaxedit', e4);
+obj.controls.yMin = newEditText(obj, obj.panel.ylim, num2str(obj.axes.ylim(1)), 'yminedit', e3);
+obj.controls.yMax = newEditText(obj, obj.panel.ylim, num2str(obj.axes.ylim(2)), 'ymaxedit', e4);
 
 % Integrate Tab --> Options
 ie1(1) = 0.075 + 0.05 + 0.25;
@@ -174,11 +174,11 @@ ie5(2) = 0.02 * 1 + 0.15 * 0 + 0.075;
 ie5(3) = ie1(3);
 ie5(4) = ie1(4);
 
-obj.controls.peakIDEdit     = newEditText(obj.panel.integrate, obj.peaks.name{1}, 'peakidedit', ie1);
-obj.controls.peakTimeEdit   = newEditText(obj.panel.integrate, '', 'peaktimeedit',   ie2);
-obj.controls.peakWidthEdit  = newEditText(obj.panel.integrate, '', 'peakwidthedit',  ie3);
-obj.controls.peakHeightEdit = newEditText(obj.panel.integrate, '', 'peakheightedit', ie4);
-obj.controls.peakAreaEdit   = newEditText(obj.panel.integrate, '', 'peakareaedit',   ie5);
+obj.controls.peakIDEdit     = newEditText(obj, obj.panel.integrate, obj.peaks.name{1}, 'peakidedit', ie1);
+obj.controls.peakTimeEdit   = newEditText(obj, obj.panel.integrate, '', 'peaktimeedit',   ie2);
+obj.controls.peakWidthEdit  = newEditText(obj, obj.panel.integrate, '', 'peakwidthedit',  ie3);
+obj.controls.peakHeightEdit = newEditText(obj, obj.panel.integrate, '', 'peakheightedit', ie4);
+obj.controls.peakAreaEdit   = newEditText(obj, obj.panel.integrate, '', 'peakareaedit',   ie5);
 
 % ---------------------------------------
 % Toggle Buttons
@@ -195,10 +195,10 @@ x2(2) = x1(2);
 x2(3) = x1(3);
 x2(4) = x1(4);
 
-obj.controls.xManual = newToggleButton(obj.panel.xlim, 'Manual', 'xmanual', 0, x1);
-obj.controls.yManual = newToggleButton(obj.panel.ylim, 'Manual', 'ymanual', 0, x1);
-obj.controls.xAuto   = newToggleButton(obj.panel.xlim, 'Auto',   'xauto',   1, x2);
-obj.controls.yAuto   = newToggleButton(obj.panel.ylim, 'Auto',   'yauto',   1, x2);
+obj.controls.xManual = newToggleButton(obj, obj.panel.xlim, 'Manual', 'xmanual', 0, x1);
+obj.controls.yManual = newToggleButton(obj, obj.panel.ylim, 'Manual', 'ymanual', 0, x1);
+obj.controls.xAuto   = newToggleButton(obj, obj.panel.xlim, 'Auto',   'xauto',   1, x2);
+obj.controls.yAuto   = newToggleButton(obj, obj.panel.ylim, 'Auto',   'yauto',   1, x2);
 
 % Integrate Tab --> Show Baseline
 b1(1) = 0.03;
@@ -206,7 +206,7 @@ b1(2) = b2(2);
 b1(3) = b2(3);
 b1(4) = b2(4);
 
-obj.controls.showBaseline = newToggleButton(obj.panel.baseline, 'Show', 'showbaseline', 0, b1);
+obj.controls.showBaseline = newToggleButton(obj, obj.panel.baseline, 'Show', 'showbaseline', 0, b1);
 
 % Integrate Tab --> Show Peaks
 it1(1) = 0.725;
@@ -224,9 +224,9 @@ it3(2) = 0.05 + 0.28 * 0 + 0.03 * 0;
 it3(3) = it1(3);
 it3(4) = it1(4);
 
-obj.controls.showPeak   = newToggleButton(obj.panel.integrate, 'Show',   'showpeak', 1, it1);
-obj.controls.selectPeak = newPushButton(obj.panel.integrate,   'Select', 'selectpeak',  it2);
-obj.controls.clearPeak  = newPushButton(obj.panel.integrate,   'Clear',  'clearpeak',   it3);
+obj.controls.showPeak   = newToggleButton(obj, obj.panel.integrate, 'Show',   'showpeak', 1, it1);
+obj.controls.selectPeak = newPushButton(obj, obj.panel.integrate,   'Select', 'selectpeak',  it2);
+obj.controls.clearPeak  = newPushButton(obj, obj.panel.integrate,   'Clear',  'clearpeak',   it3);
 
 % ---------------------------------------
 % Listbox
@@ -237,7 +237,7 @@ l1(2) = 0.0;
 l1(3) = 0.6;
 l1(4) = 1.0;
 
-obj.controls.peakList = newListbox(obj.panel.peakList, obj.peaks.name, 'peaklist', l1);
+obj.controls.peakList = newListbox(obj, obj.panel.peakList, obj.peaks.name, 'peaklist', l1);
 
 % ---------------------------------------
 % Sliders
@@ -253,14 +253,14 @@ s2(2) = 0.40;
 s2(3) = s1(3);
 s2(4) = s1(4);
 
-obj.controls.smoothSlider = newSlider(obj.panel.baseline, 's', 'smoothslider', s1);
-obj.controls.asymSlider   = newSlider(obj.panel.baseline, 'a', 'asymslider',   s2);
+obj.controls.smoothSlider = newSlider(obj, obj.panel.baseline, 's', 'smoothslider', s1);
+obj.controls.asymSlider   = newSlider(obj, obj.panel.baseline, 'a', 'asymslider',   s2);
 
 set(obj.controls.smoothSlider, 'min', 1,   'max', 10, 'value',  5.5);
 set(obj.controls.asymSlider,   'min', -10, 'max', -1, 'value', -5.5);
 
 % ---------------------------------------
-% Callbacks
+% Selection Callback
 % ---------------------------------------
 set(obj.controls.next,...
     'callback', @(src, evt) sampleSelectionCallback(obj, src, evt),...
@@ -268,18 +268,6 @@ set(obj.controls.next,...
 
 set(obj.controls.prev,...
     'callback', @(src, evt) sampleSelectionCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.addPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.editPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.delPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
 set(obj.controls.editID,...
@@ -290,6 +278,9 @@ set(obj.controls.editName,...
     'callback', @(src, evt) editNameCallback(obj, src, evt),...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
+% ---------------------------------------
+% Axes Callback
+% ---------------------------------------
 set(obj.controls.xManual,...
     'callback', @(src, evt) axesToggleCallback(obj, src, evt),...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
@@ -322,6 +313,9 @@ set(obj.controls.yMax,...
     'callback', @(src, evt) axesLimitCallback(obj, src, evt),...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
+% ---------------------------------------
+% Baseline Callback
+% ---------------------------------------
 set(obj.controls.applyBaseline,...
     'callback', @(src, evt) baselineCallback(obj, src, evt));
 
@@ -331,8 +325,23 @@ set(obj.controls.clearBaseline,...
 set(obj.controls.showBaseline,...
     'callback', @(src, evt) baselineCallback(obj, src, evt));
 
+% ---------------------------------------
+% Peak Callback
+% ---------------------------------------
 set(obj.controls.peakList,...
     'callback', @(src, evt) peakListboxCallback(obj, src, evt));
+
+set(obj.controls.addPeak,...
+    'callback', @(src, evt) peakListCallback(obj, src, evt),...
+    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+
+set(obj.controls.editPeak,...
+    'callback', @(src, evt) peakListCallback(obj, src, evt),...
+    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+
+set(obj.controls.delPeak,...
+    'callback', @(src, evt) peakListCallback(obj, src, evt),...
+    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
 set(obj.controls.peakIDEdit,...
     'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
@@ -360,6 +369,9 @@ set(obj.controls.selectPeak,...
 
 end
 
+% ---------------------------------------
+% Peak Options
+% ---------------------------------------
 function peakListCallback(obj, src, ~)
 
 switch get(src, 'string')
@@ -422,6 +434,9 @@ end
 
 end
 
+% ---------------------------------------
+% Selection Buttons
+% ---------------------------------------
 function sampleSelectionCallback(obj, src, ~)
 
 if obj.view.index == 0
@@ -474,6 +489,9 @@ updateSelectionText(obj);
 
 end
 
+% ---------------------------------------
+% Keyboard Callback
+% ---------------------------------------
 function browseKeyCallback(obj, src, evt)
 
 if strcmpi(evt.EventName, 'KeyPress')
@@ -492,14 +510,16 @@ if strcmpi(evt.EventName, 'KeyPress')
                 
                 case {'addpeak', 'editpeak', 'delpeak'}
                     peakListCallback(obj, src);
-            
+                    
             end
-    end
-    
+    end    
 end
 
 end
 
+% ---------------------------------------
+% Selection Text
+% ---------------------------------------
 function updateSelectionText(obj, varargin)
 
 set(obj.controls.editID,   'string', obj.view.id);
@@ -512,6 +532,9 @@ end
 
 end
 
+% ---------------------------------------
+% Selection ID
+% ---------------------------------------
 function editIDCallback(obj, varargin)
 
 n = get(obj.controls.editID, 'string');
@@ -537,12 +560,18 @@ updateSelectionText(obj);
 
 end
 
+% ---------------------------------------
+% Selection Name
+% ---------------------------------------
 function editNameCallback(obj, ~, ~)
 
 updateSelectionText(obj);
 
 end
 
+% ---------------------------------------
+% Axes Toggle
+% ---------------------------------------
 function axesToggleCallback(obj, src, ~)
 
 if ~strcmpi(get(src, 'style'), 'togglebutton')
@@ -593,6 +622,9 @@ obj.updatePlot();
 
 end
 
+% ---------------------------------------
+% Axes Limits
+% ---------------------------------------
 function axesLimitCallback(obj, src, ~)
 
 if ~strcmpi(get(src, 'style'), 'edit')
@@ -613,7 +645,7 @@ switch get(src, 'tag')
         elseif val < obj.axes.xlim(2)
             obj.axes.xmode = 'manual';
             obj.axes.xlim(1) = val;
-            obj.xlimUpdate();
+            obj.updateAxesXLim();
         else
             set(src, 'string', getStr(obj.axes.xlim(1)));
         end
@@ -625,7 +657,7 @@ switch get(src, 'tag')
         elseif val > obj.axes.xlim(1)
             obj.axes.xmode = 'manual';
             obj.axes.xlim(2) = val;
-            obj.xlimUpdate();
+            obj.updateAxesXLim();
         else
             set(src, 'string', getStr(obj.axes.xlim(2)));
         end
@@ -638,7 +670,7 @@ switch get(src, 'tag')
         elseif val < obj.axes.ylim(2)
             obj.axes.ymode = 'manual';
             obj.axes.ylim(1) = val;
-            obj.ylimUpdate();
+            obj.updateAxesYLim();
         else
             set(src, 'string', getStr(obj.axes.ylim(1)));
             return
@@ -652,7 +684,7 @@ switch get(src, 'tag')
         elseif val > obj.axes.ylim(1)
             obj.axes.ymode = 'manual';
             obj.axes.ylim(2) = val;
-            obj.ylimUpdate();
+            obj.updateAxesYLim();
         else
             set(src, 'string', getStr(obj.axes.ylim(2)));
             return
@@ -668,7 +700,9 @@ obj.updatePlot();
 
 end
 
-
+% ---------------------------------------
+% Baseline
+% ---------------------------------------
 function baselineCallback(obj, src, ~)
 
 if isempty(obj.data) || obj.view.index == 0
@@ -721,12 +755,18 @@ end
 
 end
 
+% ---------------------------------------
+% Peak Listbox
+% ---------------------------------------
 function peakListboxCallback(obj, ~, ~)
 
 obj.updatePeakEditText();
 
 end
 
+% ---------------------------------------
+% Peak Edit Text
+% ---------------------------------------
 function peakEditTextCallback(obj, src, ~)
 
 switch get(src, 'tag')
@@ -810,6 +850,9 @@ end
         
 end
 
+% ---------------------------------------
+% Check Peak Edit Text
+% ---------------------------------------
 function str = checkPeakEditText(obj, field)
 
 getStr = @(x) sprintf('%.3f', x);
@@ -839,12 +882,18 @@ end
 
 end
 
+% ---------------------------------------
+% Display Peak
+% ---------------------------------------
 function peakDisplayCallback(obj, ~, ~)
 
 obj.plotPeaks();
 
 end
 
+% ---------------------------------------
+% Clear Peak
+% ---------------------------------------
 function peakClearCallback(obj, ~, ~)
 
 if isempty(obj.data) || obj.view.index == 0
@@ -883,6 +932,9 @@ obj.plotPeaks();
 
 end
 
+% ---------------------------------------
+% Select Peak
+% ---------------------------------------
 function peakSelectCallback(obj, ~, ~)
 
 if strcmpi(get(obj.axes.zoom, 'enable'), 'on')
@@ -915,11 +967,13 @@ set(x, 'position', p1);
 
 end
 
-function button = newPushButton(parent, title, tag, position)
+% ---------------------------------------
+% Push Button
+% ---------------------------------------
+function button = newPushButton(obj, parent, title, tag, position)
 
 backgroundColor = [0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 11;
 
 button = uicontrol(...
@@ -929,7 +983,7 @@ button = uicontrol(...
     'string',          title,...
     'tag',             tag,...
     'position',        position,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
@@ -937,11 +991,13 @@ button = uicontrol(...
 
 end
 
-function button = newToggleButton(parent, title, tag, value, position)
+% ---------------------------------------
+% Toggle Button
+% ---------------------------------------
+function button = newToggleButton(obj, parent, title, tag, value, position)
 
 backgroundColor = [0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 11;
 
 button = uicontrol(...
@@ -952,7 +1008,7 @@ button = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'value',           value,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
@@ -960,11 +1016,13 @@ button = uicontrol(...
 
 end
 
-function text = newStaticText(parent, title, tag, position)
+% ---------------------------------------
+% Static Text
+% ---------------------------------------
+function text = newStaticText(obj, parent, title, tag, position)
 
 backgroundColor = [0.99, 0.99, 0.99];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 11;
 
 text = uicontrol(...
@@ -974,7 +1032,7 @@ text = uicontrol(...
     'string',          title,...
     'tag',             tag,...
     'position',        position,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
@@ -982,11 +1040,13 @@ text = uicontrol(...
 
 end
 
-function text = newEditText(parent, title, tag, position)
+% ---------------------------------------
+% Edit Text
+% ---------------------------------------
+function text = newEditText(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 11;
 
 text = uicontrol(...
@@ -996,7 +1056,7 @@ text = uicontrol(...
     'string',          title,...
     'tag',             tag,...
     'position',        position,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
@@ -1004,11 +1064,13 @@ text = uicontrol(...
 
 end
 
-function listbox = newListbox(parent, title, tag, position)
+% ---------------------------------------
+% Listbox
+% ---------------------------------------
+function listbox = newListbox(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 10;
 
 listbox = uicontrol(...
@@ -1018,18 +1080,20 @@ listbox = uicontrol(...
     'string',          title,...
     'tag',             tag,...
     'position',        position,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor);
 
 end
 
-function slider = newSlider(parent, title, tag, position)
+% ---------------------------------------
+% Slider
+% ---------------------------------------
+function slider = newSlider(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontName        = 'arial';
 fontSize        = 11;
 
 slider = uicontrol(...
@@ -1039,7 +1103,7 @@ slider = uicontrol(...
     'string',          title,...
     'tag',             tag,...
     'position',        position,...
-    'fontname',        fontName,...
+    'fontname',        obj.font,...
     'fontsize',        fontSize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...

@@ -158,20 +158,23 @@ if ~isempty(data) && isstruct(data)
     for i = 1:length(data)
         
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
-            
+
             obj.data = [obj.data; data(i)];
             tableAppendCallback(obj);
             
-            cols = length(obj.peaks.name);
-            rows = length(obj.data);
+            if ~isempty(obj.peaks.name)
+                
+                cols = length(obj.peaks.name);
+                rows = length(obj.data);
             
-            obj.peaks.time{rows, cols}   = [];
-            obj.peaks.width{rows, cols}  = [];
-            obj.peaks.height{rows, cols} = [];
-            obj.peaks.area{rows, cols}   = [];
-            obj.peaks.error{rows, cols}  = [];
-            obj.peaks.fit{rows, cols}    = [];
-            
+                obj.peaks.time{rows, cols}   = [];
+                obj.peaks.width{rows, cols}  = [];
+                obj.peaks.height{rows, cols} = [];
+                obj.peaks.area{rows, cols}   = [];
+                obj.peaks.error{rows, cols}  = [];
+                obj.peaks.fit{rows, cols}    = [];
+                
+            end
         end
     end
     
@@ -188,40 +191,54 @@ end
 % ---------------------------------------
 function loadMatlabCallback(obj, varargin)
 
-[filename, filepath] = uigetfile('*.mat', 'Open');
+[fileName, filePath] = uigetfile('*.mat', 'Open');
 
-if ischar(filename) && ischar(filepath)
-    data = load([filepath, filename]);
+if ischar(fileName) && ischar(filePath)
+    data = load([filePath, fileName]);
     
     if isstruct(data) && isfield(data, 'data')
         data = data.data;
         
         if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
             obj.data = data;
-            obj.checkpoint = [filepath, filename];
+            obj.peaks = obj.data(1).peaks;
             
-            tableClearCallback(obj);
-            tableRefreshCallback(obj);
+            if ~isempty(obj.peaks.name)
+                
+                rows = length(obj.data);
+                cols = length(obj.peaks.name);    
             
-            if ~isfield(obj.data, 'baseline') 
-                for i = 1:length(data)
-                    obj.data(i).baseline = [];
+                if size(obj.peaks.time,1) < rows
+                    obj.peaks.time{rows,1}   = [];
+                    obj.peaks.width{rows,1}  = [];
+                    obj.peaks.height{rows,1} = [];
+                    obj.peaks.area{rows,1}   = [];
+                    obj.peaks.error{rows,1}  = [];
+                    obj.peaks.fit{rows,1}    = [];
                 end
+                
+                if size(obj.peaks.time,2) < cols
+                    obj.peaks.time{1,cols}   = [];
+                    obj.peaks.width{1,cols}  = [];
+                    obj.peaks.height{1,cols} = [];
+                    obj.peaks.area{1,cols}   = [];
+                    obj.peaks.error{1,cols}  = [];
+                    obj.peaks.fit{1,cols}    = [];
+                end
+                
             end
             
-            rows = length(obj.data);
-            cols = length(obj.peaks.name);
-                
-            obj.peaks.time{rows, cols}   = [];
-            obj.peaks.width{rows, cols}  = [];
-            obj.peaks.height{rows, cols} = [];
-            obj.peaks.area{rows, cols}   = [];
-            obj.peaks.error{rows, cols}  = [];
-            obj.peaks.fit{rows, cols}    = [];
+            obj.table.main.Data = [];
             
+            tableHeaderRefreshCallback(obj);
+            tableDataRefreshCallback(obj);
+            listboxRefreshCallback(obj);
+            
+            obj.checkpoint = [filePath, fileName];
+            obj.updatePeakEditText();
             obj.updateFigure();
             
-        end 
+        end
     end
 end
 
@@ -238,37 +255,41 @@ else
     return
 end
 
-filename = [];
+if ~isempty(obj.peaks.name)
+    data(1).peaks = obj.peaks;
+end
+
+fileName = [];
 
 if ~isempty(obj.checkpoint)
     
-    [status, fileinfo] = fileattrib(obj.checkpoint);
+    [status, fileInfo] = fileattrib(obj.checkpoint);
     
     if status
-        [filepath, filename] = fileparts(fileinfo.Name);
-        filepath = [filepath, filesep];
-        filename = [filename, '.mat'];
+        [filePath, fileName] = fileparts(fileInfo.Name);
+        filePath = [filePath, filesep];
+        fileName = [fileName, '.mat'];
     end
     
 end
 
-if isempty(filename)
+if isempty(fileName)
     
-    defaultname = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+    defaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
     
-    [filename, filepath] = uiputfile('*.mat', 'Save As...', defaultname);
+    [fileName, filePath] = uiputfile('*.mat', 'Save As...', defaultName);
     
-    if ischar(filename) && ischar(filepath)
-        obj.checkpoint = [filepath, filename];
+    if ischar(fileName) && ischar(filePath)
+        obj.checkpoint = [filePath, fileName];
     end 
     
 end
 
-if ischar(filename) && ~isempty(data)
-    currentpath = pwd;
-    cd(filepath);
-    save(filename, 'data', '-mat');
-    cd(currentpath);
+if ischar(fileName) && ~isempty(data)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'data', '-mat');
+    cd(currentPath);
 end
 
 end
@@ -284,20 +305,24 @@ else
     return
 end
 
+if ~isempty(obj.peaks.name)
+    data(1).peaks = obj.peaks;
+end
+   
 if ~isempty(obj.checkpoint)
-    [~, defaultname] = fileparts(obj.checkpoint);
+    [~, defaultName] = fileparts(obj.checkpoint);
 else
-    defaultname = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+    defaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
 end
 
-[filename, filepath] = uiputfile('*.mat', 'Save As...', defaultname);
+[fileName, filePath] = uiputfile('*.mat', 'Save As...', defaultName);
 
-if ischar(filename) && ischar(filepath) && ~isempty(data)
-    currentpath = pwd;
-    cd(filepath);
-    save(filename, 'data', '-mat');
-    obj.checkpoint = [filepath, filename];
-    cd(currentpath);
+if ischar(fileName) && ischar(filePath) && ~isempty(data)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'data', '-mat');
+    obj.checkpoint = [filePath, fileName];
+    cd(currentPath);
 end
 
 end
@@ -431,16 +456,16 @@ filterExtensions = '*.xls;*.xlsx';
 filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
 filterDefaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
 
-[filename, filepath] = uiputfile(...
+[fileName, filePath] = uiputfile(...
     {filterExtensions, filterDescription},...
     'Save As...',...
     filterDefaultName);
 
-if ischar(filename) && ischar(filepath)
-    currentpath = pwd;
-    cd(filepath);
-    xlswrite(filename, excelData)
-    cd(currentpath);
+if ischar(fileName) && ischar(filePath)
+    currentPath = pwd;
+    cd(filePath);
+    xlswrite(fileName, excelData)
+    cd(currentPath);
 end
     
 end
@@ -507,13 +532,46 @@ end
 end
 
 % ---------------------------------------
-% Refresh Table
+% Refresh Table Header
 % ---------------------------------------
-function tableRefreshCallback(obj, varargin)
+function tableHeaderRefreshCallback(obj, varargin)
+
+tableHeader = obj.table.main.ColumnName(1:14);
+
+if ~isempty(obj.peaks.name)
+    
+    for i = 1:length(obj.peaks.name)
+        tableHeader(end+1) = {['Time (', obj.peaks.name{i}, ')']};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        tableHeader(end+1) = {['Area (', obj.peaks.name{i}, ')']};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        tableHeader(end+1) = {['Height (', obj.peaks.name{i}, ')']};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        tableHeader(end+1) = {['Width (', obj.peaks.name{i}, ')']};
+    end
+    
+end
+
+obj.table.main.ColumnName = tableHeader;
+
+end
+
+% ---------------------------------------
+% Refresh Table Data
+% ---------------------------------------
+function tableDataRefreshCallback(obj, varargin)
 
 if isempty(obj.data)
     return
 end
+
+x = length(obj.peaks.name);
 
 for i = 1:length(obj.data)
     
@@ -531,18 +589,31 @@ for i = 1:length(obj.data)
     obj.table.main.Data{i,12} = obj.data(i).vial;
     obj.table.main.Data{i,13} = obj.data(i).replicate;
     
+    if ~isempty(obj.peaks.name)
+        for j = 1:x
+            obj.table.main.Data{i, 14+j + x*0} = obj.peaks.time{i,j};
+            obj.table.main.Data{i, 14+j + x*1} = obj.peaks.area{i,j};
+            obj.table.main.Data{i, 14+j + x*2} = obj.peaks.height{i,j};
+            obj.table.main.Data{i, 14+j + x*3} = obj.peaks.width{i,j};
+        end        
+    end
+    
 end
-
-obj.updatePlot();
 
 end
 
 % ---------------------------------------
-% Clear Table
+% Refresh Listbox 
 % ---------------------------------------
-function tableClearCallback(obj, varargin)
+function listboxRefreshCallback(obj, varargin)
 
-obj.table.main.Data = [];
+x = obj.controls.peakList.Value;
+
+if isempty(x) || x == 0 || x > length(obj.peaks.name)
+    obj.controls.peakList.Value = 1;
+end
+            
+set(obj.controls.peakList, 'string', obj.peaks.name);
 
 end
 
@@ -582,12 +653,11 @@ function tableDeleteRowMenu(obj, varargin)
 
 if isempty(obj.data) || isempty(obj.table.main.Data) || isempty(obj.table.selection)
     return
+else
+    rowSelection = '';    
 end
 
-rowSelection = '';
-
 for i = 1:length(obj.table.selection(:,1))
-    
     row = obj.table.selection(i,1);
     
     if i == 1
@@ -613,7 +683,6 @@ for i = 1:length(obj.table.selection(:,1))
                     end
                 end
             end
-            
         elseif obj.table.selection(i,1) - obj.table.selection(i-1,1) ~= 1
             rowSelection = [rowSelection, ', ', num2str(row)];
         end
