@@ -49,7 +49,7 @@ function varargout = exponentialgaussian(varargin)
 default.center = 0;
 default.width  = 1;
 
-default.cutoff.area = 1E-3;
+default.cutoff.area = 1E-5;
 
 varargout{1} = [];
 
@@ -159,19 +159,23 @@ pLX = x(pIndex,1);
 pRX = x(pIndex,1);
 pLY = y(pIndex,1);
 pRY = y(pIndex,1);
-pLimit = 0.5;
+pLimit = 0.3;
 pMax = 10;
 
 for i = pIndex:length(x)
     
-    if y(i,1) > pRY
+    if y(i,1) >= pRY
         pRX = x(i);
         pRY = y(i,1);
-        pDown = 0;
         pUp = pUp + 1;
+        if pUp > 2
+            pDown = 0;
+        end
     elseif y(i,1) < pRY
         pDown = pDown + 1;
-        pUp = 0;
+        if pDown > 2
+            pUp = 0;
+        end
     end
     
     if pUp == pMax
@@ -199,11 +203,15 @@ for i = pIndex:-1:1
     if y(i,1) > pLY
         pLX = x(i);
         pLY = y(i,1);
-        pDown = 0;
         pUp = pUp + 1;
+        if pUp > 2
+            pDown = 0;
+        end
     elseif y(i,1) < pLY
         pDown = pDown + 1;
-        pUp = 0;
+        if pDown > 2
+            pUp = 0;
+        end
     end
     
     if pUp == pMax
@@ -224,7 +232,7 @@ end
 
 pLCount = pIndex - find(x>=pLX,1);
 pRCount = find(x>=pRX,1) - pIndex;
-
+disp([center,pLX,pRX]);
 if pRCount == 0 && pLCount == 0
     center = x(pIndex);
 elseif pRCount ~= 0 && (pRCount < pLCount || pLCount == 0)
@@ -317,8 +325,11 @@ for i = 1:length(y(1,:))
     yfit(yfit(:,7) < h(3) * 10^-9 | yfit(:,7) > h(3) * 10, 7) = 0;
     yfit(yfit(:,8) < h(4) * 10^-9 | yfit(:,8) > h(4) * 10, 8) = 0;
     
+    w(5:8) = w(1:4);
+    
     for j = 1:size(yfit,2)
-        rmsd(j) = peakError(y(:,i), yfit(:,j));
+        w(j) = peakWidth(x, yfit(:,j));
+        rmsd(j) = peakError(x, y(:,i), yfit(:,j), w(j));
     end
     
     [~, index] = min(rmsd);
@@ -337,15 +348,15 @@ for i = 1:length(y(1,:))
     
     peaks.time(i)   = c(index);
     peaks.height(i) = h(index);
+    peaks.width(i) = w(yIndex);
     peaks.error(i)  = rmsd(yIndex);
     peaks.fit(:,i) = yfit(:,yIndex);
     
     if size(x,1) == size(peaks.fit(:,i), 1)
-        peaks.width(i) = peakWidth(x, peaks.fit(:,i));
         peaks.area(i) = peakArea(x, peaks.fit(:,i));
     else
-        peaks.width(i) = w(index);
-        peaks.area(i) = EGH.a(h(index), w(index), e, EGH.c(EGH.t(w(index), e)));
+        peaks.width(i) = w(yIndex);
+        peaks.area(i) = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
     end
     
     if peaks.area(i) < std(y) * default.cutoff.area
@@ -395,15 +406,31 @@ end
 
 end
 
-function rmsd = peakError(y1,y2)
+function rmsd = peakError(x,y1,y2,w)
 
 ymin = min(y2);
-ymax = max(y2);
+[ymax, xi] = max(y2);
 
-y1 = y1(y2 >= ymin + 0.05 * (ymax-ymin));
-y2 = y2(y2 >= ymin + 0.05 * (ymax-ymin));
+if w ~= 0
+    xCutoff = w*10;
+    xFilter = x > x(xi)-xCutoff & x < x(xi)+xCutoff;
+else
+    xFilter = [];
+end
 
-rmsd = sqrt(sum((y2 - y1).^2) / numel(y2));
+yFilter = y2 >= ymin + 0.05 * (ymax-ymin);
+
+if any(yFilter)
+    if ~isempty(xFilter)
+        y1 = y1(xFilter&yFilter);
+        y2 = y2(xFilter&yFilter);
+    else
+        y1 = y1(yFilter);
+        y2 = y2(yFilter);
+    end
+end
+
+rmsd = sqrt(sum(abs(y2 - y1).^2) / numel(y2));
 rmsd = rmsd / (ymax - ymin) * 100;
 
 end
@@ -455,7 +482,7 @@ end
 xx = x(x <= t+1 & x >= t-1);
 yy = y(x <= t+1 & x >= t-1);
 
-counterMax = 25;
+counterMax = 20;
 
 if ~isempty(xx)
     
@@ -468,16 +495,19 @@ if ~isempty(xx)
     hy = [yy(idx), yy(idx)];
     
     counter = 0;
+    noiseCounter = 0;
     
     for i = idx:length(yy)
         if yy(i) < hy(2) && yy(i) >= yy(idx) / 2
             hx(2) = xx(i);
             hy(2) = yy(i);
             counter = 0;
+            noiseCounter = 0;
         elseif yy(i) > hy(2)
+            noiseCounter = noiseCounter + 1;
             if counter + 1 > counterMax
                 break
-            else
+            elseif noiseCounter > 3
                 counter = counter + 1;
             end
         elseif yy(i) < yy(idx) / 2
@@ -486,16 +516,19 @@ if ~isempty(xx)
     end
     
     counter = 0;
+    noiseCounter = 0;
     
     for i = idx:-1:1
         if yy(i) < hy(1) && yy(i) >= yy(idx) / 2
             hx(1) = xx(i);
             hy(1) = yy(i);
             counter = 0;
+            noiseCounter = 0;
         elseif yy(i) > hy(1)
+            noiseCounter = noiseCounter + 1;
             if counter + 1 > counterMax
                 break
-            else
+            elseif noiseCounter > 3
                 counter = counter + 1;
             end
         elseif yy(i) < yy(idx) / 2
@@ -525,16 +558,19 @@ if ~isempty(xx)
     hy = [yy(idx), yy(idx)];
     
     counter = 0;
+    noiseCounter = 0;
     
     for i = idx:length(yy)
         if yy(i) < hy(2) && yy(i) >= yy(idx) / 4
             hx(2) = xx(i);
             hy(2) = yy(i);
             counter = 0;
+            noiseCounter = 0;
         elseif yy(i) > hy(2)
+            noiseCounter = noiseCounter + 1;
             if counter + 1 > counterMax
                 break
-            else
+            elseif noiseCounter > 3
                 counter = counter + 1;
             end
         elseif yy(i) < yy(idx) / 4
@@ -543,16 +579,19 @@ if ~isempty(xx)
     end
     
     counter = 0;
+    noiseCounter = 0;
     
     for i = idx:-1:1
         if yy(i) < hy(1) && yy(i) >= yy(idx) / 4
             hx(1) = xx(i);
             hy(1) = yy(i);
             counter = 0;
-        elseif yy(i) > hy(2)
+            noiseCounter = 0;
+        elseif yy(i) > hy(1)
+            noiseCounter = noiseCounter + 1;
             if counter + 1 > counterMax
                 break
-            else
+            elseif noiseCounter > 3
                 counter = counter + 1;
             end
         elseif yy(i) < yy(idx) / 4

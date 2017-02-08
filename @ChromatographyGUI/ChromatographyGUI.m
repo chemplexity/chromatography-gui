@@ -471,7 +471,7 @@ classdef ChromatographyGUI < handle
                             obj.view.peak{i} = plot(x, y,...
                                 'parent',    obj.axes.main,...
                                 'color',     [0.00, 0.30, 0.53],...
-                                'linewidth', 1.5,...
+                                'linewidth', 2.0,...
                                 'visible',   'on',...
                                 'hittest',   'off',...
                                 'tag',       'peak');
@@ -699,8 +699,8 @@ classdef ChromatographyGUI < handle
                                 yFilter(i0-1) = 1;
                             end
                             
-                            if i0 > 2
-                                yFilter(i0-2) = 1;
+                            if i0 > 5
+                                yFilter(i0-5:i0-2) = 1;
                             end
                             
                             i0 = find(flipud(yFilter) > 0, 1);
@@ -712,8 +712,8 @@ classdef ChromatographyGUI < handle
                                     yFilter(i0) = 1;
                                 end
                                 
-                                if i0+1 <= length(yFilter)
-                                    yFilter(i0+1) = 1;
+                                if i0+5 <= length(yFilter)
+                                    yFilter(i0:i0+5) = 1;
                                 end
                                 
                             end
@@ -721,23 +721,27 @@ classdef ChromatographyGUI < handle
                             x = x(yFilter);
                             y = y(yFilter);
                             
+                            [~,yi] = max(y);
+                            
                             if length(peak.fit) == length(b(:,1))
                                 y = y + b(yFilter, 2);
                             end
+                            
+                            peak.height = y(yi);
                             
                         end
                         
                         if peak.width > 0
                             
-                            xCutoff = peak.width * 2.5;
+                            xCutoff = peak.width * 2.0;
                             xFilter = x > peak.time+xCutoff | x < peak.time-xCutoff;
                             
-                            yCutoff = (max(y) - min(y)) * 0.05 + min(y);
+                            yCutoff = (max(y) - min(y)) * 0.001 + min(y);
                             yFilter = y <= yCutoff;
                             
                             if any(xFilter)
-                                x(xFilter & yFilter) = [];
-                                y(xFilter & yFilter) = [];
+                                x(xFilter | yFilter) = [];
+                                y(xFilter | yFilter) = [];
                             end
                             
                             if ~isempty(x) && ~isempty(y) && length(x) == length(y)
@@ -745,6 +749,8 @@ classdef ChromatographyGUI < handle
                             end
                             
                         end
+                        
+                        
                     end
                 end
             end
@@ -817,6 +823,7 @@ classdef ChromatographyGUI < handle
                 set(obj.controls.editID, 'string', obj.view.id);
                 set(obj.controls.editName, 'string', obj.view.name);
                 
+                obj.updatePeakEditText();
                 obj.updatePlot(); 
                 
             end

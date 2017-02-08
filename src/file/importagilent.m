@@ -1116,15 +1116,15 @@ buffer = [0,0,0,0];
 
 while ftell(f) < n
     
-    buffer(3) = fread(f, 1, 'int16', 'b');
     buffer(4) = buffer(4) + 1;
+    buffer(3) = fread(f, 1, 'int16', 'b');
     
     if buffer(3) ~= 32767
         buffer(2) = buffer(2) + buffer(3);
         buffer(1) = buffer(1) + buffer(2);
     else
         buffer(1) = fread(f, 1, 'int16', 'b') * 4294967296;
-        buffer(1) = fread(f, 1, 'int32', 'b') + buffer(1);
+        buffer(1) = fread(f, 1, 'uint32', 'b') + buffer(1);
         buffer(2) = 0;
     end
     
