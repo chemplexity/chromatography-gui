@@ -147,6 +147,7 @@ if strcmpi(evt.EventName, 'KeyPress')
             set(obj.controls.editID,   'string', obj.view.id);
             set(obj.controls.editName, 'string', obj.view.name);
             
+            obj.updatePeakEditText();
             obj.updatePlot();
             
         case 'delete'

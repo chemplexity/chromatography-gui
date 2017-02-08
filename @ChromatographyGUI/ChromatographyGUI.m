@@ -471,7 +471,7 @@ classdef ChromatographyGUI < handle
                             obj.view.peak{i} = plot(x, y,...
                                 'parent',    obj.axes.main,...
                                 'color',     [0.00, 0.30, 0.53],...
-                                'linewidth', 1.5,...
+                                'linewidth', 2.0,...
                                 'visible',   'on',...
                                 'hittest',   'off',...
                                 'tag',       'peak');
@@ -680,46 +680,107 @@ classdef ChromatographyGUI < handle
             
             peak = exponentialgaussian(x, y, 'center', time, 'width', width);
             
-            if ~isempty(peak)
+            if ~isempty(peak) && peak.area ~= 0
                 
-                if length(peak.fit) == length(x)
+                if ~isempty(peak.fit)
                     
-                    x = x(peak.fit ~= 0);
-                    y = peak.fit(peak.fit ~= 0);
+                    y = peak.fit;
                     
-                    if length(peak.fit) == length(b(:,1))
-                        b = b(peak.fit ~= 0, 2);
-                        y = y + b;
+                    % Filter Intensity
+                    if length(peak.fit) == length(x)
+                        
+                        yFilter = peak.fit ~= 0;
+                        
+                        if any(yFilter)
+                            
+                            i0 = find(yFilter > 0, 1);
+                            
+                            if i0 > 1
+                                yFilter(i0-1) = 1;
+                            end
+                            
+                            if i0 > 5
+                                yFilter(i0-5:i0-2) = 1;
+                            end
+                            
+                            i0 = find(flipud(yFilter) > 0, 1);
+                            
+                            if ~isempty(i0)
+                                i0 = length(yFilter) - i0 + 2;
+                                
+                                if i0 <= length(yFilter)
+                                    yFilter(i0) = 1;
+                                end
+                                
+                                if i0+5 <= length(yFilter)
+                                    yFilter(i0:i0+5) = 1;
+                                end
+                                
+                            end
+                            
+                            x = x(yFilter);
+                            y = y(yFilter);
+                            
+                            [~,yi] = max(y);
+                            
+                            if length(peak.fit) == length(b(:,1))
+                                y = y + b(yFilter, 2);
+                            end
+                            
+                            peak.height = y(yi);
+                            
+                        end
+                        
+                        if peak.width > 0
+                            
+                            xCutoff = peak.width * 2.0;
+                            xFilter = x > peak.time+xCutoff | x < peak.time-xCutoff;
+                            
+                            yCutoff = (max(y) - min(y)) * 0.001 + min(y);
+                            yFilter = y <= yCutoff;
+                            
+                            if any(xFilter)
+                                x(xFilter | yFilter) = [];
+                                y(xFilter | yFilter) = [];
+                            end
+                            
+                            if ~isempty(x) && ~isempty(y) && length(x) == length(y)
+                                peak.fit = [x,y];
+                            end
+                            
+                        end
+                        
+                        
                     end
-                    
-                    filter = x > peak.time+peak.width*5 | x < peak.time-peak.width*5;
-                    
-                    if any(filter)
-                        x(filter) = [];
-                        y(filter) = [];
-                    end
-                    
-                    if length(x) == length(y)
-                        peak.fit = [x,y];
-                    end
-                    
                 end
-                
+            end
+            
+            if ~isempty(peak) && peak.area ~= 0
                 obj.peaks.time{row,col}   = peak.time;
                 obj.peaks.width{row,col}  = peak.width;
                 obj.peaks.height{row,col} = peak.height;
                 obj.peaks.area{row,col}   = peak.area;
                 obj.peaks.error{row,col}  = peak.error;
                 obj.peaks.fit{row,col}    = peak.fit;
+            else
+                obj.peaks.time{row,col}   = [];
+                obj.peaks.width{row,col}  = [];
+                obj.peaks.height{row,col} = [];
+                obj.peaks.area{row,col}   = [];
+                obj.peaks.error{row,col}  = [];
+                obj.peaks.fit{row,col}    = [];
+            end
+            
+            obj.updatePeakEditText();
+            
+            offset = length(obj.peaks.name);
+            
+            if offset ~= 0
                 
-                obj.updatePeakEditText();
-                
-                offset = length(obj.peaks.name);
-                
-                obj.table.main.Data{row, col+14 + offset*0} = peak.time;
-                obj.table.main.Data{row, col+14 + offset*1} = peak.area;
-                obj.table.main.Data{row, col+14 + offset*2} = peak.height;
-                obj.table.main.Data{row, col+14 + offset*3} = peak.width;
+                obj.table.main.Data{row, col+14 + offset*0} = obj.peaks.time{row,col};
+                obj.table.main.Data{row, col+14 + offset*1} = obj.peaks.area{row,col};
+                obj.table.main.Data{row, col+14 + offset*2} = obj.peaks.height{row,col};
+                obj.table.main.Data{row, col+14 + offset*3} = obj.peaks.width{row,col};
                 
                 if get(obj.controls.showPeak, 'value')
                     obj.plotPeaks();
@@ -762,6 +823,7 @@ classdef ChromatographyGUI < handle
                 set(obj.controls.editID, 'string', obj.view.id);
                 set(obj.controls.editName, 'string', obj.view.name);
                 
+                obj.updatePeakEditText();
                 obj.updatePlot(); 
                 
             end
