@@ -232,7 +232,7 @@ end
 
 pLCount = pIndex - find(x>=pLX,1);
 pRCount = find(x>=pRX,1) - pIndex;
-disp([center,pLX,pRX]);
+
 if pRCount == 0 && pLCount == 0
     center = x(pIndex);
 elseif pRCount ~= 0 && (pRCount < pLCount || pLCount == 0)

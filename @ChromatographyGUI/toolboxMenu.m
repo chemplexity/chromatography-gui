@@ -767,7 +767,7 @@ link.linux   = 'https://git-scm.com/download/linux';
 
 option.git     = [];
 option.branch  = 'master';
-option.force   = false;
+option.force   = true;
 option.verbose = true;
 
 msg = 'Updating toolbox...';
