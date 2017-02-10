@@ -380,7 +380,7 @@ switch get(src, 'string')
         
         dlgMsg = {'Enter name for new peak:'};
         dlgTop = '';
-        dlgAns = {['Peak', num2str(length(obj.peaks.name))]};
+        dlgAns = {num2str(length(obj.peaks.name)+1)};
         
         x = inputdlg(dlgMsg, dlgTop, 1, dlgAns);
         
@@ -404,7 +404,8 @@ switch get(src, 'string')
         
         if ~isempty(x) && ~isempty(x{1,1})
             if ~strcmp(obj.peaks.name(m,1), x{1,1})
-                obj.peakEditColumn(m, x(1,1));
+                x = {strtrim(deblank(x{1,1}))};
+                obj.peakEditColumn(m,x);
             end
         end
         

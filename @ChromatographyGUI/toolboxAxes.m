@@ -140,15 +140,21 @@ end
 % ---------------------------------------
 function updateAxesPosition(obj, varargin)
 
-x1 = get(obj.axes.main, 'position');
-x2 = get(obj.axes.main, 'outerposition');
+uiProperties = properties(obj.axes.main);
 
-x(1) = x1(1) - x2(1);
-x(2) = x1(2) - x2(2);
-x(3) = x1(3) - (x2(3)-1);
-x(4) = x1(4) - (x2(4)-1);
-
-set(obj.axes.main, 'position', x);
-set(obj.axes.secondary, 'position', x);
+if any(strcmp(uiProperties, 'OuterPosition'))
+    
+    x1 = get(obj.axes.main, 'position');
+    x2 = get(obj.axes.main, 'outerposition');
+    
+    x(1) = x1(1) - x2(1);
+    x(2) = x1(2) - x2(2);
+    x(3) = x1(3) - (x2(3)-1);
+    x(4) = x1(4) - (x2(4)-1);
+    
+    set(obj.axes.main, 'position', x);
+    set(obj.axes.secondary, 'position', x);
+    
+end
 
 end

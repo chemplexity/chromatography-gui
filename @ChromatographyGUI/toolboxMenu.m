@@ -55,27 +55,27 @@ obj.menu.file.mat.save = uimenu(...
     'callback', @(src, event) saveMatlabCallback(obj, src, event));
 
 if ispc
-
+    
     obj.menu.file.xls.save = uimenu(...
         'parent',   obj.menu.file.saveas,...
         'label',    'Excel (*.xls, *.xlsx)',...
         'tag',      'saveasxlsmenu',...
         'callback', @(src, event) saveExcelCallback(obj, src, event));
-
+    
 end
 
 obj.menu.file.csv.save = uimenu(...
-        'parent',   obj.menu.file.saveas,...
-        'label',    'CSV (*.csv)',...
-        'tag',      'saveasxlsmenu',...
-        'callback', @(src, event) saveCSVCallback(obj, src, event));
+    'parent',   obj.menu.file.saveas,...
+    'label',    'CSV (*.csv)',...
+    'tag',      'saveasxlsmenu',...
+    'callback', @(src, event) saveCSVCallback(obj, src, event));
 
 obj.menu.file.img.save = uimenu(...
     'parent',   obj.menu.file.saveas,...
     'label',    'Image (*.jpg, *.png, *.tiff)',...
     'tag',      'saveasimagemenu',...
     'callback', @(src, event) saveImageCallback(obj, src, event));
-    
+
 % ---------------------------------------
 % Edit Menu
 % ---------------------------------------
@@ -158,7 +158,7 @@ if ~isempty(data) && isstruct(data)
     for i = 1:length(data)
         
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
-
+            
             obj.data = [obj.data; data(i)];
             tableAppendCallback(obj);
             
@@ -166,7 +166,7 @@ if ~isempty(data) && isstruct(data)
                 
                 cols = length(obj.peaks.name);
                 rows = length(obj.data);
-            
+                
                 obj.peaks.time{rows, cols}   = [];
                 obj.peaks.width{rows, cols}  = [];
                 obj.peaks.height{rows, cols} = [];
@@ -206,8 +206,8 @@ if ischar(fileName) && ischar(filePath)
             if ~isempty(obj.peaks.name)
                 
                 rows = length(obj.data);
-                cols = length(obj.peaks.name);    
-            
+                cols = length(obj.peaks.name);
+                
                 if size(obj.peaks.time,1) < rows
                     obj.peaks.time{rows,1}   = [];
                     obj.peaks.width{rows,1}  = [];
@@ -275,13 +275,18 @@ end
 
 if isempty(fileName)
     
-    defaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+    filterExtensions = '*.mat';
+    filterDescription = 'MAT-files (*.mat)';
+    filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
     
-    [fileName, filePath] = uiputfile('*.mat', 'Save As...', defaultName);
+    [fileName, filePath] = uiputfile(...
+        {filterExtensions, filterDescription},...
+        'Save As...',...
+        filterDefaultName);
     
     if ischar(fileName) && ischar(filePath)
         obj.checkpoint = [filePath, fileName];
-    end 
+    end
     
 end
 
@@ -308,14 +313,20 @@ end
 if ~isempty(obj.peaks.name)
     data(1).peaks = obj.peaks;
 end
-   
+
 if ~isempty(obj.checkpoint)
-    [~, defaultName] = fileparts(obj.checkpoint);
+    [~, filterDefaultName] = fileparts(obj.checkpoint);
 else
-    defaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+    filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 end
 
-[fileName, filePath] = uiputfile('*.mat', 'Save As...', defaultName);
+filterExtensions = '*.mat';
+filterDescription = 'MAT-files (*.mat)';
+
+[fileName, filePath] = uiputfile(...
+    {filterExtensions, filterDescription},...
+    'Save As...',...
+    filterDefaultName);
 
 if ischar(fileName) && ischar(filePath) && ~isempty(data)
     currentPath = pwd;
@@ -338,8 +349,12 @@ end
 
 filterExtensions = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
 filterDescription = 'Image file (*.jpg, *.png, *.tif)';
+filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
-[fileName, filePath] = uiputfile({filterExtensions, filterDescription});
+[fileName, filePath] = uiputfile(...
+    {filterExtensions, filterDescription},...
+    'Save As...',...
+    filterDefaultName);
 
 [~, ~, fileExtension] = fileparts(fileName);
 
@@ -406,7 +421,7 @@ if ischar(fileName) && ischar(filePath)
         print(exportFigure, fileName, fileType, '-r150')
         waitbar(1.0, h, msg);
         
-        cd(currentPath); 
+        cd(currentPath);
         
         if ishandle(h)
             close(h);
@@ -432,7 +447,7 @@ end
 
 tableHeader = get(obj.table.main, 'columnname');
 tableData   = get(obj.table.main, 'data');
-  
+
 tableHeader(1) = [];
 tableData(:,1) = [];
 
@@ -454,7 +469,7 @@ end
 
 filterExtensions = '*.xls;*.xlsx';
 filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
-filterDefaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
     {filterExtensions, filterDescription},...
@@ -467,7 +482,7 @@ if ischar(fileName) && ischar(filePath)
     xlswrite(fileName, excelData)
     cd(currentPath);
 end
-    
+
 end
 
 % ---------------------------------------
@@ -489,9 +504,9 @@ end
 tableHeader(1) = [];
 tableData(:,1) = [];
 
-filterExtensions = '*.csv';
+filterExtensions  = '*.csv';
 filterDescription = 'CSV file (*.csv)';
-filterDefaultName = [num2str(yyyymmdd(datetime)), '_chromatography_data'];
+filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
     {filterExtensions, filterDescription},...
@@ -517,7 +532,7 @@ if ischar(fileName) && ischar(filePath)
     tableFmt = [repmat('%s, ', 1, length(tableHeader)-1), '%s\n'];
     
     f = fopen(fileName, 'w');
-       
+    
     fprintf(f, tableFmt, tableHeader{:});
     
     for i = 1:length(tableData(:,1))
@@ -595,7 +610,7 @@ for i = 1:length(obj.data)
             obj.table.main.Data{i, 14+j + x*1} = obj.peaks.area{i,j};
             obj.table.main.Data{i, 14+j + x*2} = obj.peaks.height{i,j};
             obj.table.main.Data{i, 14+j + x*3} = obj.peaks.width{i,j};
-        end        
+        end
     end
     
 end
@@ -603,7 +618,7 @@ end
 end
 
 % ---------------------------------------
-% Refresh Listbox 
+% Refresh Listbox
 % ---------------------------------------
 function listboxRefreshCallback(obj, varargin)
 
@@ -612,7 +627,7 @@ x = obj.controls.peakList.Value;
 if isempty(x) || x == 0 || x > length(obj.peaks.name)
     obj.controls.peakList.Value = 1;
 end
-            
+
 set(obj.controls.peakList, 'string', obj.peaks.name);
 
 end
@@ -654,45 +669,57 @@ function tableDeleteRowMenu(obj, varargin)
 if isempty(obj.data) || isempty(obj.table.main.Data) || isempty(obj.table.selection)
     return
 else
-    rowSelection = '';    
+    row = '';
 end
 
-for i = 1:length(obj.table.selection(:,1))
-    row = obj.table.selection(i,1);
+nRows = length(obj.table.selection(:,1));
+
+for i = 1:nRows
+    
+    n = obj.table.selection(i,1);
     
     if i == 1
-        rowSelection = num2str(row);
+        row = num2str(n);
+        
     elseif i > 1
-        if obj.table.selection(i,1) - obj.table.selection(i-1,1) == 1
-            if ~strcmpi(rowSelection(end), ':')
-                if i == length(obj.table.selection(:,1))
-                    rowSelection = [rowSelection, ':', num2str(row)];
-                elseif i < length(obj.table.selection(:,1))
-                    if obj.table.selection(i+1,1) - obj.table.selection(i,1) ~= 1
-                        rowSelection = [rowSelection, ':', num2str(row)];
-                    elseif obj.table.selection(i+1,1) - obj.table.selection(i,1) == 1
-                        rowSelection = [rowSelection, ':'];
+        
+        if n - obj.table.selection(i-1,1) == 1
+            
+            if ~strcmpi(row(end), ':')
+                
+                if i == nRows
+                    row = [row, ':', num2str(n)];
+                else
+                    if obj.table.selection(i+1,1) - n ~= 1
+                        row = [row, ':', num2str(n)];
+                    elseif obj.table.selection(i+1,1) - n == 1
+                        row = [row, ':'];
                     end
                 end
-            elseif strcmpi(rowSelection(end), ':')
-                if i == length(obj.table.selection(:,1))
-                    rowSelection = [rowSelection, num2str(row)];
-                elseif i < length(obj.table.selection(:,1))
-                    if obj.table.selection(i+1,1) - obj.table.selection(i,1) ~= 1
-                        rowSelection = [rowSelection, num2str(row)];
-                    end
+                
+            elseif strcmpi(row(end), ':')
+                
+                if i == nRows
+                    row = [row, num2str(n)];
+                elseif obj.table.selection(i+1,1) - n ~= 1
+                    row = [row, num2str(n)];
                 end
             end
-        elseif obj.table.selection(i,1) - obj.table.selection(i-1,1) ~= 1
-            rowSelection = [rowSelection, ', ', num2str(row)];
+            
+        elseif n - obj.table.selection(i-1,1) ~= 1
+            row = [row, ', ', num2str(n)];
         end
-    end    
+    end
 end
 
-msgPrompt = ['Delete selected rows (', rowSelection, ')?'];
+if isempty(row)
+    message = 'Delete selected rows?';
+else
+    message = ['Delete selected rows (', row, ')?'];
+end
 
 msg = questdlg(...
-    msgPrompt,...
+    message,...
     'Delete',...
     'Yes', 'No', 'Yes');
 
@@ -720,7 +747,7 @@ switch evt.EventName
                 set(src, 'checked', 'off');
                 set(obj.axes.zoom, 'enable', 'off');
                 set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-            
+                
             case 'off'
                 set(src, 'checked', 'on');
                 set(obj.axes.zoom, 'enable', 'on');
@@ -741,7 +768,7 @@ switch evt.EventName
     case 'Action'
         
         switch get(src, 'checked')
-        
+            
             case 'on'
                 set(src, 'checked', 'off');
                 obj.view.showLabel = 0;
@@ -751,7 +778,7 @@ switch evt.EventName
                 set(src, 'checked', 'on');
                 obj.view.showLabel = 1;
                 obj.plotPeaks();
-        end     
+        end
 end
 
 end
@@ -772,7 +799,7 @@ option.verbose = true;
 
 msg = 'Updating toolbox...';
 h = waitbar(0, msg);
-        
+
 % ---------------------------------------
 % Path
 % ---------------------------------------
@@ -860,7 +887,7 @@ elseif isunix
             waitbar(1, h, msg);
             close(h);
         end
-            
+        
         return
         
     end
