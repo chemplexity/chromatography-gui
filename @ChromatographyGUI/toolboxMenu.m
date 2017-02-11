@@ -99,6 +99,21 @@ obj.menu.edit.table.delete = uimenu(...
     'callback', @(src, event) tableDeleteRowMenu(obj, src, event));
 
 % ---------------------------------------
+% Edit Menu --> Peaks
+% ---------------------------------------
+%obj.menu.edit.peaks.main = uimenu(...
+%    'parent',   obj.menu.edit.main,...
+%    'label',    'Peaks',...
+%    'tag',      'peaksmenu');
+
+%obj.menu.edit.peaks.autodetect = uimenu(...
+%    'parent',   obj.menu.edit.peaks.main,...
+%    'label',    'Auto-Detection',...
+%    'tag',      'peakautodetectmenu',...
+%    'checked',  'on',...
+%    'callback', @(src, event) peakAutoDetectMenu(obj, src, event));
+
+% ---------------------------------------
 % View Menu
 % ---------------------------------------
 obj.menu.view.main = uimenu(...
@@ -110,7 +125,7 @@ obj.menu.view.zoom = uimenu(...
     'parent',   obj.menu.view.main,...
     'label',    'Zoom',...
     'tag',      'zoommenu',...
-    'checked',  'on',...
+    'checked',  'off',...
     'callback', @(src, event) zoomMenuCallback(obj, src, event));
 
 obj.menu.view.label = uimenu(...
@@ -733,6 +748,27 @@ end
 end
 
 % ---------------------------------------
+% Enable/Disable Peak Auto-Detection
+% ---------------------------------------
+%function peakAutoDetectMenu(obj, src, evt)
+
+%switch evt.EventName
+%    
+%    case 'Action'
+%        
+%        switch get(src, 'checked')
+%            case 'on'
+%                set(src, 'checked', 'off');
+%                obj.autodetect.enable = false;
+%            case 'off'
+%                set(src, 'checked', 'on');
+%                obj.autodetect.enable = true;
+%        end
+%end
+
+%end
+
+% ---------------------------------------
 % Enable/Disable Zoom
 % ---------------------------------------
 function zoomMenuCallback(obj, src, evt)
@@ -742,17 +778,12 @@ switch evt.EventName
     case 'Action'
         
         switch get(src, 'checked')
-            
             case 'on'
                 set(src, 'checked', 'off');
-                set(obj.axes.zoom, 'enable', 'off');
-                set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-                
+                obj.userZoom(0);
             case 'off'
                 set(src, 'checked', 'on');
-                set(obj.axes.zoom, 'enable', 'on');
-                set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-                
+                obj.userZoom(1);                
         end
 end
 
@@ -768,12 +799,10 @@ switch evt.EventName
     case 'Action'
         
         switch get(src, 'checked')
-            
             case 'on'
                 set(src, 'checked', 'off');
                 obj.view.showLabel = 0;
                 obj.plotPeaks();
-                
             case 'off'
                 set(src, 'checked', 'on');
                 obj.view.showLabel = 1;

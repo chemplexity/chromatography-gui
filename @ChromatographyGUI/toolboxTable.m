@@ -104,7 +104,7 @@ switch evt.Indices(2)
         obj.data(evt.Indices(1)).injvol = evt.NewData;
 end
 
-src.Data(evt.Indices(1), evt.Indices(2)) = evt.NewData;
+src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
 
 end
 

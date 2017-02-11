@@ -224,9 +224,9 @@ it3(2) = 0.05 + 0.28 * 0 + 0.03 * 0;
 it3(3) = it1(3);
 it3(4) = it1(4);
 
-obj.controls.showPeak   = newToggleButton(obj, obj.panel.integrate, 'Show',   'showpeak', 1, it1);
-obj.controls.selectPeak = newPushButton(obj, obj.panel.integrate,   'Select', 'selectpeak',  it2);
-obj.controls.clearPeak  = newPushButton(obj, obj.panel.integrate,   'Clear',  'clearpeak',   it3);
+obj.controls.showPeak   = newToggleButton(obj, obj.panel.integrate, 'Show',   'showpeak',   1, it1);
+obj.controls.selectPeak = newToggleButton(obj, obj.panel.integrate, 'Select', 'selectpeak', 0, it2);
+obj.controls.clearPeak  = newPushButton(obj, obj.panel.integrate,   'Clear',  'clearpeak',     it3);
 
 % ---------------------------------------
 % Listbox
@@ -282,36 +282,28 @@ set(obj.controls.editName,...
 % Axes Callback
 % ---------------------------------------
 set(obj.controls.xManual,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
 
 set(obj.controls.xAuto,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
 
 set(obj.controls.yManual,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
 
 set(obj.controls.yAuto,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
 
 set(obj.controls.xMin,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
 
 set(obj.controls.xMax,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
 
 set(obj.controls.yMin,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
 
 set(obj.controls.yMax,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
 
 % ---------------------------------------
 % Baseline Callback
@@ -499,21 +491,28 @@ if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-        case {'leftarrow', 'uparrow'}
+        case 'leftarrow'
             sampleSelectionCallback(obj, obj.controls.prev);
             
-        case {'rightarrow', 'downarrow'}
+        case 'rightarrow'
             sampleSelectionCallback(obj, obj.controls.next);
             
-        case {'return'}
+        case 'return'
             
             switch get(src, 'tag')                
                 
                 case {'addpeak', 'editpeak', 'delpeak'}
                     peakListCallback(obj, src);
                     
+                case {'nextsample', 'prevsample'}
+                    sampleSelectionCallback(obj, src);
             end
-    end    
+            
+        case 'space'
+            return
+ 
+    end
+    
 end
 
 end
@@ -762,6 +761,7 @@ end
 function peakListboxCallback(obj, ~, ~)
 
 obj.updatePeakEditText();
+obj.userPeak(1);
 
 end
 
@@ -936,18 +936,27 @@ end
 % ---------------------------------------
 % Select Peak
 % ---------------------------------------
-function peakSelectCallback(obj, ~, ~)
+function peakSelectCallback(obj, src, evt)
 
-if strcmpi(get(obj.axes.zoom, 'enable'), 'on')
-    set(obj.axes.zoom, 'enable', 'off');
-    set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
+switch evt.EventName
+    
+    case 'Action'
+        
+        currentObject = get(get(obj.figure, 'currentobject'), 'tag');
+        
+        if strcmpi(currentObject, src.Tag)
+            
+            if src.Value
+                obj.userPeak(1);
+            else
+                obj.userPeak(0);
+            end
+            
+        else
+            set(src, 'value', obj.view.selectPeak);
+        end
+        
 end
-
-if isempty(get(obj.axes.main, 'buttondownfcn'))
-    set(obj.axes.main, 'buttondownfcn', @(src, evt) peakTimeSelectCallback(obj, src, evt));
-end
-
-obj.view.selection = 1;
 
 end
 

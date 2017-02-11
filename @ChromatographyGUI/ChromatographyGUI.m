@@ -39,9 +39,7 @@ classdef ChromatographyGUI < handle
     methods
         
         function obj = ChromatographyGUI(varargin)
-            
-            warning off all
-            
+                         
             % ---------------------------------------
             % Path
             % ---------------------------------------
@@ -84,7 +82,8 @@ classdef ChromatographyGUI < handle
             obj.view.peak       = [];
             obj.view.label      = [];
             obj.view.showLabel  = 1;
-            obj.view.selection  = 0;
+            obj.view.selectZoom = 1;
+            obj.view.selectPeak = 0;
             
             obj.table.selection = [];
             
@@ -710,7 +709,7 @@ classdef ChromatographyGUI < handle
             
             b = obj.data(row).baseline;
             
-            if length(b(:,1)) == length(y(:,1))
+            if ~isempty(b) && length(b(:,1)) == length(y(:,1))
                 y = y - b(:,2);
             end
             
@@ -784,11 +783,12 @@ classdef ChromatographyGUI < handle
                                 peak.fit = [x,y];
                             end
                         end
+                        
                     end
                 end
             end
             
-            if ~isempty(peak) && peak.area ~= 0
+            if ~isempty(peak) && peak.area ~= 0 && peak.width ~= 0
                 obj.peaks.time{row,col}   = peak.time;
                 obj.peaks.width{row,col}  = peak.width;
                 obj.peaks.height{row,col} = peak.height;
@@ -823,7 +823,7 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            obj.view.selection = 0;
+            obj.userPeak(0);
             
         end
         
@@ -1081,29 +1081,22 @@ classdef ChromatographyGUI < handle
             
             switch xTag
                 
-                case {'peaktimeedit', 'peaklist', 'selectpeak'}
+                case 'peaklist'
                     
-                    if strcmpi(get(obj.axes.zoom, 'enable'), 'on')
-                        set(obj.axes.zoom, 'enable', 'off');
-                        set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-                    end
+                    obj.userPeak(1);
                     
-                    if isempty(get(obj.axes.main, 'buttondownfcn'))
-                        set(obj.axes.main, 'buttondownfcn', @(src, evt) peakTimeSelectCallback(obj, src, evt));
+                case 'selectpeak'
+                    
+                    if xObj.Value
+                        obj.userPeak(1);
+                    else
+                        obj.userPeak(0);
                     end
                     
                 otherwise
                     
-                    if strcmpi(get(obj.axes.zoom, 'enable'), 'off') && obj.view.selection == 0
-                        if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
-                            set(obj.axes.zoom, 'enable', 'on');
-                            set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-                        end
-                    end
+                    obj.userPeak(0);
                     
-                    if ~isempty(get(obj.axes.main, 'buttondownfcn')) && obj.view.selection == 0
-                        set(obj.axes.main, 'buttondownfcn', '');
-                    end
             end
             
         end
@@ -1115,31 +1108,17 @@ classdef ChromatographyGUI < handle
                 case 'Hit'
                     
                     x = evt.IntersectionPoint(1);
-                        
+
                     if obj.view.index == 0 || isempty(obj.peaks.name)
                         set(obj.controls.peakTimeEdit, 'string', '');
-                    
                     elseif x > obj.axes.xlim(1) && x < obj.axes.xlim(2)
                         obj.getPeakFit(x);
                     end
                     
-                    axesChildren = get(obj.axes.main,'children');
-                    
-                    for i = 1:length(axesChildren)
-                        if strcmpi(get(axesChildren(i), 'type'), 'line')
-                            set(axesChildren(i), 'hittest', 'off');
-                        end
-                        if strcmpi(get(axesChildren(i), 'type'), 'text')
-                            set(axesChildren(i), 'hittest', 'off');
-                        end
-                    end
-                    
-                    if strcmpi(get(obj.axes.zoom, 'enable'), 'off')
-                        if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
-                            set(obj.axes.zoom, 'enable', 'on');
-                            set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-                        end
-                    end
+                    obj.userPeak(0);
+                   
+                otherwise
+                    obj.userPeak(0);
                     
             end
             
@@ -1180,11 +1159,34 @@ classdef ChromatographyGUI < handle
             obj.axes.zoom = zoom(obj.figure);
             
             set(obj.axes.zoom,...
-                'enable', 'on',...
                 'actionpostcallback', @(src, evt) zoomCallback(obj, src, evt));
             
-            set(obj.figure,...
-                'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
+            obj.userZoom(0);
+            
+        end
+        
+        function selectPeak(obj, varargin)
+            
+            currentIndex = get(obj.controls.peakList, 'value');
+            
+            if ~isempty(currentIndex) && currentIndex ~= 0    
+                newIndex = currentIndex + varargin{1};
+                maxIndex = length(obj.peaks.name);
+                
+                if maxIndex == 1
+                    return
+                elseif newIndex <= maxIndex && newIndex >= 1
+                    set(obj.controls.peakList, 'value', newIndex);
+                elseif newIndex > maxIndex
+                    set(obj.controls.peakList, 'value', 1);
+                elseif newIndex < 1
+                    set(obj.controls.peakList, 'value', maxIndex);
+                end
+                
+                set(obj.figure, 'currentobject', obj.controls.peakList);
+                obj.updatePeakEditText();
+                obj.userPeak(1);
+            end
             
         end
         
@@ -1211,6 +1213,102 @@ classdef ChromatographyGUI < handle
             obj.updateAxesLimitEditText();
             obj.updateAxesXLim();
             obj.updateAxesYLim();
+            
+        end
+        
+        function userZoom(obj, state)
+            
+            if obj.view.selectZoom == state
+                return
+            end
+            
+            switch state
+                
+                case 0
+                    
+                    obj.view.selectZoom = 0;
+                    set(obj.axes.zoom, 'enable', 'off');
+                    set(obj.figure, 'windowbuttonmotionfcn',...
+                        @(src, evt) figureMotionCallback(obj, src, evt));
+                    set(obj.figure, 'windowkeypressfcn',...
+                        @(src, evt) keyboardCallback(obj, src, evt));
+                    
+                case 1
+                    
+                    obj.view.selectZoom = 1;
+                    set(obj.axes.zoom, 'enable', 'on');
+                    set(obj.figure, 'windowbuttonmotionfcn',...
+                        @(src, evt) figureMotionCallback(obj, src, evt));
+                    
+            end
+            
+        end
+        
+        function userPeak(obj, state)
+            
+            if obj.view.selectPeak == state
+                return
+            end
+            
+            switch state
+                
+                case 0
+                    
+                    obj.view.selectPeak = 0;
+                    set(obj.controls.selectPeak, 'value', 0);
+                    
+                    if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
+                        obj.userZoom(1);
+                    end
+                    
+                    set(obj.axes.main, 'buttondownfcn', '');
+                    
+                case 1
+                    
+                    obj.view.selectPeak = 1;
+                    set(obj.controls.selectPeak, 'value', 1);
+                    
+                    if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
+                        obj.userZoom(0);
+                    end
+                    
+                    set(obj.axes.main, 'buttondownfcn',...
+                        @(src, evt) peakTimeSelectCallback(obj, src, evt));                    
+            end
+            
+        end
+        
+        function keyboardCallback(obj, ~, evt)
+            
+            switch evt.Key
+                
+                case 'space'
+
+                    if isempty(evt.Modifier)
+                        
+                        if obj.view.selectPeak
+                            obj.userPeak(0);
+                            set(obj.figure, 'currentobject', obj.axes.main);
+                        else
+                            obj.userPeak(1);
+                            set(obj.figure, 'currentobject', obj.controls.peakList);%obj.controls.selectPeak);
+                        end
+                        
+                    end
+                    
+                case 'uparrow'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectPeak(-1);
+                    end
+                    
+                case 'downarrow'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectPeak(1);
+                    end
+                    
+            end
             
         end
         
