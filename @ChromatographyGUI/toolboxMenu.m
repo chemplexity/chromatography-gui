@@ -748,27 +748,6 @@ end
 end
 
 % ---------------------------------------
-% Enable/Disable Peak Auto-Detection
-% ---------------------------------------
-%function peakAutoDetectMenu(obj, src, evt)
-
-%switch evt.EventName
-%    
-%    case 'Action'
-%        
-%        switch get(src, 'checked')
-%            case 'on'
-%                set(src, 'checked', 'off');
-%                obj.autodetect.enable = false;
-%            case 'off'
-%                set(src, 'checked', 'on');
-%                obj.autodetect.enable = true;
-%        end
-%end
-
-%end
-
-% ---------------------------------------
 % Enable/Disable Zoom
 % ---------------------------------------
 function zoomMenuCallback(obj, src, evt)

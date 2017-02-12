@@ -432,54 +432,16 @@ end
 % ---------------------------------------
 function sampleSelectionCallback(obj, src, ~)
 
-if obj.view.index == 0
-    return
-else
-    row = obj.view.index;
-end
-
-if isempty(obj.data)
+switch src.Tag
     
-    obj.view.index = 0;
-    obj.view.id    = 'N/A';
-    obj.view.name  = 'N/A';
-    
-    updateSelectionText(obj);
-    
-    return
-    
-end
-
-switch get(src, 'tag')
-    
-    case 'nextsample'
-        
-        if row + 1 > length(obj.data)
-            obj.view.index = 1;
-            obj.view.id    = '1';
-            obj.view.name  = obj.data(1).sample_name;
-        elseif row + 1 <= length(obj.data)
-            obj.view.index = row + 1;
-            obj.view.id    = num2str(row+1);
-            obj.view.name  = obj.data(row+1).sample_name;
-        end
+    case 'nextsample'        
+        obj.selectSample(1);
         
     case 'prevsample'
-        
-        if row - 1 < 1
-            obj.view.index = length(obj.data);
-            obj.view.id    = num2str(length(obj.data));
-            obj.view.name  = obj.data(end).sample_name;
-        elseif row - 1 >= 1
-            obj.view.index = row-1;
-            obj.view.id    = num2str(row-1);
-            obj.view.name  = obj.data(row-1).sample_name;
-        end
+        obj.selectSample(-1);
         
 end
   
-updateSelectionText(obj);
-
 end
 
 % ---------------------------------------

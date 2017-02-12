@@ -5,7 +5,7 @@ classdef ChromatographyGUI < handle
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.3';
-        date        = '20170210';
+        date        = '20170211';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -39,7 +39,7 @@ classdef ChromatographyGUI < handle
     methods
         
         function obj = ChromatographyGUI(varargin)
-                         
+            
             % ---------------------------------------
             % Path
             % ---------------------------------------
@@ -110,9 +110,6 @@ classdef ChromatographyGUI < handle
         
         function updateFigure(obj, varargin)
             
-            % ---------------------------------------
-            % Select
-            % ---------------------------------------
             if obj.view.index == 0 && ~isempty(obj.data)
                 obj.view.index = 1;
                 obj.view.id    = '1';
@@ -122,18 +119,16 @@ classdef ChromatographyGUI < handle
                 obj.view.index = 0;
                 obj.view.id    = 'N/A';
                 obj.view.name  = 'N/A';
-                
             end
             
-            set(obj.controls.editID,   'string', obj.view.id);
-            set(obj.controls.editName, 'string', obj.view.name);
+            obj.controls.editID.String = obj.view.id;
+            obj.controls.editName.String = obj.view.name;
             
-            % ---------------------------------------
-            % Table
-            % ---------------------------------------
-            if any(cellfun(@isempty, obj.table.main.Data(:,2))) || length(obj.table.main.Data(:,1)) ~= length(obj.data)
-                
+            if any(cellfun(@isempty, obj.table.main.Data(:,2))) || ...
+                    length(obj.table.main.Data(:,1)) ~= length(obj.data)
+
                 for i = 1:length(obj.data)
+                    
                     obj.table.main.Data{i,1}  = i;
                     obj.table.main.Data{i,2}  = obj.data(i).file_path;
                     obj.table.main.Data{i,3}  = obj.data(i).file_name;
@@ -147,13 +142,11 @@ classdef ChromatographyGUI < handle
                     obj.table.main.Data{i,11} = obj.data(i).seqindex;
                     obj.table.main.Data{i,12} = obj.data(i).vial;
                     obj.table.main.Data{i,13} = obj.data(i).replicate;
+                
                 end
                 
             end
             
-            % ---------------------------------------
-            % Plot
-            % ---------------------------------------
             obj.updatePlot();
             
         end
@@ -184,18 +177,18 @@ classdef ChromatographyGUI < handle
             obj.updateAxesXLim();
             obj.updateAxesYLim();
             
-            if get(obj.controls.showBaseline, 'value')
+            if obj.controls.showBaseline.Value
                 obj.plotBaseline();
             end
             
-            if get(obj.controls.showPeak, 'value')
+            if obj.controls.showPeak.Value
                 obj.plotPeaks();
             end
             
         end
         
         function updateAxesXLim(obj, varargin)
-             
+            
             switch obj.axes.xmode
                 
                 case 'auto'
@@ -215,8 +208,8 @@ classdef ChromatographyGUI < handle
                     
                 case 'manual'
                     
-                    xmin = str2double(get(obj.controls.xMin, 'string'));
-                    xmax = str2double(get(obj.controls.xMax, 'string'));
+                    xmin = str2double(obj.controls.xMin.String);
+                    xmax = str2double(obj.controls.xMax.String);
                     
                     if xmin ~= round(obj.axes.xlim(2), 3)
                         obj.axes.xlim(1) = xmin;
@@ -251,6 +244,7 @@ classdef ChromatographyGUI < handle
             switch obj.axes.ymode
                 
                 case 'auto'
+                    
                     y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
                     
                     if any(y)
@@ -259,10 +253,11 @@ classdef ChromatographyGUI < handle
                     end
                     
                 case 'manual'
-                    ymin = get(obj.controls.yMin, 'string');
-                    ymax = get(obj.controls.yMax, 'string');
-                    obj.axes.ylim = [str2double(ymin), str2double(ymax)];
                     
+                    ymin = obj.controls.yMin.String;
+                    ymax = obj.controls.yMax.String;
+                    
+                    obj.axes.ylim = [str2double(ymin), str2double(ymax)];
             end
             
             set(obj.axes.main, 'ylim', obj.axes.ylim);
@@ -273,13 +268,13 @@ classdef ChromatographyGUI < handle
         
         function updateAxesLimitMode(obj, varargin)
             
-            if get(obj.controls.xManual, 'value')
+            if obj.controls.xManual.Value
                 obj.axes.xmode = 'manual';
             else
                 obj.axes.xmode = 'auto';
             end
             
-            if get(obj.controls.yManual, 'value')
+            if obj.controls.yManual.Value
                 obj.axes.ymode = 'manual';
             else
                 obj.axes.ymode = 'auto';
@@ -291,46 +286,47 @@ classdef ChromatographyGUI < handle
             
             switch obj.axes.xmode
                 case 'manual'
-                    set(obj.controls.xManual, 'value', 1);
-                    set(obj.controls.xAuto, 'value', 0);
+                    obj.controls.xManual.Value = 1;
+                    obj.controls.xAuto.Value = 0;
                 case 'auto'
-                    set(obj.controls.xManual, 'value', 0);
-                    set(obj.controls.xAuto, 'value', 1);
+                    obj.controls.xManual.Value = 0;
+                    obj.controls.xAuto.Value = 1;
             end
             
             switch obj.axes.ymode
                 case 'manual'
-                    set(obj.controls.yManual, 'value', 1);
-                    set(obj.controls.yAuto, 'value', 0);
+                    obj.controls.yManual.Value = 1;
+                    obj.controls.yAuto.Value = 0;
                 case 'auto'
-                    set(obj.controls.yManual, 'value', 0);
-                    set(obj.controls.yAuto, 'value', 1);
+                    obj.controls.yManual.Value = 0;
+                    obj.controls.yAuto.Value = 1;
             end
             
         end
         
         function updateAxesLimitEditText(obj, varargin)
             
-            getStr = @(x) sprintf('%.3f', x);
+            str = @(x) sprintf('%.3f', x);
             
-            set(obj.controls.xMin, 'string', getStr(obj.axes.xlim(1)));
-            set(obj.controls.xMax, 'string', getStr(obj.axes.xlim(2)));
-            set(obj.controls.yMin, 'string', getStr(obj.axes.ylim(1)));
-            set(obj.controls.yMax, 'string', getStr(obj.axes.ylim(2)));
+            obj.controls.xMin.String = str(obj.axes.xlim(1));
+            obj.controls.xMax.String = str(obj.axes.xlim(2));
+            obj.controls.yMin.String = str(obj.axes.ylim(1));
+            obj.controls.yMax.String = str(obj.axes.ylim(2));
             
         end
         
         function updatePeakEditText(obj, varargin)
             
-            getStr = @(x) sprintf('%.3f', x);
+            str = @(x) sprintf('%.3f', x);
             
-            col = get(obj.controls.peakList, 'value');
             row = obj.view.index;
+            col = obj.controls.peakList.Value;
             
             nRow = length(obj.data);
             nCol = length(obj.peaks.name);
             
             if ~isempty(obj.data) && size(obj.peaks.time, 1) < nRow
+                
                 if ~isempty(obj.peaks.name)
                     obj.peaks.time{nRow, 1}   = [];
                     obj.peaks.width{nRow, 1}  = [];
@@ -339,9 +335,11 @@ classdef ChromatographyGUI < handle
                     obj.peaks.error{nRow, 1}  = [];
                     obj.peaks.fit{nRow, 1}    = [];
                 end
+                
             end
             
             if ~isempty(obj.peaks.name) && size(obj.peaks.time, 2) < nCol
+                
                 if ~isempty(obj.data)
                     obj.peaks.time{1, nCol}   = [];
                     obj.peaks.width{1, nCol}  = [];
@@ -350,6 +348,7 @@ classdef ChromatographyGUI < handle
                     obj.peaks.error{1, nCol}  = [];
                     obj.peaks.fit{1, nCol}    = [];
                 end
+                
             end
             
             if isempty(col) || col == 0
@@ -366,17 +365,17 @@ classdef ChromatographyGUI < handle
                 area   = '';
             else
                 id     = obj.peaks.name{col};
-                time   = getStr(obj.peaks.time{row,col});
-                width  = getStr(obj.peaks.width{row,col});
-                height = getStr(obj.peaks.height{row,col});
-                area   = getStr(obj.peaks.area{row,col});
+                time   = str(obj.peaks.time{row,col});
+                width  = str(obj.peaks.width{row,col});
+                height = str(obj.peaks.height{row,col});
+                area   = str(obj.peaks.area{row,col});
             end
             
-            set(obj.controls.peakIDEdit,     'string', id);
-            set(obj.controls.peakTimeEdit,   'string', time);
-            set(obj.controls.peakWidthEdit,  'string', width);
-            set(obj.controls.peakHeightEdit, 'string', height);
-            set(obj.controls.peakAreaEdit,   'string', area);
+            obj.controls.peakIDEdit.String     = id;
+            obj.controls.peakTimeEdit.String   = time;
+            obj.controls.peakWidthEdit.String  = width;
+            obj.controls.peakHeightEdit.String = height;
+            obj.controls.peakAreaEdit.String   = area;
             
         end
         
@@ -406,8 +405,8 @@ classdef ChromatographyGUI < handle
                     'visible',   'off',...
                     'tag',       'baseline');
                 
-                if get(obj.controls.showBaseline, 'value')
-                    set(obj.view.baseline, 'visible', 'on');
+                if obj.controls.showBaseline.Value
+                    obj.view.baseline.Visible = 'on';
                 end
                 
             end
@@ -424,7 +423,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~get(obj.controls.showPeak, 'value') || isempty(obj.peaks.fit) 
+            elseif ~obj.controls.showPeak.Value || isempty(obj.peaks.fit)
                 return
             else
                 row = obj.view.index;
@@ -437,7 +436,7 @@ classdef ChromatographyGUI < handle
                     if isempty(obj.peaks.fit{row,i})
                         continue
                     elseif length(obj.peaks.fit{row,i}(1,:)) ~= 2
-                        continue 
+                        continue
                     end
                     
                     x = obj.peaks.fit{row,i}(:,1);
@@ -457,7 +456,7 @@ classdef ChromatographyGUI < handle
             end
             
         end
-
+        
         function plotPeakLabels(obj, x, y, i)
             
             if ~obj.view.showLabel
@@ -490,7 +489,7 @@ classdef ChromatographyGUI < handle
                 'verticalalignment',   'bottom',...
                 'selectionhighlight',  'off');
             
-            textPos = get(obj.view.label{i}, 'extent');
+            textPos = obj.view.label{i}.Extent;
             
             tL = textPos(1);
             tR = textPos(1) + textPos(3);
@@ -527,25 +526,29 @@ classdef ChromatographyGUI < handle
                         
                         if xmax > tL && xmax < textX
                             
-                            set(obj.view.label{i}, 'units', 'characters');
+                            obj.view.label{i}.Units = 'characters';
                             t = get(obj.view.label{i}, 'extent');
-                            set(obj.view.label{i}, 'units', 'data');
-                            xpos = get(obj.view.label{i}, 'position');
+                            
                             xmargin = (tW - ((t(3)-1) * tW) / t(3)) / 4;
-                            xpos(1) = xpos(1) + xmax - tL + xmargin;
-                            set(obj.view.label{i}, 'position', xpos);
+                            
+                            obj.view.label{i}.Units = 'data';
+                            t = obj.view.label{i}.Position;
+                            
+                            t(1) = t(1) + xmax - tL + xmargin;
+                            obj.view.label{i}.Position = t;
                             
                         elseif xmin < tR && xmin > textX
                             
-                            set(obj.view.label{i}, 'units', 'characters');
-                            t = get(obj.view.label{i}, 'extent');
+                            obj.view.label{i}.Units = 'characters';
+                            t = obj.view.label{i}.Extent;
+                            
                             xmargin = (((t(3)+1) * tW) / t(3) - tW) / 4;
                             
-                            set(obj.view.label{i}, 'units', 'data');
-                            t = get(obj.view.label{i}, 'position');
-                            t(1) = t(1) - xmargin;
+                            obj.view.label{i}.Units = 'data';
+                            t = obj.view.label{i}.Position;
                             
-                            set(obj.view.label{i}, 'position', t);
+                            t(1) = t(1) - xmargin;
+                            obj.view.label{i}.Position = t;
                             
                         end
                         
@@ -554,7 +557,7 @@ classdef ChromatographyGUI < handle
             end
             
             % Text / Axes Limits
-            textPos = get(obj.view.label{i}, 'extent');
+            textPos = obj.view.label{i}.Extent;
             
             tL = textPos(1);
             tR = textPos(1) + textPos(3);
@@ -571,7 +574,7 @@ classdef ChromatographyGUI < handle
                 xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
                 obj.axes.xlim(2) = td(1) + td(3) + xmargin;
                 
-                set(obj.controls.xMax, 'string', sprintf('%.3f', obj.axes.xlim(2)));
+                obj.controls.xMax.String = sprintf('%.3f', obj.axes.xlim(2));
                 set(obj.axes.main, 'xlim', obj.axes.xlim);
                 
             end
@@ -587,15 +590,15 @@ classdef ChromatographyGUI < handle
                 xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
                 obj.axes.xlim(1) = td(1) - xmargin;
                 
-                set(obj.controls.xMin, 'string', sprintf('%.3f', obj.axes.xlim(1)));
+                obj.controls.xMin.String = sprintf('%.3f', obj.axes.xlim(1));
                 set(obj.axes.main, 'xlim', obj.axes.xlim);
                 
             end
             
-            if tT >= obj.axes.ylim(2)
+            if tT >= obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'auto')
                 
                 if textX > obj.axes.xlim(1) && textX < obj.axes.xlim(2)
-                
+                    
                     set(obj.view.label{i}, 'units', 'characters');
                     tc = get(obj.view.label{i}, 'extent');
                     
@@ -605,17 +608,17 @@ classdef ChromatographyGUI < handle
                     ymargin = td(4) - (td(4) / tc(4)) * (tc(4) - 0.5);
                     obj.axes.ylim(2) = td(2) + td(4) + ymargin;
                     
-                    set(obj.controls.yMax, 'string', sprintf('%.3f', obj.axes.ylim(2)));
+                    obj.controls.yMax.String = sprintf('%.3f', obj.axes.ylim(2));
                     set(obj.axes.main, 'ylim', obj.axes.ylim);
                 end
                 
             end
             
         end
-              
+        
         function axesMain = getAxes(obj, varargin)
             
-            axesLine = get(obj.axes.main, 'children');
+            axesLine = obj.axes.main.Children;
             axesMain = [];
             
             if ~isempty(axesLine)
@@ -654,8 +657,8 @@ classdef ChromatographyGUI < handle
                 x(x < xmin | x > xmax) = [];
             end
             
-            a = get(obj.controls.asymSlider, 'value');
-            s = get(obj.controls.smoothSlider, 'value');
+            a = obj.controls.asymSlider.Value;
+            s = obj.controls.smoothSlider.Value;
             
             a = 10 ^ a;
             s = 10 ^ s;
@@ -671,14 +674,14 @@ classdef ChromatographyGUI < handle
         function getPeakFit(obj, varargin)
             
             row = obj.view.index;
-            col = get(obj.controls.peakList, 'value');
+            col = obj.controls.peakList.Value;
             
             if isempty(col) || isempty(obj.data) || row == 0 || col == 0
                 return
             end
             
             if isempty(varargin)
-                time  = str2double(get(obj.controls.peakTimeEdit, 'string'));
+                time  = str2double(obj.controls.peakTimeEdit.String);
             else
                 time = varargin{1};
             end
@@ -716,7 +719,7 @@ classdef ChromatographyGUI < handle
             peak = exponentialgaussian(x, y, 'center', time, 'width', width);
             
             if ~isempty(peak) && peak.area ~= 0 && peak.width ~= 0
-
+                
                 if ~isempty(peak.fit)
                     
                     y = peak.fit;
@@ -815,7 +818,7 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{row, col+14 + offset*2} = obj.peaks.height{row,col};
                 obj.table.main.Data{row, col+14 + offset*3} = obj.peaks.width{row,col};
                 
-                if get(obj.controls.showPeak, 'value')
+                if obj.controls.showPeak.Value
                     obj.updateAxesXLim();
                     obj.updateAxesYLim();
                     obj.plotPeaks();
@@ -855,11 +858,11 @@ classdef ChromatographyGUI < handle
                     obj.view.name = obj.data(obj.view.index).sample_name;
                 end
                 
-                set(obj.controls.editID, 'string', obj.view.id);
-                set(obj.controls.editName, 'string', obj.view.name);
+                obj.controls.editID.String   = obj.view.id;
+                obj.controls.editName.String = obj.view.name;
                 
                 obj.updatePeakEditText();
-                obj.updatePlot(); 
+                obj.updatePlot();
                 
             end
             
@@ -945,7 +948,7 @@ classdef ChromatographyGUI < handle
                 end
             end
             
-            set(obj.controls.peakList, 'string', obj.peaks.name);
+            obj.controls.peakList.String = obj.peaks.name;
             
             obj.table.main.ColumnName = tableHeader;
             obj.table.main.Data = tableData;
@@ -966,7 +969,7 @@ classdef ChromatographyGUI < handle
             
             if offset >= m
                 obj.peaks.name(m,1) = str;
-                set(obj.controls.peakIDEdit, 'string', str);
+                obj.controls.peakIDEdit.String = str;
             end
             
             tableHeader = obj.table.main.ColumnName;
@@ -978,7 +981,7 @@ classdef ChromatographyGUI < handle
                 tableHeader{m+14 + offset*3} = ['Width (', obj.peaks.name{m}, ')'];
             end
             
-            set(obj.controls.peakList, 'string', obj.peaks.name);
+            obj.controls.peakList.String = obj.peaks.name;
             obj.table.main.ColumnName = tableHeader;
             
             if ~isempty(obj.data)
@@ -1038,7 +1041,7 @@ classdef ChromatographyGUI < handle
                 end
             end
             
-            set(obj.controls.peakList, 'string', obj.peaks.name);
+            obj.controls.peakList.String = obj.peaks.name;
             
             if obj.controls.peakList.Value > length(obj.peaks.name)
                 obj.controls.peakList.Value = length(obj.peaks.name);
@@ -1064,16 +1067,16 @@ classdef ChromatographyGUI < handle
             end
             
         end
-  
+        
         function figureMotionCallback(obj, src, ~)
             
-            xObj = get(src, 'currentobject');
+            xObj = src.CurrentObject;
             
             if isempty(xObj)
                 return
             end
             
-            xTag = get(xObj, 'tag');
+            xTag = xObj.Tag;
             
             if isempty(xTag)
                 return
@@ -1102,21 +1105,21 @@ classdef ChromatographyGUI < handle
         end
         
         function peakTimeSelectCallback(obj, ~, evt)
-                        
+            
             switch evt.EventName
                 
                 case 'Hit'
                     
                     x = evt.IntersectionPoint(1);
-
+                    
                     if obj.view.index == 0 || isempty(obj.peaks.name)
-                        set(obj.controls.peakTimeEdit, 'string', '');
+                        obj.controls.peakTimeEdit.String = '';
                     elseif x > obj.axes.xlim(1) && x < obj.axes.xlim(2)
                         obj.getPeakFit(x);
                     end
                     
                     obj.userPeak(0);
-                   
+                    
                 otherwise
                     obj.userPeak(0);
                     
@@ -1165,44 +1168,118 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function selectSample(obj, varargin)
+            
+            currentIndex = obj.view.index;
+            
+            if ~isempty(currentIndex) && currentIndex ~= 0
+                newIndex = currentIndex + varargin{1};
+                maxIndex = length(obj.data);
+                
+                if maxIndex == 1
+                    return
+                elseif newIndex <= maxIndex && newIndex >= 1
+                    obj.view.index = newIndex;
+                    obj.view.id    = num2str(newIndex);
+                    obj.view.name  = obj.data(newIndex).sample_name;
+                elseif newIndex > maxIndex
+                    obj.view.index = 1;
+                    obj.view.id    = '1';
+                    obj.view.name  = obj.data(1).sample_name;
+                elseif newIndex < 1
+                    obj.view.index = maxIndex;
+                    obj.view.id    = num2str(maxIndex);
+                    obj.view.name  = obj.data(maxIndex).sample_name;
+                end
+                
+                obj.figure.CurrentObject = obj.controls.peakList;
+                
+                obj.updateSampleSelectionText();
+                obj.updatePeakSelectionText();
+                obj.updatePlot();
+                obj.userPeak(1);
+                
+            end
+            
+        end
+        
         function selectPeak(obj, varargin)
             
-            currentIndex = get(obj.controls.peakList, 'value');
+            currentIndex = obj.controls.peakList.Value;
             
-            if ~isempty(currentIndex) && currentIndex ~= 0    
+            if ~isempty(currentIndex) && currentIndex ~= 0
                 newIndex = currentIndex + varargin{1};
                 maxIndex = length(obj.peaks.name);
                 
                 if maxIndex == 1
                     return
                 elseif newIndex <= maxIndex && newIndex >= 1
-                    set(obj.controls.peakList, 'value', newIndex);
+                    obj.controls.peakList.Value = newIndex;
                 elseif newIndex > maxIndex
-                    set(obj.controls.peakList, 'value', 1);
+                    obj.controls.peakList.Value = 1;
                 elseif newIndex < 1
-                    set(obj.controls.peakList, 'value', maxIndex);
+                    obj.controls.peakList.Value = maxIndex;
                 end
                 
-                set(obj.figure, 'currentobject', obj.controls.peakList);
-                obj.updatePeakEditText();
+                obj.figure.CurrentObject = obj.controls.peakList;
+                
+                obj.updatePeakSelectionText();
                 obj.userPeak(1);
+                
+            end
+            
+        end
+        
+        function updateSampleSelectionText(obj, varargin)
+            
+            obj.controls.editID.String   = obj.view.id;
+            obj.controls.editName.String = obj.view.name;
+            
+        end
+        
+        function updatePeakSelectionText(obj, varargin)
+            
+            str = @(x) sprintf('%.3f', x);
+            
+            n = obj.view.index;
+            m = obj.controls.peakList.Value;
+            
+            if isempty(obj.data) || isempty(m) || n == 0 || m == 0
+                
+                if ~isempty(m) && m ~= 0
+                    obj.controls.peakIDEdit.String = obj.peaks.name{m};
+                else
+                    obj.controls.peakIDEdit.String = '';
+                end
+                   
+                obj.controls.peakTimeEdit.String   = '';
+                obj.controls.peakAreaEdit.String   = '';
+                obj.controls.peakHeightEdit.String = '';
+                obj.controls.peakWidthEdit.String  = '';
+                
+            else
+                obj.controls.peakIDEdit.String     = obj.peaks.name{m};
+                obj.controls.peakTimeEdit.String   = str(obj.peaks.time{n,m});
+                obj.controls.peakAreaEdit.String   = str(obj.peaks.area{n,m});
+                obj.controls.peakHeightEdit.String = str(obj.peaks.height{n,m});
+                obj.controls.peakWidthEdit.String  = str(obj.peaks.width{n,m});
             end
             
         end
         
         function clearAxesChildren(obj, tag)
             
-            axesChildren = get(obj.axes.main, 'children');
+            axesChildren = obj.axes.main.Children;
             
             if ~isempty(axesChildren)
-                axesTag = get(axesChildren, 'tag');        
+                axesTag = get(axesChildren, 'tag');
                 delete(axesChildren(strcmpi(axesTag, tag)));
             end
             
         end
         
         function resetAxes(obj)
-           
+            
             obj.axes.xlim  = [0.000, 1.000];
             obj.axes.ylim  = [0.000, 1.000];
             
@@ -1227,16 +1304,19 @@ classdef ChromatographyGUI < handle
                 case 0
                     
                     obj.view.selectZoom = 0;
-                    set(obj.axes.zoom, 'enable', 'off');
+                    obj.axes.zoom.Enable = 'off';
+                    
                     set(obj.figure, 'windowbuttonmotionfcn',...
                         @(src, evt) figureMotionCallback(obj, src, evt));
+                    
                     set(obj.figure, 'windowkeypressfcn',...
                         @(src, evt) keyboardCallback(obj, src, evt));
                     
                 case 1
                     
                     obj.view.selectZoom = 1;
-                    set(obj.axes.zoom, 'enable', 'on');
+                    obj.axes.zoom.Enable = 'on';
+                    
                     set(obj.figure, 'windowbuttonmotionfcn',...
                         @(src, evt) figureMotionCallback(obj, src, evt));
                     
@@ -1255,9 +1335,9 @@ classdef ChromatographyGUI < handle
                 case 0
                     
                     obj.view.selectPeak = 0;
-                    set(obj.controls.selectPeak, 'value', 0);
+                    obj.controls.selectPeak.Value = 0;
                     
-                    if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
+                    if strcmpi(obj.menu.view.zoom.Checked, 'on')
                         obj.userZoom(1);
                     end
                     
@@ -1266,14 +1346,15 @@ classdef ChromatographyGUI < handle
                 case 1
                     
                     obj.view.selectPeak = 1;
-                    set(obj.controls.selectPeak, 'value', 1);
+                    obj.controls.selectPeak.Value = 1;
                     
-                    if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
+                    if strcmpi(obj.menu.view.zoom.Checked, 'on')
                         obj.userZoom(0);
                     end
                     
                     set(obj.axes.main, 'buttondownfcn',...
-                        @(src, evt) peakTimeSelectCallback(obj, src, evt));                    
+                        @(src, evt) peakTimeSelectCallback(obj, src, evt));
+                    
             end
             
         end
@@ -1283,15 +1364,15 @@ classdef ChromatographyGUI < handle
             switch evt.Key
                 
                 case 'space'
-
+                    
                     if isempty(evt.Modifier)
                         
                         if obj.view.selectPeak
                             obj.userPeak(0);
-                            set(obj.figure, 'currentobject', obj.axes.main);
+                            obj.figure.CurrentObject = obj.axes.main;
                         else
                             obj.userPeak(1);
-                            set(obj.figure, 'currentobject', obj.controls.peakList);%obj.controls.selectPeak);
+                            obj.figure.CurrentObject = obj.controls.peakList;
                         end
                         
                     end
@@ -1306,6 +1387,18 @@ classdef ChromatographyGUI < handle
                     
                     if isempty(evt.Modifier)
                         obj.selectPeak(1);
+                    end
+                    
+                case 'leftarrow'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectSample(-1);
+                    end
+                    
+                case 'rightarrow'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectSample(1);
                     end
                     
             end
@@ -1345,7 +1438,7 @@ classdef ChromatographyGUI < handle
         
         function x = getFont()
             
-            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue'; 
+            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue';
                 'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
             
             sysFonts = listfonts;
