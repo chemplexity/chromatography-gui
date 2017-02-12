@@ -52,21 +52,28 @@ end
 % ---------------------------------------
 function resizeTablePanel(obj, ~, ~, pos)
 
-set(obj.panel.table, 'position', pos);
-set(obj.table.main,  'units', 'pixels');
-set(obj.panel.table, 'units', 'pixels');
+obj.panel.table.Position = pos;
 
-x1 = get(obj.panel.table, 'innerposition');
-x2 = get(obj.panel.table, 'position');
+uiProperties = properties(obj.panel.table);
 
-x(1) = x1(1) - x2(1);
-x(2) = x1(2) - x2(2);
-x(3) = x1(3);
-x(4) = x1(4);
-
-set(obj.table.main,  'position', x);
-set(obj.table.main,  'units', 'normalized');
-set(obj.panel.table, 'units', 'normalized');
+if any(strcmp(uiProperties, 'InnerPosition'))
+    
+    obj.table.main.Units = 'pixels';
+    obj.panel.table.Units = 'pixels';
+    
+    x1 = get(obj.panel.table, 'innerposition');
+    x2 = get(obj.panel.table, 'position');
+    
+    x(1) = x1(1) - x2(1);
+    x(2) = x1(2) - x2(2);
+    x(3) = x1(3);
+    x(4) = x1(4);
+    
+    obj.table.main.Position = x;
+    obj.table.main.Units = 'normalized';
+    obj.panel.table.Units = 'normalized';
+    
+end
 
 end
 
@@ -75,18 +82,24 @@ end
 % ---------------------------------------
 function resizeAxesPanel(obj, ~, ~, pos)
 
-set(obj.panel.axes, 'position', pos);
+obj.panel.axes.Position = pos;
 
-x1 = get(obj.axes.main, 'position');
-x2 = get(obj.axes.main, 'outerposition');
+uiProperties = properties(obj.axes.main);
 
-x(1) = x1(1) - x2(1);
-x(2) = x1(2) - x2(2);
-x(3) = x1(3) - (x2(3)-1);
-x(4) = x1(4) - (x2(4)-1);
-
-set(obj.axes.main, 'position', x);
-set(obj.axes.secondary, 'position', x);
+if any(strcmp(uiProperties, 'OuterPosition'))
+    
+    x1 = obj.axes.main.Position;
+    x2 = obj.axes.main.OuterPosition;
+    
+    x(1) = x1(1) - x2(1);
+    x(2) = x1(2) - x2(2);
+    x(3) = x1(3) - (x2(3)-1);
+    x(4) = x1(4) - (x2(4)-1);
+    
+    obj.axes.main.Position = x;
+    obj.axes.secondary.Position = x;
+    
+end
 
 end
 
@@ -95,7 +108,7 @@ end
 % ---------------------------------------
 function resizeCtrlPanel(obj, ~, ~, pos)
 
-set(obj.panel.control, 'position', pos);
+obj.panel.control.Position = pos;
 
 end
 
@@ -103,28 +116,34 @@ end
 % Selection Panel
 % ---------------------------------------
 function resizeSelectPanel(obj, ~, ~, pos)
+
+obj.panel.select.Position = pos;
+
+uiProperties = properties(obj.controls.editID);
+
+if any(strcmp(uiProperties, 'OuterPosition'))
     
-set(obj.panel.select, 'position', pos);
-
-x1 = get(obj.controls.selectID, 'extent');
-x2 = get(obj.controls.editID, 'outerposition');
-
-x(1) = 0.25 - (x1(3) / 2);
-x(3) = x1(3);
-x(4) = x1(4);
-x(2) = (x2(2) + (x2(4) / 2)) - (x1(4) / 2);
-
-set(obj.controls.selectID, 'position', x);
-
-x1 = get(obj.controls.selectName, 'extent');
-x2 = get(obj.controls.editName, 'outerposition');
-
-x(1) = 0.25 - (x1(3) / 2);
-x(3) = x1(3);
-x(4) = x1(4);
-x(2) = (x2(2) + (x2(4) / 2)) - (x1(4) / 2);
+    x1 = get(obj.controls.selectID, 'extent');
+    x2 = get(obj.controls.editID, 'outerposition');
     
-set(obj.controls.selectName, 'position', x);
+    x(1) = 0.25 - (x1(3) / 2);
+    x(3) = x1(3);
+    x(4) = x1(4);
+    x(2) = (x2(2) + (x2(4) / 2)) - (x1(4) / 2);
+    
+    obj.controls.selectID.Position = x;
+    
+    x1 = get(obj.controls.selectName, 'extent');
+    x2 = get(obj.controls.editName, 'outerposition');
+    
+    x(1) = 0.25 - (x1(3) / 2);
+    x(3) = x1(3);
+    x(4) = x1(4);
+    x(2) = (x2(2) + (x2(4) / 2)) - (x1(4) / 2);
+    
+    obj.controls.selectName.Position = x;
+    
+end
 
 end
 
@@ -133,17 +152,23 @@ end
 % ---------------------------------------
 function resizeXlimPanel(obj, ~, ~, pos)
 
-set(obj.panel.xlim, 'position', pos);
+obj.panel.xlim.Position = pos;
 
-x1 = get(obj.controls.xMin, 'outerposition');
-x2 = get(obj.controls.xSeparator, 'extent');
+uiProperties = properties(obj.controls.xMin);
 
-x(3) = x2(3);
-x(4) = x2(4);
-x(1) = 0.5 - (x2(3) / 2);
-x(2) = (x1(2) + (x1(4) / 2)) - (x2(4) / 2);
-
-set(obj.controls.xSeparator, 'position', x);
+if any(strcmp(uiProperties, 'OuterPosition'))
+    
+    x1 = get(obj.controls.xMin, 'outerposition');
+    x2 = get(obj.controls.xSeparator, 'extent');
+    
+    x(3) = x2(3);
+    x(4) = x2(4);
+    x(1) = 0.5 - (x2(3) / 2);
+    x(2) = (x1(2) + (x1(4) / 2)) - (x2(4) / 2);
+    
+    obj.controls.xSeparator.Position = x;
+    
+end
 
 end
 
@@ -152,16 +177,22 @@ end
 % ---------------------------------------
 function resizeYlimPanel(obj, ~, ~, pos)
 
-set(obj.panel.ylim, 'position', pos);
+obj.panel.ylim.Position = pos;
 
-x1 = get(obj.controls.yMin, 'outerposition');
-x2 = get(obj.controls.ySeparator, 'extent');
+uiProperties = properties(obj.controls.yMin);
 
-x(3) = x2(3);
-x(4) = x2(4);
-x(1) = 0.5 - (x2(3) / 2);
-x(2) = (x1(2) + (x1(4) / 2)) - (x2(4) / 2);
-
-set(obj.controls.ySeparator, 'position', x);
+if any(strcmp(uiProperties, 'OuterPosition'))
+    
+    x1 = get(obj.controls.yMin, 'outerposition');
+    x2 = get(obj.controls.ySeparator, 'extent');
+    
+    x(3) = x2(3);
+    x(4) = x2(4);
+    x(1) = 0.5 - (x2(3) / 2);
+    x(2) = (x1(2) + (x1(4) / 2)) - (x2(4) / 2);
+    
+    obj.controls.ySeparator.Position = x;
+    
+end
 
 end

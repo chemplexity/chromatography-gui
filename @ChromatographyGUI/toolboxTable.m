@@ -104,7 +104,7 @@ switch evt.Indices(2)
         obj.data(evt.Indices(1)).injvol = evt.NewData;
 end
 
-src.Data(evt.Indices(1), evt.Indices(2)) = evt.NewData;
+src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
 
 end
 
@@ -199,38 +199,44 @@ end
 function message = tableDeleteMessage(obj)
 
 row = '';
+nRows = length(obj.table.selection(:,1));
 
-for i = 1:length(obj.table.selection(:,1))
+for i = 1:nRows
     
-    row = obj.table.selection(i,1);
+    n = obj.table.selection(i,1);
     
     if i == 1
-        row = num2str(row);
+        row = num2str(n);
+        
     elseif i > 1
-        if obj.table.selection(i,1) - obj.table.selection(i-1,1) == 1
+        
+        if n - obj.table.selection(i-1,1) == 1
+
             if ~strcmpi(row(end), ':')
-                if i == length(obj.table.selection(:,1))
-                    row = [row, ':', num2str(row)];
-                elseif i < length(obj.table.selection(:,1))
-                    if obj.table.selection(i+1,1) - obj.table.selection(i,1) ~= 1
-                        row = [row, ':', num2str(row)];
-                    elseif obj.table.selection(i+1,1) - obj.table.selection(i,1) == 1
+                
+                if i == nRows
+                    row = [row, ':', num2str(n)];
+                else
+                    if obj.table.selection(i+1,1) - n ~= 1
+                        row = [row, ':', num2str(n)];
+                    elseif obj.table.selection(i+1,1) - n == 1
                         row = [row, ':'];
                     end
                 end
-            elseif strcmpi(row(end), ':')
-                if i == length(obj.table.selection(:,1))
-                    row = [row, num2str(row)];
-                elseif i < length(obj.table.selection(:,1))
-                    if obj.table.selection(i+1,1) - obj.table.selection(i,1) ~= 1
-                        row = [row, num2str(row)];
-                    end
+                
+            elseif strcmpi(row(end), ':')                
+                
+                if i == nRows
+                    row = [row, num2str(n)];
+                elseif obj.table.selection(i+1,1) - n ~= 1
+                        row = [row, num2str(n)];
                 end
             end
             
-        elseif obj.table.selection(i,1) - obj.table.selection(i-1,1) ~= 1
-            row = [row, ', ', num2str(row)];
+        elseif n - obj.table.selection(i-1,1) ~= 1
+            row = [row, ', ', num2str(n)];
         end
+        
     end
 end
 
