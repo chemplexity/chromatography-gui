@@ -4,8 +4,8 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.3';
-        date        = '20170211';
+        version     = '0.0.4';
+        date        = '20170213';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -724,7 +724,6 @@ classdef ChromatographyGUI < handle
                     
                     y = peak.fit;
                     
-                    % Filter Intensity
                     if length(peak.fit) == length(x)
                         
                         yFilter = peak.fit ~= 0;

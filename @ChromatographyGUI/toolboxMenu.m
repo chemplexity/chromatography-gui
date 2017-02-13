@@ -687,6 +687,7 @@ else
     row = '';
 end
 
+obj.table.selection = unique(obj.table.selection(:,1));
 nRows = length(obj.table.selection(:,1));
 
 for i = 1:nRows
@@ -801,8 +802,6 @@ link.mac     = 'https://git-scm.com/download/mac';
 link.linux   = 'https://git-scm.com/download/linux';
 
 option.git     = [];
-option.branch  = 'master';
-option.force   = true;
 option.verbose = true;
 
 msg = 'Updating toolbox...';
@@ -967,38 +966,7 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
-[~,~] = system(['"', option.git, '" pull']);
-
-if gitTest
-    
-    if option.force
-        gitCmd = '" checkout -f master';
-    else
-        gitCmd = '" checkout master';
-    end
-    
-    [~,~] = system(['"', option.git, gitCmd]);
-    
-end
-
-if ishandle(h)
-    waitbar(0.9, h, msg);
-end
-
-% ---------------------------------------
-% Checkout branch
-% ---------------------------------------
-if ~isempty(option.branch)
-    
-    if option.force
-        gitCmd = ['" checkout -f ', option.branch];
-    else
-        gitCmd = ['" checkout ', option.branch];
-    end
-    
-    [~,~] = system(['"', option.git, gitCmd]);
-    
-end
+[~,~] = system(['"', option.git, '" pull origin master']);
 
 if ishandle(h)
     waitbar(0.9, h, msg);
@@ -1009,7 +977,11 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', 'Update complete!');
 fprintf('\n');
-fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
+
+fprintf([...
+    ChromatographyGUI.name, ' (v',...
+    ChromatographyGUI.version, '.',...
+    ChromatographyGUI.date, ')\n']);
 
 fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'EXIT');

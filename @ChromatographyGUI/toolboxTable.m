@@ -122,15 +122,15 @@ end
 % ---------------------------------------
 function tableKeyDownCallback(obj, ~, evt)
 
+if isempty(obj.table.selection) || isempty(obj.data)
+    return
+end
+
 if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-        case 'return'
-            
-            if isempty(obj.table.selection) || isempty(obj.data)
-                return
-            end
+       case 'return'
             
             obj.table.selection = obj.table.selection(1,:);
             
@@ -197,6 +197,8 @@ end
 % Table Delete Row
 % ---------------------------------------
 function message = tableDeleteMessage(obj)
+
+obj.table.selection = unique(obj.table.selection(:,1));
 
 row = '';
 nRows = length(obj.table.selection(:,1));
