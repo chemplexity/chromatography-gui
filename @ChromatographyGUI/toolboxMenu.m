@@ -463,9 +463,6 @@ end
 tableHeader = get(obj.table.main, 'columnname');
 tableData   = get(obj.table.main, 'data');
 
-tableHeader(1) = [];
-tableData(:,1) = [];
-
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = [];
 end
@@ -474,7 +471,7 @@ excelData = [];
 
 try
     excelData = tableHeader';
-    excelData(2:length(tableData(:,1))+1, 1:length(tableData(1,:))) = tableData;
+    excelData(1:length(tableData(:,1)), 1:length(tableData(1,:))) = tableData;
 catch
 end
 
@@ -544,7 +541,7 @@ if ischar(fileName) && ischar(filePath)
     end
     
     tableHeader{1,1} = ['''', tableHeader{1,1}];
-    tableFmt = [repmat('%s, ', 1, length(tableHeader)-1), '%s\n'];
+    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '%s\n'];
     
     f = fopen(fileName, 'w');
     
@@ -605,26 +602,25 @@ x = length(obj.peaks.name);
 
 for i = 1:length(obj.data)
     
-    obj.table.main.Data{i,1}  = i;
-    obj.table.main.Data{i,2}  = obj.data(i).file_path;
-    obj.table.main.Data{i,3}  = obj.data(i).file_name;
-    obj.table.main.Data{i,4}  = obj.data(i).datetime;
-    obj.table.main.Data{i,5}  = obj.data(i).instrument;
-    obj.table.main.Data{i,6}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,7}  = obj.data(i).method_name;
-    obj.table.main.Data{i,8}  = obj.data(i).operator;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,10} = obj.data(i).sample_info;
-    obj.table.main.Data{i,11} = obj.data(i).seqindex;
-    obj.table.main.Data{i,12} = obj.data(i).vial;
-    obj.table.main.Data{i,13} = obj.data(i).replicate;
+    obj.table.main.Data{i,1}  = obj.data(i).file_path;
+    obj.table.main.Data{i,2}  = obj.data(i).file_name;
+    obj.table.main.Data{i,3}  = obj.data(i).datetime;
+    obj.table.main.Data{i,4}  = obj.data(i).instrument;
+    obj.table.main.Data{i,5}  = obj.data(i).instmodel;
+    obj.table.main.Data{i,6}  = obj.data(i).method_name;
+    obj.table.main.Data{i,7}  = obj.data(i).operator;
+    obj.table.main.Data{i,8}  = obj.data(i).sample_name;
+    obj.table.main.Data{i,9}  = obj.data(i).sample_info;
+    obj.table.main.Data{i,10} = obj.data(i).seqindex;
+    obj.table.main.Data{i,11} = obj.data(i).vial;
+    obj.table.main.Data{i,12} = obj.data(i).replicate;
     
     if ~isempty(obj.peaks.name)
         for j = 1:x
-            obj.table.main.Data{i, 14+j + x*0} = obj.peaks.time{i,j};
-            obj.table.main.Data{i, 14+j + x*1} = obj.peaks.area{i,j};
-            obj.table.main.Data{i, 14+j + x*2} = obj.peaks.height{i,j};
-            obj.table.main.Data{i, 14+j + x*3} = obj.peaks.width{i,j};
+            obj.table.main.Data{i, 13+j + x*0} = obj.peaks.time{i,j};
+            obj.table.main.Data{i, 13+j + x*1} = obj.peaks.area{i,j};
+            obj.table.main.Data{i, 13+j + x*2} = obj.peaks.height{i,j};
+            obj.table.main.Data{i, 13+j + x*3} = obj.peaks.width{i,j};
         end
     end
     
@@ -658,19 +654,18 @@ end
 
 for i = length(obj.table.main.Data)+1:length(obj.data)
     
-    obj.table.main.Data{i,1}  = i;
-    obj.table.main.Data{i,2}  = obj.data(i).file_path;
-    obj.table.main.Data{i,3}  = obj.data(i).file_name;
-    obj.table.main.Data{i,4}  = obj.data(i).datetime;
-    obj.table.main.Data{i,5}  = obj.data(i).instrument;
-    obj.table.main.Data{i,6}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,7}  = obj.data(i).method_name;
-    obj.table.main.Data{i,8}  = obj.data(i).operator;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,10} = obj.data(i).sample_info;
-    obj.table.main.Data{i,11} = obj.data(i).seqindex;
-    obj.table.main.Data{i,12} = obj.data(i).vial;
-    obj.table.main.Data{i,13} = obj.data(i).replicate;
+    obj.table.main.Data{i,1}  = obj.data(i).file_path;
+    obj.table.main.Data{i,2}  = obj.data(i).file_name;
+    obj.table.main.Data{i,3}  = obj.data(i).datetime;
+    obj.table.main.Data{i,4}  = obj.data(i).instrument;
+    obj.table.main.Data{i,5}  = obj.data(i).instmodel;
+    obj.table.main.Data{i,6}  = obj.data(i).method_name;
+    obj.table.main.Data{i,7}  = obj.data(i).operator;
+    obj.table.main.Data{i,8}  = obj.data(i).sample_name;
+    obj.table.main.Data{i,9}  = obj.data(i).sample_info;
+    obj.table.main.Data{i,10} = obj.data(i).seqindex;
+    obj.table.main.Data{i,11} = obj.data(i).vial;
+    obj.table.main.Data{i,12} = obj.data(i).replicate;
     
 end
 

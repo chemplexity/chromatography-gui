@@ -388,7 +388,7 @@ switch get(src, 'string')
             return
         end
         
-        dlgMsg = {'Enter  name for peak:'};
+        dlgMsg = {'Enter name for peak:'};
         dlgTop = '';
         dlgAns = {obj.peaks.name{m,1}};
         
@@ -886,10 +886,10 @@ set(obj.controls.peakAreaEdit,   'string', '');
 
 offset = length(obj.peaks.name);
 
-obj.table.main.Data{row, col+14 + offset*0} = [];
-obj.table.main.Data{row, col+14 + offset*1} = [];
-obj.table.main.Data{row, col+14 + offset*2} = [];
-obj.table.main.Data{row, col+14 + offset*3} = [];
+obj.table.main.Data{row, col+13 + offset*0} = [];
+obj.table.main.Data{row, col+13 + offset*1} = [];
+obj.table.main.Data{row, col+13 + offset*2} = [];
+obj.table.main.Data{row, col+13 + offset*3} = [];
 
 obj.plotPeaks();
 

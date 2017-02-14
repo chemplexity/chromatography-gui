@@ -353,7 +353,7 @@ for i = 1:length(y(1,:))
     peaks.fit(:,i) = yfit(:,yIndex);
     
     if size(x,1) == size(peaks.fit(:,i), 1)
-        peaks.area(i) = peakArea(x, peaks.fit(:,i));
+        peaks.area(i) = peakArea(x, y, peaks.fit(:,i));
     else
         peaks.width(i) = w(yIndex);
         peaks.area(i) = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
@@ -435,37 +435,45 @@ rmsd = rmsd / (ymax - ymin) * 100;
 
 end
 
-function area = peakArea(x,y)
+function area = peakArea(x0, y0, y1)
 
-ymin = min(y);
-ymax = max(y);
+ymin = min(y1);
+ymax = max(y1);
 
-x = x(y >= ymin + 0.001 * (ymax-ymin));
-y = y(y >= ymin + 0.001 * (ymax-ymin));
+x0 = x0(y1 >= ymin + 0.001 * (ymax-ymin));
+y0 = y0(y1 >= ymin + 0.001 * (ymax-ymin));
 
-if length(y) <= 1 || length(x) ~= length(y)
+if length(y0) <= 1 || length(x0) ~= length(y0)
     area = 0;
     return
 end
 
+x0 = [x0(1)-(x0(2)-x0(1)); x0; x0(end)+x0(end)-x0(end-1)];
+y0 = [0; y0; 0];
+
 f0 = 5000;
-f1 = 1/mean(diff(x));
+f1 = 1/mean(diff(x0));
 
 if f1 < f0
-    xi = min(x) : 1/f0 : max(x);
-    yi = interp1(x, y, xi, 'pchip');
+    xi = min(x0) : 1/f0 : max(x0);
+    yi = interp1(x0, y0, xi, 'pchip');
 else
     xi = x;
     yi = y;
 end
 
 dx = diff(xi);
-dy = 0.5 * (yi(1:end-1) .* yi(2:end));
+dy = 0.5 * (yi(1:end-1) + yi(2:end));
 
 if length(dx) == length(dy)
     area = sum(dx.*dy);
 else
     area = 0;
+end
+
+% Scale to Agilent Peak Area
+if area ~= 0
+    area = (area - 0.001107524) / 0.016599114;
 end
 
 end
