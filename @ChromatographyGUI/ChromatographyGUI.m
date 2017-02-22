@@ -729,29 +729,37 @@ classdef ChromatographyGUI < handle
                             
                             x = x(yFilter);
                             y = y(yFilter);
+                            b = b(yFilter,2);
                             
-                            if length(peak.fit) == length(b(:,1))
-                                y = y + b(yFilter, 2);
+                            yCutoff = 1E-5;
+                            yFilter = y >= yCutoff;
+                            
+                            if any(yFilter)
+                                x = x(yFilter);
+                                y = y(yFilter);
+                                b = b(yFilter);
+                            end
+                            
+                            if size(y,1) == size(b,1)
+                                y = y + b;
                             end
                             
                         end
                         
                         if peak.width > 0
                             
-                            xCutoff = peak.width * 2.0;
+                            xCutoff = peak.width * 2.5;
                             xFilter = x > peak.time+xCutoff | x < peak.time-xCutoff;
                             
-                            yCutoff = (max(y) - min(y)) * 0.001 + min(y);
-                            yFilter = y <= yCutoff;
-                            
                             if any(xFilter)
-                                x(xFilter | yFilter) = [];
-                                y(xFilter | yFilter) = [];
+                                x(xFilter) = [];
+                                y(xFilter) = [];
                             end
                             
                             if ~isempty(x) && ~isempty(y) && length(x) == length(y)
                                 peak.fit = [x,y];
                             end
+                            
                         end
                         
                     end
@@ -1071,7 +1079,7 @@ classdef ChromatographyGUI < handle
             if isempty(axesHandles)
                 
                 if ishandle(exportFigure)
-                    delete(exportFigure);
+                    close(exportFigure);
                 end
                 
                 return
@@ -1121,7 +1129,7 @@ classdef ChromatographyGUI < handle
             print(exportFigure, '-clipboard', '-dbitmap');
             
             if ishandle(exportFigure)
-                delete(exportFigure);
+                close(exportFigure);
             end
             
         end
