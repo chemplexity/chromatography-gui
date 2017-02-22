@@ -467,26 +467,31 @@ if isempty(obj.data)
     return
 end
 
-tableHeader = get(obj.table.main, 'columnname');
-tableData   = get(obj.table.main, 'data');
-
-if length(tableData(1,:)) ~= length(tableHeader)
-    tableData{end, length(tableHeader)} = [];
+if size(obj.table.main.Data,2) ~= length(obj.table.main.ColumnName)
+    obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
 end
 
-excelData = [];
-
 try
-    excelData = tableHeader';
-    excelData(1:length(tableData(:,1)), 1:length(tableData(1,:))) = tableData;
+    excelData = [obj.table.main.ColumnName'; obj.table.main.Data];
 catch
+    excelData = obj.table.main.Data;
 end
 
 if isempty(excelData)
     return
 end
 
-filterExtensions = '*.xls;*.xlsx';
+if length(excelData(1,:)) >= 14
+    for i = 1:length(excelData(:,1))
+        for j = 14:length(excelData(1,:))
+            if ~isempty(excelData{i,j}) && isnumeric(excelData{i,j})
+                excelData{i,j} = round(excelData{i,j},4);
+            end
+        end 
+    end
+end
+
+filterExtensions  = '*.xls;*.xlsx';
 filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
 filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
@@ -867,8 +872,10 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
+%[~,~] = system(['"', option.git, '" stash']);
 [~,~] = system(['"', option.git, '" checkout master']);
 [~,~] = system(['"', option.git, '" pull origin master']);
+%[~,~] = system(['"', option.git, '" stash pop']);
 
 if ishandle(h)
     waitbar(0.9, h, msg);
