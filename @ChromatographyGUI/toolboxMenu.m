@@ -85,6 +85,26 @@ obj.menu.edit.main = uimenu(...
     'tag',      'editmenu');
 
 % ---------------------------------------
+% Edit Menu --> Copy
+% ---------------------------------------
+obj.menu.edit.copy.main = uimenu(...
+    'parent',   obj.menu.edit.main,...
+    'label',    'Copy',...
+    'tag',      'editcopymenu');
+
+obj.menu.edit.copy.figure = uimenu(...
+    'parent',   obj.menu.edit.copy.main,...
+    'label',    'Figure',...
+    'tag',      'copyfiguremenu',...
+    'callback', @obj.copyFigure);
+
+obj.menu.edit.copy.table = uimenu(...
+    'parent',   obj.menu.edit.copy.main,...
+    'label',    'Table',...
+    'tag',      'copytablemenu',...
+    'callback', @obj.copyTable);
+
+% ---------------------------------------
 % Edit Menu --> Table
 % ---------------------------------------
 obj.menu.edit.table.main = uimenu(...
@@ -97,21 +117,6 @@ obj.menu.edit.table.delete = uimenu(...
     'label',    'Delete selected rows...',...
     'tag',      'deletetablerowmenu',...
     'callback', @(src, event) tableDeleteRowMenu(obj, src, event));
-
-% ---------------------------------------
-% Edit Menu --> Peaks
-% ---------------------------------------
-%obj.menu.edit.peaks.main = uimenu(...
-%    'parent',   obj.menu.edit.main,...
-%    'label',    'Peaks',...
-%    'tag',      'peaksmenu');
-
-%obj.menu.edit.peaks.autodetect = uimenu(...
-%    'parent',   obj.menu.edit.peaks.main,...
-%    'label',    'Auto-Detection',...
-%    'tag',      'peakautodetectmenu',...
-%    'checked',  'on',...
-%    'callback', @(src, event) peakAutoDetectMenu(obj, src, event));
 
 % ---------------------------------------
 % View Menu
@@ -154,11 +159,6 @@ obj.menu.help.update = uimenu(...
     'tag',      'updatemenu',...
     'callback', @(src, event) updateToolboxCallback(obj, src, event));
 
-%obj.menu.help.about = uimenu(...
-%    'parent',   obj.menu.help.main,...
-%    'label',    'About',...
-%    'tag',      'aboutmenu');
-
 end
 
 % ---------------------------------------
@@ -175,21 +175,23 @@ if ~isempty(data) && isstruct(data)
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
             
             obj.data = [obj.data; data(i)];
-            tableAppendCallback(obj);
             
             if ~isempty(obj.peaks.name)
                 
-                cols = length(obj.peaks.name);
-                rows = length(obj.data);
+                nCol = length(obj.peaks.name);
+                nRow = length(obj.data);
                 
-                obj.peaks.time{rows, cols}   = [];
-                obj.peaks.width{rows, cols}  = [];
-                obj.peaks.height{rows, cols} = [];
-                obj.peaks.area{rows, cols}   = [];
-                obj.peaks.error{rows, cols}  = [];
-                obj.peaks.fit{rows, cols}    = [];
+                obj.peaks.time{nRow, nCol}   = [];
+                obj.peaks.width{nRow, nCol}  = [];
+                obj.peaks.height{nRow, nCol} = [];
+                obj.peaks.area{nRow, nCol}   = [];
+                obj.peaks.error{nRow, nCol}  = [];
+                obj.peaks.fit{nRow, nCol}    = [];
                 
             end
+            
+            obj.appendTableData();
+            
         end
     end
     
@@ -219,37 +221,19 @@ if ischar(fileName) && ischar(filePath)
             obj.peaks = obj.data(1).peaks;
             
             if ~isempty(obj.peaks.name)
-                
-                rows = length(obj.data);
-                cols = length(obj.peaks.name);
-                
-                if size(obj.peaks.time,1) < rows
-                    obj.peaks.time{rows,1}   = [];
-                    obj.peaks.width{rows,1}  = [];
-                    obj.peaks.height{rows,1} = [];
-                    obj.peaks.area{rows,1}   = [];
-                    obj.peaks.error{rows,1}  = [];
-                    obj.peaks.fit{rows,1}    = [];
-                end
-                
-                if size(obj.peaks.time,2) < cols
-                    obj.peaks.time{1,cols}   = [];
-                    obj.peaks.width{1,cols}  = [];
-                    obj.peaks.height{1,cols} = [];
-                    obj.peaks.area{1,cols}   = [];
-                    obj.peaks.error{1,cols}  = [];
-                    obj.peaks.fit{1,cols}    = [];
-                end
-                
+                nRow = length(obj.data);
+                nCol = length(obj.peaks.name);
+                obj.validatePeakData(nRow, nCol);
             end
             
-            obj.table.main.Data = [];
+            obj.checkpoint = [filePath, fileName];
             
-            tableHeaderRefreshCallback(obj);
-            tableDataRefreshCallback(obj);
+            obj.clearTableData();
+            obj.resetTableHeader();
+            obj.resetTableData();
+            
             listboxRefreshCallback(obj);
             
-            obj.checkpoint = [filePath, fileName];
             obj.updatePeakEditText();
             obj.updateFigure();
             
@@ -268,10 +252,6 @@ if ~isempty(obj.data)
     data = obj.data;
 else
     return
-end
-
-if ~isempty(obj.peaks.name)
-    data(1).peaks = obj.peaks;
 end
 
 fileName = [];
@@ -305,11 +285,17 @@ if isempty(fileName)
     
 end
 
-if ischar(fileName) && ~isempty(data)
+if ischar(fileName) && ischar(filePath) && ~isempty(data)
+    
+    if ~isempty(obj.peaks.name)
+        data(1).peaks = obj.peaks;
+    end
+
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
     cd(currentPath);
+    
 end
 
 end
@@ -323,10 +309,6 @@ if ~isempty(obj.data)
     data = obj.data;
 else
     return
-end
-
-if ~isempty(obj.peaks.name)
-    data(1).peaks = obj.peaks;
 end
 
 if ~isempty(obj.checkpoint)
@@ -344,11 +326,17 @@ filterDescription = 'MAT-files (*.mat)';
     filterDefaultName);
 
 if ischar(fileName) && ischar(filePath) && ~isempty(data)
+    
+    if ~isempty(obj.peaks.name)
+        data(1).peaks = obj.peaks;
+    end
+
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
     obj.checkpoint = [filePath, fileName];
     cd(currentPath);
+    
 end
 
 end
@@ -371,10 +359,10 @@ filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
     'Save As...',...
     filterDefaultName);
 
-[~, ~, fileExtension] = fileparts(fileName);
-
 if ischar(fileName) && ischar(filePath)
-    
+
+    [~, ~, fileExtension] = fileparts(fileName);
+
     switch fileExtension
         case {'.png'}
             fileType = '-dpng';
@@ -405,12 +393,32 @@ if ischar(fileName) && ischar(filePath)
         axesTags = get(axesHandles, 'tag');
         axesPlot = strcmpi(axesTags, 'axesplot');
         
+        p1 = [];
+        p2 = [];
+        
         if any(axesPlot)
-            p1 = get(axesHandles(axesPlot), 'position');
-            p2 = get(axesHandles(axesPlot), 'outerposition');
+
+            uiProperties = properties(axesHandles(axesPlot));
+
+            if any(strcmp(uiProperties, 'OuterPosition'))
+                p1 = get(axesHandles(axesPlot), 'position');
+                p2 = get(axesHandles(axesPlot), 'outerposition');
+            end
+            
         else
+            
+            uiProperties = properties(axesHandles(axesPlot));
+            
+            if any(strcmp(uiProperties, 'OuterPosition'))
+                p1 = get(gca, 'position');
+                p2 = get(gca, 'outerposition');
+            end
+            
+        end
+        
+        if isempty(p1) || isempty(p2)
             p1 = get(gca, 'position');
-            p2 = get(gca, 'outerposition');
+            p2 = p1;
         end
         
         axesPosition(1) = p1(1) - p2(1);
@@ -445,7 +453,6 @@ if ischar(fileName) && ischar(filePath)
         if ishandle(exportFigure)
             delete(exportFigure);
         end
-        
     end
 end
 
@@ -506,15 +513,12 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
-tableHeader = get(obj.table.main, 'columnname');
-tableData   = get(obj.table.main, 'data');
+tableHeader = obj.table.main.ColumnName;
+tableData   = obj.table.main.Data;
 
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
-
-tableHeader(1) = [];
-tableData(:,1) = [];
 
 filterExtensions  = '*.csv';
 filterDescription = 'CSV file (*.csv)';
@@ -541,7 +545,7 @@ if ischar(fileName) && ischar(filePath)
     end
     
     tableHeader{1,1} = ['''', tableHeader{1,1}];
-    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '%s\n'];
+    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '\n'];
     
     f = fopen(fileName, 'w');
     
@@ -559,76 +563,6 @@ end
 end
 
 % ---------------------------------------
-% Refresh Table Header
-% ---------------------------------------
-function tableHeaderRefreshCallback(obj, varargin)
-
-tableHeader = obj.table.main.ColumnName(1:14);
-
-if ~isempty(obj.peaks.name)
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Time (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Area (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Height (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Width (', obj.peaks.name{i}, ')']};
-    end
-    
-end
-
-obj.table.main.ColumnName = tableHeader;
-
-end
-
-% ---------------------------------------
-% Refresh Table Data
-% ---------------------------------------
-function tableDataRefreshCallback(obj, varargin)
-
-if isempty(obj.data)
-    return
-end
-
-x = length(obj.peaks.name);
-
-for i = 1:length(obj.data)
-    
-    obj.table.main.Data{i,1}  = obj.data(i).file_path;
-    obj.table.main.Data{i,2}  = obj.data(i).file_name;
-    obj.table.main.Data{i,3}  = obj.data(i).datetime;
-    obj.table.main.Data{i,4}  = obj.data(i).instrument;
-    obj.table.main.Data{i,5}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,6}  = obj.data(i).method_name;
-    obj.table.main.Data{i,7}  = obj.data(i).operator;
-    obj.table.main.Data{i,8}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_info;
-    obj.table.main.Data{i,10} = obj.data(i).seqindex;
-    obj.table.main.Data{i,11} = obj.data(i).vial;
-    obj.table.main.Data{i,12} = obj.data(i).replicate;
-    
-    if ~isempty(obj.peaks.name)
-        for j = 1:x
-            obj.table.main.Data{i, 13+j + x*0} = obj.peaks.time{i,j};
-            obj.table.main.Data{i, 13+j + x*1} = obj.peaks.area{i,j};
-            obj.table.main.Data{i, 13+j + x*2} = obj.peaks.height{i,j};
-            obj.table.main.Data{i, 13+j + x*3} = obj.peaks.width{i,j};
-        end
-    end
-    
-end
-
-end
-
-% ---------------------------------------
 % Refresh Listbox
 % ---------------------------------------
 function listboxRefreshCallback(obj, varargin)
@@ -640,34 +574,6 @@ if isempty(x) || x == 0 || x > length(obj.peaks.name)
 end
 
 set(obj.controls.peakList, 'string', obj.peaks.name);
-
-end
-
-% ---------------------------------------
-% Append Table
-% ---------------------------------------
-function tableAppendCallback(obj, varargin)
-
-if isempty(obj.data)
-    return
-end
-
-for i = length(obj.table.main.Data)+1:length(obj.data)
-    
-    obj.table.main.Data{i,1}  = obj.data(i).file_path;
-    obj.table.main.Data{i,2}  = obj.data(i).file_name;
-    obj.table.main.Data{i,3}  = obj.data(i).datetime;
-    obj.table.main.Data{i,4}  = obj.data(i).instrument;
-    obj.table.main.Data{i,5}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,6}  = obj.data(i).method_name;
-    obj.table.main.Data{i,7}  = obj.data(i).operator;
-    obj.table.main.Data{i,8}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_info;
-    obj.table.main.Data{i,10} = obj.data(i).seqindex;
-    obj.table.main.Data{i,11} = obj.data(i).vial;
-    obj.table.main.Data{i,12} = obj.data(i).replicate;
-    
-end
 
 end
 
@@ -961,6 +867,7 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
+[~,~] = system(['"', option.git, '" checkout master']);
 [~,~] = system(['"', option.git, '" pull origin master']);
 
 if ishandle(h)

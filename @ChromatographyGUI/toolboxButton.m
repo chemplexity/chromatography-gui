@@ -275,7 +275,7 @@ set(obj.controls.editID,...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
 set(obj.controls.editName,...
-    'callback', @(src, evt) editNameCallback(obj, src, evt),...
+    'callback', @obj.updateSampleText,...
     'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
 
 % ---------------------------------------
@@ -351,10 +351,10 @@ set(obj.controls.peakAreaEdit,...
     'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
 
 set(obj.controls.showPeak,...
-    'callback', @(src, evt) peakDisplayCallback(obj, src, evt));
+    'callback', @obj.plotPeaks);
     
 set(obj.controls.clearPeak,...
-    'callback', @(src, evt) peakClearCallback(obj, src, evt));
+    'callback', @obj.clearPeak);
 
 set(obj.controls.selectPeak,...
     'callback', @(src, evt) peakSelectCallback(obj, src, evt));
@@ -366,7 +366,7 @@ end
 % ---------------------------------------
 function peakListCallback(obj, src, ~)
 
-switch get(src, 'string')
+switch src.String
     
     case 'Add'
         
@@ -382,30 +382,30 @@ switch get(src, 'string')
         
     case 'Edit'
         
-        m = get(obj.controls.peakList, 'value');
+        col = obj.controls.peakList.Value;
         
-        if m < 1 || m > length(obj.peaks.name)
+        if col < 1 || col > length(obj.peaks.name)
             return
         end
         
         dlgMsg = {'Enter name for peak:'};
         dlgTop = '';
-        dlgAns = {obj.peaks.name{m,1}};
+        dlgAns = {obj.peaks.name{col,1}};
         
         x = inputdlg(dlgMsg, dlgTop, 1, dlgAns);
         
         if ~isempty(x) && ~isempty(x{1,1})
-            if ~strcmp(obj.peaks.name(m,1), x{1,1})
+            if ~strcmp(obj.peaks.name(col,1), x{1,1})
                 x = {strtrim(deblank(x{1,1}))};
-                obj.peakEditColumn(m,x);
+                obj.peakEditColumn(col,x);
             end
         end
         
     case 'Delete'
         
-        m = get(obj.controls.peakList, 'value');
+        col = obj.controls.peakList.Value;
         
-        if isempty(m) || m < 1 || m > length(obj.peaks.name)
+        if isempty(col) || col < 1 || col > length(obj.peaks.name)
             return
         end
         
@@ -413,10 +413,10 @@ switch get(src, 'string')
         
         if strcmpi(x, 'Yes')
             
-            obj.peakDeleteColumn(m);
+            obj.peakDeleteColumn(col);
         
-            if m > length(obj.peaks.name)
-                set(obj.controls.peakList, 'value', length(obj.peaks.name));
+            if col > length(obj.peaks.name)
+                obj.controls.peakList.Value = length(obj.peaks.name);
             end
            
             obj.updatePeakEditText();
@@ -432,16 +432,20 @@ end
 % ---------------------------------------
 function sampleSelectionCallback(obj, src, ~)
 
-switch src.Tag
+if isprop(src, 'tag')
     
-    case 'nextsample'        
-        obj.selectSample(1);
+    switch src.Tag
         
-    case 'prevsample'
-        obj.selectSample(-1);
-        
+        case 'nextsample'
+            obj.selectSample(1);
+            
+        case 'prevsample'
+            obj.selectSample(-1);
+            
+    end
+    
 end
-  
+
 end
 
 % ---------------------------------------
@@ -453,43 +457,22 @@ if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-        case 'leftarrow'
-            sampleSelectionCallback(obj, obj.controls.prev);
-            
-        case 'rightarrow'
-            sampleSelectionCallback(obj, obj.controls.next);
-            
         case 'return'
             
-            switch get(src, 'tag')                
+            if isprop(src, 'tag')
                 
-                case {'addpeak', 'editpeak', 'delpeak'}
-                    peakListCallback(obj, src);
+                switch src.Tag
                     
-                case {'nextsample', 'prevsample'}
-                    sampleSelectionCallback(obj, src);
+                    case {'addpeak', 'editpeak', 'delpeak'}
+                        peakListCallback(obj, src);
+                        
+                    case {'nextsample', 'prevsample'}
+                        sampleSelectionCallback(obj, src);
+                end 
+                
             end
-            
-        case 'space'
-            return
- 
     end
     
-end
-
-end
-
-% ---------------------------------------
-% Selection Text
-% ---------------------------------------
-function updateSelectionText(obj, varargin)
-
-set(obj.controls.editID,   'string', obj.view.id);
-set(obj.controls.editName, 'string', obj.view.name);
-
-if ~isempty(obj.data) && obj.view.index ~= 0
-    obj.updatePeakEditText();
-    obj.updatePlot();
 end
 
 end
@@ -499,35 +482,32 @@ end
 % ---------------------------------------
 function editIDCallback(obj, varargin)
 
-n = get(obj.controls.editID, 'string');
+str = obj.controls.editID.String;
+val = str2double(str);
 
-if isempty(n) || isnan(str2double(n)) || isempty(obj.data)
-    updateSelectionText(obj);
+if isempty(obj.data) || isempty(str) || isnan(val) || isinf(val) || ~isreal(val)
+    obj.updateSampleText();
     return
-elseif str2double(n) > length(obj.data)
+    
+elseif val > length(obj.data)
     obj.view.index = length(obj.data);
     obj.view.id    = num2str(length(obj.data));
     obj.view.name  = obj.data(end).sample_name;
-elseif str2double(n) < 1
+    
+elseif val < 1
     obj.view.index = 1;
     obj.view.id    = '1';
     obj.view.name  = obj.data(1).sample_name;
+    
 else
-    obj.view.index = floor(str2double(n));
-    obj.view.id    = num2str(floor(str2double(n)));
+    obj.view.index = floor(val);
+    obj.view.id    = num2str(floor(val));
     obj.view.name  = obj.data(obj.view.index).sample_name;
 end
 
-updateSelectionText(obj);
-
-end
-
-% ---------------------------------------
-% Selection Name
-% ---------------------------------------
-function editNameCallback(obj, ~, ~)
-
-updateSelectionText(obj);
+obj.updateSampleText();
+obj.updatePeakText();
+obj.updatePlot();
 
 end
 
@@ -540,43 +520,22 @@ if ~strcmpi(get(src, 'style'), 'togglebutton')
     return
 end
 
-switch get(src, 'tag')
+switch src.Tag
     
     case 'xmanual'
-        
-        if get(src, 'value')
-            set(obj.controls.xAuto, 'value', 0);
-        else
-            set(obj.controls.xAuto, 'value', 1);
-        end
+        obj.controls.xAuto.Value = ~src.Value;
         
     case 'xauto'
-        
-        if get(src, 'value')
-            set(obj.controls.xManual, 'value', 0);
-        else
-            set(obj.controls.xManual, 'value', 1);
-        end
+        obj.controls.xManual.Value = ~src.Value;
         
     case 'ymanual'
-        
-        if get(src, 'value')
-            set(obj.controls.yAuto, 'value', 0);
-        else
-            set(obj.controls.yAuto, 'value', 1);
-        end
+        obj.controls.yAuto.Value = ~src.Value;
         
     case 'yauto'
-        
-        if get(src, 'value')
-            set(obj.controls.yManual, 'value', 0);
-        else
-            set(obj.controls.yManual, 'value', 1);
-        end
+        obj.controls.yManual.Value = ~src.Value;
         
     otherwise
         return
-        
 end
 
 obj.updateAxesLimitMode();
@@ -595,60 +554,130 @@ end
 
 getStr = @(x) sprintf('%.3f', x);
 
-str = get(src, 'string');
+str = src.String;
 val = str2double(str);
 
-switch get(src, 'tag')
+switch src.Tag
     
     case 'xminedit'
         
-        if isempty(str) || isnan(val) || isinf(val)
-            set(src, 'string', getStr(obj.axes.xlim(1)));
+        if isempty(str)
+            
+            if obj.view.index ~= 0
+                xmin = min(obj.data(obj.view.index).time);
+                xmax = max(obj.data(obj.view.index).time);
+                obj.axes.xlim(1) = xmin - ((xmax - xmin) * 0.02);
+            else
+                obj.axes.xlim(1) = 0;
+            end
+
+            src.String = getStr(obj.axes.xlim(1));
+            obj.axes.xmode = 'manual';
+            obj.updateAxesXLim();
+            
+        elseif isnan(val) || isinf(val) || ~isreal(val)
+            src.String = getStr(obj.axes.xlim(1));
+            return
+            
         elseif val < obj.axes.xlim(2)
             obj.axes.xmode = 'manual';
             obj.axes.xlim(1) = val;
             obj.updateAxesXLim();
+            
         else
-            set(src, 'string', getStr(obj.axes.xlim(1)));
+            src.String = getStr(obj.axes.xlim(1));
+            return
         end
         
     case 'xmaxedit'
         
-        if isempty(str) || isnan(val) || isinf(val)
-            set(src, 'string', getStr(obj.axes.xlim(2)));
-        elseif val > obj.axes.xlim(1)
+        if isempty(str) 
+            
+            if obj.view.index ~= 0
+                xmin = min(obj.data(obj.view.index).time);
+                xmax = max(obj.data(obj.view.index).time);
+                obj.axes.xlim(2) = xmax + ((xmax - xmin) * 0.02);
+            else
+                obj.axes.xlim(2) = 1;
+            end
+
+            src.String = getStr(obj.axes.xlim(2));
             obj.axes.xmode = 'manual';
-            obj.axes.xlim(2) = val;
             obj.updateAxesXLim();
+            
+        elseif isnan(val) || isinf(val) || ~isreal(val)
+            src.String = getStr(obj.axes.xlim(2));
+            return
+            
+        elseif val > obj.axes.xlim(1)
+            obj.axes.xlim(2) = val;
+            obj.axes.xmode = 'manual';
+            obj.updateAxesXLim();
+            
         else
-            set(src, 'string', getStr(obj.axes.xlim(2)));
+            src.String = getStr(obj.axes.xlim(2));
+            return
         end
         
     case 'yminedit'
         
-        if isempty(str) || isnan(val) || isinf(val)
-            set(src, 'string', getStr(obj.axes.ylim(1)));
+        if isempty(str) 
+            
+            if obj.view.index ~= 0
+                x = obj.data(obj.view.index).time;
+                y = obj.data(obj.view.index).intensity(:,1);
+                y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
+                obj.axes.ylim(1) = min(y) - ((obj.axes.ylim(2) - min(y)) * 0.02);
+            else
+                obj.axes.ylim(1) = 0;
+            end
+
+            src.String = getStr(obj.axes.ylim(1));
+            obj.axes.ymode = 'manual';
+            obj.updateAxesYLim();
+            
+        elseif isnan(val) || isinf(val) || ~isreal(val)
+            src.String = getStr(obj.axes.ylim(1));
             return
+            
         elseif val < obj.axes.ylim(2)
             obj.axes.ymode = 'manual';
             obj.axes.ylim(1) = val;
             obj.updateAxesYLim();
+            
         else
-            set(src, 'string', getStr(obj.axes.ylim(1)));
+            src.String = getStr(obj.axes.ylim(1));
             return
         end
         
     case 'ymaxedit'
         
-        if isempty(str) || isnan(val) || isinf(val)
-            set(src, 'string', getStr(obj.axes.ylim(2)));
+        if isempty(str)
+            
+            if obj.view.index ~= 0
+                x = obj.data(obj.view.index).time;
+                y = obj.data(obj.view.index).intensity(:,1);
+                y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
+                obj.axes.ylim(2) = max(y) + ((max(y) - obj.axes.ylim(1)) * 0.02);
+            else
+                obj.axes.ylim(2) = 1;
+            end
+
+            src.String = getStr(obj.axes.ylim(2));
+            obj.axes.ymode = 'manual';
+            obj.updateAxesYLim();
+            
+        elseif isnan(val) || isinf(val) || ~isreal(val)
+            src.String = getStr(obj.axes.ylim(2));
             return
+            
         elseif val > obj.axes.ylim(1)
             obj.axes.ymode = 'manual';
             obj.axes.ylim(2) = val;
             obj.updateAxesYLim();
+            
         else
-            set(src, 'string', getStr(obj.axes.ylim(2)));
+            src.String = getStr(obj.axes.ylim(2));
             return
         end
         
@@ -671,7 +700,7 @@ if isempty(obj.data) || obj.view.index == 0
     return
 end
 
-switch get(src, 'tag')
+switch src.Tag
     
     case 'showbaseline'
         obj.plotBaseline();
@@ -682,36 +711,20 @@ switch get(src, 'tag')
         
     case 'clearbaseline'
         
-        axesChildren = get(obj.axes.main, 'children');
+        obj.clearAxesChildren('baseline');
         
-        if ~isempty(axesChildren)
-            axesTag = get(axesChildren, 'tag');
-            
-            if ~isempty(axesTag)
-                axesBaseline = strcmpi(axesTag, 'baseline');
-                
-                if any(axesBaseline)
-                    axesBaseline = axesChildren(axesBaseline);
-                    
-                    for i = 1:length(axesBaseline)
-                        set(axesBaseline(i), 'visible', 'off');
-                    end
-                end
-            end
+        if obj.controls.showBaseline.Value
+            obj.controls.showBaseline.Value = 0;
         end
         
-        if get(obj.controls.showBaseline, 'value')
-            set(obj.controls.showBaseline, 'value', 0);
-        end
+        obj.controls.smoothSlider.Value = 5.5;
+        obj.controls.asymSlider.Value = -5.5;
         
         if isempty(obj.data) || obj.view.index == 0
             return
         elseif ~isempty(obj.data(obj.view.index).baseline)
             obj.data(obj.view.index).baseline = [];
         end
-        
-        set(obj.controls.smoothSlider, 'value', 5.5);
-        set(obj.controls.asymSlider, 'value', -5.5);
         
 end
 
@@ -732,82 +745,26 @@ end
 % ---------------------------------------
 function peakEditTextCallback(obj, src, ~)
 
-switch get(src, 'tag')
+switch src.Tag
     
     case 'peakidedit'
         
         if ~isempty(obj.peaks.name)
-            str = obj.peaks.name(get(obj.controls.peakList, 'value'), 1);
-            set(obj.controls.peakIDEdit, 'string', str);
+            str = obj.peaks.name(obj.controls.peakList.Value, 1);
+            obj.controls.peakIDEdit.String = str;
         end
         
     case 'peaktimeedit'
-        
-        getStr = @(x) sprintf('%.3f', x);
-        
-        str = get(obj.controls.peakTimeEdit, 'string');
-        val = str2double(str);
-        
-        if isempty(obj.data) || obj.view.index == 0
-            str = '';
-        end
-        
-        if isempty(str) || isnan(val) || isinf(val)
-            str = '';
-        else
-            str = getStr(val);
-        end
-        
-        col = get(obj.controls.peakList, 'value');
-        row = obj.view.index;
-        
-        if row ~= 0 && ~isempty(obj.peaks.time)
-            time = obj.peaks.time{row,col};
-        else
-            time = val;
-        end
-        
-        if val < obj.axes.xlim(1) || val > obj.axes.xlim(2)
-            str = checkPeakEditText(obj, 'time');
-            newPeak = 0;
-        elseif isnumeric(time) && round(time * 1000) / 1000 ~= val
-            newPeak = 1;
-        else
-            newPeak = 0;
-        end
-        
-        set(obj.controls.peakTimeEdit, 'string', str);
-        
-        if strcmpi(get(obj.axes.zoom, 'enable'), 'off')
-            if strcmpi(get(obj.menu.view.zoom, 'checked'), 'on')
-                set(obj.axes.zoom, 'enable', 'on');
-                set(obj.figure, 'windowbuttonmotionfcn', @(src, evt) figureMotionCallback(obj, src, evt));
-            end
-        end
-        
-        if ~isempty(get(obj.axes.main, 'buttondownfcn'))
-            set(obj.axes.main, 'buttondownfcn', '');
-        end
-        
-        if ~isempty(str) && newPeak == 1
-            obj.getPeakFit();
-        elseif isempty(str)
-            set(obj.controls.peakWidthEdit, 'string', '');
-            set(obj.controls.peakHeightEdit, 'string', '');
-            set(obj.controls.peakAreaEdit, 'string', '');
-        end
+        obj.controls.peakTimeEdit.String = checkPeakEditText(obj, 'time');
               
     case 'peakwidthedit'
-        str = checkPeakEditText(obj, 'width');
-        set(obj.controls.peakWidthEdit, 'string', str);
+        obj.controls.peakWidthEdit.String = checkPeakEditText(obj, 'width');
 
     case 'peakheightedit'
-        str = checkPeakEditText(obj, 'height');
-        set(obj.controls.peakHeightEdit, 'string', str);
+        obj.controls.peakHeightEdit.String = checkPeakEditText(obj, 'height');
         
     case 'peakareaedit'
-        str = checkPeakEditText(obj, 'area');
-        set(obj.controls.peakAreaEdit, 'string', str);
+        obj.controls.peakAreaEdit.String = checkPeakEditText(obj, 'area');
         
 end
         
@@ -818,17 +775,10 @@ end
 % ---------------------------------------
 function str = checkPeakEditText(obj, field)
 
-getStr = @(x) sprintf('%.3f', x);
-
-if isempty(obj.data) || obj.view.index == 0
-    str = '';
-    return
-end
-
-col = get(obj.controls.peakList, 'value');
+col = obj.controls.peakList.Value;
 row = obj.view.index;
 
-if isempty(col) || col == 0
+if isempty(obj.data) || isempty(col) || col == 0 || row == 0
     str = '';
     return
 end
@@ -840,58 +790,8 @@ else
 end
 
 if ~isempty(str)
-    str = getStr(str);
+    str = sprintf('%.3f', str);
 end
-
-end
-
-% ---------------------------------------
-% Display Peak
-% ---------------------------------------
-function peakDisplayCallback(obj, ~, ~)
-
-obj.plotPeaks();
-
-end
-
-% ---------------------------------------
-% Clear Peak
-% ---------------------------------------
-function peakClearCallback(obj, ~, ~)
-
-if isempty(obj.data) || obj.view.index == 0
-    return
-end
-
-col = get(obj.controls.peakList, 'value');
-row = obj.view.index;
-
-if isempty(col) || col == 0
-    return
-end
-
-if length(obj.peaks.time(1,:)) >= col
-    obj.peaks.time{row,col}   = [];
-    obj.peaks.width{row,col}  = [];
-    obj.peaks.height{row,col} = [];
-    obj.peaks.area{row,col}   = [];
-    obj.peaks.error{row,col}  = [];
-    obj.peaks.fit{row,col}    = [];
-end
-
-set(obj.controls.peakTimeEdit,   'string', '');
-set(obj.controls.peakWidthEdit,  'string', '');
-set(obj.controls.peakHeightEdit, 'string', '');
-set(obj.controls.peakAreaEdit,   'string', '');
-
-offset = length(obj.peaks.name);
-
-obj.table.main.Data{row, col+13 + offset*0} = [];
-obj.table.main.Data{row, col+13 + offset*1} = [];
-obj.table.main.Data{row, col+13 + offset*2} = [];
-obj.table.main.Data{row, col+13 + offset*3} = [];
-
-obj.plotPeaks();
 
 end
 
@@ -904,7 +804,11 @@ switch evt.EventName
     
     case 'Action'
         
-        currentObject = get(get(obj.figure, 'currentobject'), 'tag');
+        if ~isprop(obj.figure.CurrentObject, 'tag')
+            return
+        else
+            currentObject = obj.figure.CurrentObject.Tag;
+        end
         
         if strcmpi(currentObject, src.Tag)
             
@@ -915,7 +819,7 @@ switch evt.EventName
             end
             
         else
-            set(src, 'value', obj.view.selectPeak);
+            src.Value = obj.view.selectPeak;
         end
         
 end
@@ -924,18 +828,22 @@ end
 
 function correctPosition(x)
 
-p1 = get(x, 'position');
-p2 = get(x, 'extent');
-
-if p1(3) < p2(3)
-    p1(3) = p2(3);
+if isprop(x, 'extent')
+    
+    p1 = get(x, 'position');
+    p2 = get(x, 'extent');
+    
+    if p1(3) < p2(3)
+        p1(3) = p2(3);
+    end
+    
+    if p1(4) < p2(4)
+        p1(4) = p2(4);
+    end
+    
+    set(x, 'position', p1);
+    
 end
-
-if p1(4) < p2(4)
-    p1(4) = p2(4);
-end
-
-set(x, 'position', p1);
 
 end
 

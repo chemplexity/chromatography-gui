@@ -5,7 +5,7 @@ function toolboxTable(obj, varargin)
 % ---------------------------------------
 backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 10;
+fontSize = 10;
 
 % ---------------------------------------
 % Table Columns (metadata)
@@ -100,7 +100,16 @@ switch evt.Indices(2)
     case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
     case 13
-        obj.data(evt.Indices(1)).injvol = evt.NewData;
+        if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
+            obj.data(evt.Indices(1)).injvol = evt.NewData;
+        elseif isnan(evt.NewData)
+            obj.data(evt.Indices(1)).injvol = [];
+            src.Data{evt.Indices(1), evt.Indices(2)} = [];
+            return
+        else
+            src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
+            return
+        end
 end
 
 src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
@@ -143,9 +152,7 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
-            set(obj.controls.editID,   'string', obj.view.id);
-            set(obj.controls.editName, 'string', obj.view.name);
-            
+            obj.updateSampleText();
             obj.updatePeakEditText();
             obj.updatePlot();
             

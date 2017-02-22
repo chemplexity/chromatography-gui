@@ -228,7 +228,7 @@ for i = 1:length(file)
     end
     
     data(i,1).file_size = subsref(dir(file(i).Name), substruct('.', 'bytes'));
-        
+
     % ---------------------------------------
     % Status
     % ---------------------------------------
@@ -247,22 +247,26 @@ for i = 1:length(file)
         break
     end
     
-    f = fopen(file(i).Name, 'r');
-    
-    switch option.content
+    if data(i,1).file_size ~= 0
         
-        case {'all', 'default'}
+        f = fopen(file(i).Name, 'r');
+        
+        switch option.content
             
-            data(i,1) = parseinfo(f, data(i,1));
-            data(i,1) = parsedata(f, data(i,1));
-            
-        case {'header'}
-            
-            data(i,1) = parseinfo(f, data(i,1));
-            
+            case {'all', 'default'}
+                
+                data(i,1) = parseinfo(f, data(i,1));
+                data(i,1) = parsedata(f, data(i,1));
+                
+            case {'header'}
+                
+                data(i,1) = parseinfo(f, data(i,1));
+                
+        end
+        
+        fclose(f);
+        
     end
-    
-    fclose(f);
     
     m = num2str(i);
     n = num2str(length(file));
