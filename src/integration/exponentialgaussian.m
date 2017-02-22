@@ -472,9 +472,9 @@ else
 end
 
 % Scale to Agilent Peak Area
-if area ~= 0
-    area = (area - 0.001107524) / 0.016599114;
-end
+%if area ~= 0
+%    area = (area - 0.001107524) / 0.016599114;
+%end
 
 end
 
