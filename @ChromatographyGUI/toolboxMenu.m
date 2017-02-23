@@ -85,33 +85,38 @@ obj.menu.edit.main = uimenu(...
     'tag',      'editmenu');
 
 % ---------------------------------------
-% Edit Menu --> Table
+% Edit Menu --> Copy
 % ---------------------------------------
-obj.menu.edit.table.main = uimenu(...
+obj.menu.edit.copy.main = uimenu(...
     'parent',   obj.menu.edit.main,...
-    'label',    'Table',...
-    'tag',      'edittablemenu');
+    'label',    'Copy',...
+    'tag',      'editcopymenu');
 
-obj.menu.edit.table.delete = uimenu(...
-    'parent',   obj.menu.edit.table.main,...
-    'label',    'Delete selected rows...',...
+obj.menu.edit.copy.figure = uimenu(...
+    'parent',   obj.menu.edit.copy.main,...
+    'label',    'Figure',...
+    'tag',      'copyfiguremenu',...
+    'callback', @obj.copyFigure);
+
+obj.menu.edit.copy.table = uimenu(...
+    'parent',   obj.menu.edit.copy.main,...
+    'label',    'Table',...
+    'tag',      'copytablemenu',...
+    'callback', @obj.copyTable);
+
+% ---------------------------------------
+% Edit Menu --> Delete
+% ---------------------------------------
+obj.menu.edit.delete.main = uimenu(...
+    'parent',   obj.menu.edit.main,...
+    'label',    'Delete',...
+    'tag',      'deletemenu');
+
+obj.menu.edit.delete.selected = uimenu(...
+    'parent',   obj.menu.edit.delete.main,...
+    'label',    'Selected rows...',...
     'tag',      'deletetablerowmenu',...
     'callback', @(src, event) tableDeleteRowMenu(obj, src, event));
-
-% ---------------------------------------
-% Edit Menu --> Peaks
-% ---------------------------------------
-%obj.menu.edit.peaks.main = uimenu(...
-%    'parent',   obj.menu.edit.main,...
-%    'label',    'Peaks',...
-%    'tag',      'peaksmenu');
-
-%obj.menu.edit.peaks.autodetect = uimenu(...
-%    'parent',   obj.menu.edit.peaks.main,...
-%    'label',    'Auto-Detection',...
-%    'tag',      'peakautodetectmenu',...
-%    'checked',  'on',...
-%    'callback', @(src, event) peakAutoDetectMenu(obj, src, event));
 
 % ---------------------------------------
 % View Menu
@@ -154,11 +159,6 @@ obj.menu.help.update = uimenu(...
     'tag',      'updatemenu',...
     'callback', @(src, event) updateToolboxCallback(obj, src, event));
 
-%obj.menu.help.about = uimenu(...
-%    'parent',   obj.menu.help.main,...
-%    'label',    'About',...
-%    'tag',      'aboutmenu');
-
 end
 
 % ---------------------------------------
@@ -175,21 +175,23 @@ if ~isempty(data) && isstruct(data)
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
             
             obj.data = [obj.data; data(i)];
-            tableAppendCallback(obj);
             
             if ~isempty(obj.peaks.name)
                 
-                cols = length(obj.peaks.name);
-                rows = length(obj.data);
+                nCol = length(obj.peaks.name);
+                nRow = length(obj.data);
                 
-                obj.peaks.time{rows, cols}   = [];
-                obj.peaks.width{rows, cols}  = [];
-                obj.peaks.height{rows, cols} = [];
-                obj.peaks.area{rows, cols}   = [];
-                obj.peaks.error{rows, cols}  = [];
-                obj.peaks.fit{rows, cols}    = [];
+                obj.peaks.time{nRow, nCol}   = [];
+                obj.peaks.width{nRow, nCol}  = [];
+                obj.peaks.height{nRow, nCol} = [];
+                obj.peaks.area{nRow, nCol}   = [];
+                obj.peaks.error{nRow, nCol}  = [];
+                obj.peaks.fit{nRow, nCol}    = [];
                 
             end
+            
+            obj.appendTableData();
+            
         end
     end
     
@@ -219,40 +221,21 @@ if ischar(fileName) && ischar(filePath)
             obj.peaks = obj.data(1).peaks;
             
             if ~isempty(obj.peaks.name)
-                
-                rows = length(obj.data);
-                cols = length(obj.peaks.name);
-                
-                if size(obj.peaks.time,1) < rows
-                    obj.peaks.time{rows,1}   = [];
-                    obj.peaks.width{rows,1}  = [];
-                    obj.peaks.height{rows,1} = [];
-                    obj.peaks.area{rows,1}   = [];
-                    obj.peaks.error{rows,1}  = [];
-                    obj.peaks.fit{rows,1}    = [];
-                end
-                
-                if size(obj.peaks.time,2) < cols
-                    obj.peaks.time{1,cols}   = [];
-                    obj.peaks.width{1,cols}  = [];
-                    obj.peaks.height{1,cols} = [];
-                    obj.peaks.area{1,cols}   = [];
-                    obj.peaks.error{1,cols}  = [];
-                    obj.peaks.fit{1,cols}    = [];
-                end
-                
+                nRow = length(obj.data);
+                nCol = length(obj.peaks.name);
+                obj.validatePeakData(nRow, nCol);
             end
             
-            obj.table.main.Data = [];
+            obj.checkpoint = [filePath, fileName];
             
-            tableHeaderRefreshCallback(obj);
-            tableDataRefreshCallback(obj);
+            obj.clearTableData();
+            obj.resetTableHeader();
+            obj.resetTableData();
+            
             listboxRefreshCallback(obj);
             
-            obj.checkpoint = [filePath, fileName];
             obj.updatePeakEditText();
-            obj.updateFigure();
-            
+            obj.updateFigure(); 
         end
     end
 end
@@ -266,12 +249,9 @@ function saveCheckpoint(obj, varargin)
 
 if ~isempty(obj.data)
     data = obj.data;
+    data(1).peaks = obj.peaks;
 else
     return
-end
-
-if ~isempty(obj.peaks.name)
-    data(1).peaks = obj.peaks;
 end
 
 fileName = [];
@@ -305,7 +285,7 @@ if isempty(fileName)
     
 end
 
-if ischar(fileName) && ~isempty(data)
+if ischar(fileName) && ischar(filePath) && ~isempty(data)
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
@@ -321,12 +301,9 @@ function saveMatlabCallback(obj, varargin)
 
 if ~isempty(obj.data)
     data = obj.data;
+    data(1).peaks = obj.peaks;
 else
     return
-end
-
-if ~isempty(obj.peaks.name)
-    data(1).peaks = obj.peaks;
 end
 
 if ~isempty(obj.checkpoint)
@@ -347,8 +324,8 @@ if ischar(fileName) && ischar(filePath) && ~isempty(data)
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
-    obj.checkpoint = [filePath, fileName];
     cd(currentPath);
+    obj.checkpoint = [filePath, fileName];
 end
 
 end
@@ -371,10 +348,10 @@ filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
     'Save As...',...
     filterDefaultName);
 
-[~, ~, fileExtension] = fileparts(fileName);
-
 if ischar(fileName) && ischar(filePath)
-    
+
+    [~, ~, fileExtension] = fileparts(fileName);
+
     switch fileExtension
         case {'.png'}
             fileType = '-dpng';
@@ -405,12 +382,32 @@ if ischar(fileName) && ischar(filePath)
         axesTags = get(axesHandles, 'tag');
         axesPlot = strcmpi(axesTags, 'axesplot');
         
+        p1 = [];
+        p2 = [];
+        
         if any(axesPlot)
-            p1 = get(axesHandles(axesPlot), 'position');
-            p2 = get(axesHandles(axesPlot), 'outerposition');
+
+            uiProperties = properties(axesHandles(axesPlot));
+
+            if any(strcmp(uiProperties, 'OuterPosition'))
+                p1 = get(axesHandles(axesPlot), 'position');
+                p2 = get(axesHandles(axesPlot), 'outerposition');
+            end
+            
         else
+            
+            uiProperties = properties(axesHandles(axesPlot));
+            
+            if any(strcmp(uiProperties, 'OuterPosition'))
+                p1 = get(gca, 'position');
+                p2 = get(gca, 'outerposition');
+            end
+            
+        end
+        
+        if isempty(p1) || isempty(p2)
             p1 = get(gca, 'position');
-            p2 = get(gca, 'outerposition');
+            p2 = p1;
         end
         
         axesPosition(1) = p1(1) - p2(1);
@@ -443,9 +440,8 @@ if ischar(fileName) && ischar(filePath)
         end
         
         if ishandle(exportFigure)
-            delete(exportFigure);
+            close(exportFigure);
         end
-        
     end
 end
 
@@ -460,29 +456,31 @@ if isempty(obj.data)
     return
 end
 
-tableHeader = get(obj.table.main, 'columnname');
-tableData   = get(obj.table.main, 'data');
-
-tableHeader(1) = [];
-tableData(:,1) = [];
-
-if length(tableData(1,:)) ~= length(tableHeader)
-    tableData{end, length(tableHeader)} = [];
+if size(obj.table.main.Data,2) ~= length(obj.table.main.ColumnName)
+    obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
 end
 
-excelData = [];
-
 try
-    excelData = tableHeader';
-    excelData(2:length(tableData(:,1))+1, 1:length(tableData(1,:))) = tableData;
+    excelData = [obj.table.main.ColumnName'; obj.table.main.Data];
 catch
+    excelData = obj.table.main.Data;
 end
 
 if isempty(excelData)
     return
 end
 
-filterExtensions = '*.xls;*.xlsx';
+if length(excelData(1,:)) >= 14
+    for i = 1:length(excelData(:,1))
+        for j = 14:length(excelData(1,:))
+            if ~isempty(excelData{i,j}) && isnumeric(excelData{i,j})
+                excelData{i,j} = round(excelData{i,j},4);
+            end
+        end 
+    end
+end
+
+filterExtensions  = '*.xls;*.xlsx';
 filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
 filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
@@ -509,15 +507,12 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
-tableHeader = get(obj.table.main, 'columnname');
-tableData   = get(obj.table.main, 'data');
+tableHeader = obj.table.main.ColumnName;
+tableData   = obj.table.main.Data;
 
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
-
-tableHeader(1) = [];
-tableData(:,1) = [];
 
 filterExtensions  = '*.csv';
 filterDescription = 'CSV file (*.csv)';
@@ -544,7 +539,7 @@ if ischar(fileName) && ischar(filePath)
     end
     
     tableHeader{1,1} = ['''', tableHeader{1,1}];
-    tableFmt = [repmat('%s, ', 1, length(tableHeader)-1), '%s\n'];
+    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '\n'];
     
     f = fopen(fileName, 'w');
     
@@ -556,77 +551,6 @@ if ischar(fileName) && ischar(filePath)
     
     fclose(f);
     cd(currentPath);
-    
-end
-
-end
-
-% ---------------------------------------
-% Refresh Table Header
-% ---------------------------------------
-function tableHeaderRefreshCallback(obj, varargin)
-
-tableHeader = obj.table.main.ColumnName(1:14);
-
-if ~isempty(obj.peaks.name)
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Time (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Area (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Height (', obj.peaks.name{i}, ')']};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        tableHeader(end+1) = {['Width (', obj.peaks.name{i}, ')']};
-    end
-    
-end
-
-obj.table.main.ColumnName = tableHeader;
-
-end
-
-% ---------------------------------------
-% Refresh Table Data
-% ---------------------------------------
-function tableDataRefreshCallback(obj, varargin)
-
-if isempty(obj.data)
-    return
-end
-
-x = length(obj.peaks.name);
-
-for i = 1:length(obj.data)
-    
-    obj.table.main.Data{i,1}  = i;
-    obj.table.main.Data{i,2}  = obj.data(i).file_path;
-    obj.table.main.Data{i,3}  = obj.data(i).file_name;
-    obj.table.main.Data{i,4}  = obj.data(i).datetime;
-    obj.table.main.Data{i,5}  = obj.data(i).instrument;
-    obj.table.main.Data{i,6}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,7}  = obj.data(i).method_name;
-    obj.table.main.Data{i,8}  = obj.data(i).operator;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,10} = obj.data(i).sample_info;
-    obj.table.main.Data{i,11} = obj.data(i).seqindex;
-    obj.table.main.Data{i,12} = obj.data(i).vial;
-    obj.table.main.Data{i,13} = obj.data(i).replicate;
-    
-    if ~isempty(obj.peaks.name)
-        for j = 1:x
-            obj.table.main.Data{i, 14+j + x*0} = obj.peaks.time{i,j};
-            obj.table.main.Data{i, 14+j + x*1} = obj.peaks.area{i,j};
-            obj.table.main.Data{i, 14+j + x*2} = obj.peaks.height{i,j};
-            obj.table.main.Data{i, 14+j + x*3} = obj.peaks.width{i,j};
-        end
-    end
     
 end
 
@@ -648,35 +572,6 @@ set(obj.controls.peakList, 'string', obj.peaks.name);
 end
 
 % ---------------------------------------
-% Append Table
-% ---------------------------------------
-function tableAppendCallback(obj, varargin)
-
-if isempty(obj.data)
-    return
-end
-
-for i = length(obj.table.main.Data)+1:length(obj.data)
-    
-    obj.table.main.Data{i,1}  = i;
-    obj.table.main.Data{i,2}  = obj.data(i).file_path;
-    obj.table.main.Data{i,3}  = obj.data(i).file_name;
-    obj.table.main.Data{i,4}  = obj.data(i).datetime;
-    obj.table.main.Data{i,5}  = obj.data(i).instrument;
-    obj.table.main.Data{i,6}  = obj.data(i).instmodel;
-    obj.table.main.Data{i,7}  = obj.data(i).method_name;
-    obj.table.main.Data{i,8}  = obj.data(i).operator;
-    obj.table.main.Data{i,9}  = obj.data(i).sample_name;
-    obj.table.main.Data{i,10} = obj.data(i).sample_info;
-    obj.table.main.Data{i,11} = obj.data(i).seqindex;
-    obj.table.main.Data{i,12} = obj.data(i).vial;
-    obj.table.main.Data{i,13} = obj.data(i).replicate;
-    
-end
-
-end
-
-% ---------------------------------------
 % Delete Table Row
 % ---------------------------------------
 function tableDeleteRowMenu(obj, varargin)
@@ -687,6 +582,7 @@ else
     row = '';
 end
 
+obj.table.selection = unique(obj.table.selection(:,1));
 nRows = length(obj.table.selection(:,1));
 
 for i = 1:nRows
@@ -801,9 +697,9 @@ link.mac     = 'https://git-scm.com/download/mac';
 link.linux   = 'https://git-scm.com/download/linux';
 
 option.git     = [];
-option.branch  = 'master';
-option.force   = true;
 option.verbose = true;
+
+previousVersion = ['v', obj.version, '.', obj.date];
 
 msg = 'Updating toolbox...';
 h = waitbar(0, msg);
@@ -815,7 +711,7 @@ fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'UPDATE');
 fprintf(['\n', repmat('-',1,50), '\n\n']);
 
-fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n\n']);
+fprintf([obj.name, ' (', previousVersion, ')\n\n']);
 
 fprintf(' STATUS  %s \n', 'Checking online for updates...');
 
@@ -847,7 +743,7 @@ if ispc
         
         if gitStatus
             
-            msg = ['Visit ', link.windows, ' to and install Git for Windows...'];
+            msg = ['Visit ', link.windows, ' to install Git for Windows...'];
             
             fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
             fprintf(' STATUS  %s \n', msg);
@@ -879,9 +775,9 @@ elseif isunix
     if gitStatus
         
         if ismac
-            msg = ['Visit ', link.mac, ' to and install Git for OSX...'];
+            msg = ['Visit ', link.mac, ' to install Git for OSX...'];
         else
-            msg = ['Visit ', link.linux, ' to and install Git for Linux...'];
+            msg = ['Visit ', link.linux, ' to install Git for Linux...'];
         end
         
         fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
@@ -967,37 +863,27 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
-[~,~] = system(['"', option.git, '" pull']);
+[gitTest, branchName] = system(['"', option.git, '" rev-parse --abbrev-ref HEAD']);
 
-if gitTest
-    
-    if option.force
-        gitCmd = '" checkout -f master';
-    else
-        gitCmd = '" checkout master';
-    end
-    
-    [~,~] = system(['"', option.git, gitCmd]);
-    
+if gitTest || isempty(branchName)
+    branchName = 'master';
+elseif ischar(branchName)
+    branchName = deblank(strtrim(branchName));
 end
 
-if ishandle(h)
-    waitbar(0.9, h, msg);
-end
+[~,~] = system(['"', option.git, '" fetch origin']);
 
-% ---------------------------------------
-% Checkout branch
-% ---------------------------------------
-if ~isempty(option.branch)
+switch branchName
     
-    if option.force
-        gitCmd = ['" checkout -f ', option.branch];
-    else
-        gitCmd = ['" checkout ', option.branch];
-    end
+    case {'master', 'HEAD'}
+        [~,~] = system(['"', option.git, '" pull origin master']);
     
-    [~,~] = system(['"', option.git, gitCmd]);
+    case {'develop', 'dev'}
+        [~,~] = system(['"', option.git, '" pull origin develop']);
     
+    otherwise
+        [~,~] = system(['"', option.git, '" pull origin master']);
+        
 end
 
 if ishandle(h)
@@ -1007,9 +893,14 @@ end
 % ---------------------------------------
 % Status
 % ---------------------------------------
-fprintf(' STATUS  %s \n', 'Update complete!');
-fprintf('\n');
-fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n']);
+currentVersion = ['v', ChromatographyGUI.version, '.', ChromatographyGUI.date];
+
+if strcmpi(currentVersion, previousVersion)
+    fprintf(' STATUS  %s \n', 'Already up-to-date!');
+else
+    fprintf(' STATUS  %s \n', 'Update complete!');
+    fprintf([ChromatographyGUI.name, ' (', currentVersion, ')\n']);
+end
 
 fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'EXIT');
@@ -1018,6 +909,11 @@ fprintf(['\n', repmat('-',1,50), '\n\n']);
 if ishandle(h)
     waitbar(1.0, h, msg);
     close(h)
+end
+
+if ~strcmpi(currentVersion, previousVersion)
+    msg = 'Please restart ChromatographyGUI to complete update...';
+    questdlg(msg, currentVersion, 'OK', 'OK');
 end
 
 end

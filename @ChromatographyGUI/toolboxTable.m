@@ -5,13 +5,12 @@ function toolboxTable(obj, varargin)
 % ---------------------------------------
 backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 10;
+fontSize = 10;
 
 % ---------------------------------------
 % Table Columns (metadata)
 % ---------------------------------------
 columnParameters = {...
-    'ID',         35,    false,   'numeric';...
     'Filepath',   125,   false,   'char';...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
@@ -59,7 +58,7 @@ end
 obj.table.main = uitable(...
     'parent',                obj.panel.table,...
     'tag',                   'datatable',...
-    'rowname',               [],...
+    'rowname',               {'numbered'},...
     'rowstriping',           'off',...
     'units',                 'normalized',...
     'position',              [0,0,1,1],...
@@ -90,18 +89,27 @@ end
 
 switch evt.Indices(2)
     
-    case 5
+    case 4
         obj.data(evt.Indices(1)).instrument = evt.NewData;
-    case 6
+    case 5
         obj.data(evt.Indices(1)).instmodel = evt.NewData;
-    case 8
+    case 7
         obj.data(evt.Indices(1)).operator = evt.NewData;
-    case 9
+    case 8
         obj.data(evt.Indices(1)).sample_name = evt.NewData;
-    case 10
+    case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
-    case 14
-        obj.data(evt.Indices(1)).injvol = evt.NewData;
+    case 13
+        if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
+            obj.data(evt.Indices(1)).injvol = evt.NewData;
+        elseif isnan(evt.NewData)
+            obj.data(evt.Indices(1)).injvol = [];
+            src.Data{evt.Indices(1), evt.Indices(2)} = [];
+            return
+        else
+            src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
+            return
+        end
 end
 
 src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
@@ -122,15 +130,15 @@ end
 % ---------------------------------------
 function tableKeyDownCallback(obj, ~, evt)
 
+if isempty(obj.table.selection) || isempty(obj.data)
+    return
+end
+
 if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-        case 'return'
-            
-            if isempty(obj.table.selection) || isempty(obj.data)
-                return
-            end
+       case 'return'
             
             obj.table.selection = obj.table.selection(1,:);
             
@@ -144,9 +152,7 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
-            set(obj.controls.editID,   'string', obj.view.id);
-            set(obj.controls.editName, 'string', obj.view.name);
-            
+            obj.updateSampleText();
             obj.updatePeakEditText();
             obj.updatePlot();
             
@@ -197,6 +203,8 @@ end
 % Table Delete Row
 % ---------------------------------------
 function message = tableDeleteMessage(obj)
+
+obj.table.selection = unique(obj.table.selection(:,1));
 
 row = '';
 nRows = length(obj.table.selection(:,1));
