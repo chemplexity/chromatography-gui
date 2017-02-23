@@ -5,7 +5,7 @@ classdef ChromatographyGUI < handle
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.4';
-        date        = '20170222';
+        date        = '20170223';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -326,13 +326,13 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            if isempty(col) || col == 0
+            if isempty(col) || col == 0 || isempty(obj.peaks.name)
                 id     = '';
                 time   = '';
                 width  = '';
                 height = '';
                 area   = '';
-            elseif col ~= 0 && (row == 0 || isempty(obj.data))
+            elseif col ~= 0 && length(obj.peaks.name) >= col && (row == 0 || isempty(obj.data))
                 id     = obj.peaks.name{col};
                 time   = '';
                 width  = '';

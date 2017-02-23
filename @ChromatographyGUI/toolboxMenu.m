@@ -235,8 +235,7 @@ if ischar(fileName) && ischar(filePath)
             listboxRefreshCallback(obj);
             
             obj.updatePeakEditText();
-            obj.updateFigure();
-            
+            obj.updateFigure(); 
         end
     end
 end
@@ -250,6 +249,7 @@ function saveCheckpoint(obj, varargin)
 
 if ~isempty(obj.data)
     data = obj.data;
+    data(1).peaks = obj.peaks;
 else
     return
 end
@@ -286,16 +286,10 @@ if isempty(fileName)
 end
 
 if ischar(fileName) && ischar(filePath) && ~isempty(data)
-    
-    if ~isempty(obj.peaks.name)
-        data(1).peaks = obj.peaks;
-    end
-
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
     cd(currentPath);
-    
 end
 
 end
@@ -307,6 +301,7 @@ function saveMatlabCallback(obj, varargin)
 
 if ~isempty(obj.data)
     data = obj.data;
+    data(1).peaks = obj.peaks;
 else
     return
 end
@@ -326,17 +321,11 @@ filterDescription = 'MAT-files (*.mat)';
     filterDefaultName);
 
 if ischar(fileName) && ischar(filePath) && ~isempty(data)
-    
-    if ~isempty(obj.peaks.name)
-        data(1).peaks = obj.peaks;
-    end
-
     currentPath = pwd;
     cd(filePath);
     save(fileName, 'data', '-mat');
-    obj.checkpoint = [filePath, fileName];
     cd(currentPath);
-    
+    obj.checkpoint = [filePath, fileName];
 end
 
 end
@@ -710,6 +699,8 @@ link.linux   = 'https://git-scm.com/download/linux';
 option.git     = [];
 option.verbose = true;
 
+previousVersion = ['v', obj.version, '.', obj.date];
+
 msg = 'Updating toolbox...';
 h = waitbar(0, msg);
 
@@ -720,7 +711,7 @@ fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'UPDATE');
 fprintf(['\n', repmat('-',1,50), '\n\n']);
 
-fprintf([obj.name, ' (v', obj.version, '.', obj.date, ')\n\n']);
+fprintf([obj.name, ' (', previousVersion, ')\n\n']);
 
 fprintf(' STATUS  %s \n', 'Checking online for updates...');
 
@@ -752,7 +743,7 @@ if ispc
         
         if gitStatus
             
-            msg = ['Visit ', link.windows, ' to and install Git for Windows...'];
+            msg = ['Visit ', link.windows, ' to install Git for Windows...'];
             
             fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
             fprintf(' STATUS  %s \n', msg);
@@ -784,9 +775,9 @@ elseif isunix
     if gitStatus
         
         if ismac
-            msg = ['Visit ', link.mac, ' to and install Git for OSX...'];
+            msg = ['Visit ', link.mac, ' to install Git for OSX...'];
         else
-            msg = ['Visit ', link.linux, ' to and install Git for Linux...'];
+            msg = ['Visit ', link.linux, ' to install Git for Linux...'];
         end
         
         fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
@@ -872,10 +863,28 @@ end
 % ---------------------------------------
 fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
-%[~,~] = system(['"', option.git, '" stash']);
-[~,~] = system(['"', option.git, '" checkout master']);
-[~,~] = system(['"', option.git, '" pull origin master']);
-%[~,~] = system(['"', option.git, '" stash pop']);
+[gitTest, branchName] = system(['"', option.git, '" rev-parse --abbrev-ref HEAD']);
+
+if gitTest || isempty(branchName)
+    branchName = 'master';
+elseif ischar(branchName)
+    branchName = deblank(strtrim(branchName));
+end
+
+[~,~] = system(['"', option.git, '" fetch origin']);
+
+switch branchName
+    
+    case {'master', 'HEAD'}
+        [~,~] = system(['"', option.git, '" pull origin master']);
+    
+    case {'develop', 'dev'}
+        [~,~] = system(['"', option.git, '" pull origin develop']);
+    
+    otherwise
+        [~,~] = system(['"', option.git, '" pull origin master']);
+        
+end
 
 if ishandle(h)
     waitbar(0.9, h, msg);
@@ -884,13 +893,14 @@ end
 % ---------------------------------------
 % Status
 % ---------------------------------------
-fprintf(' STATUS  %s \n', 'Update complete!');
-fprintf('\n');
+currentVersion = ['v', ChromatographyGUI.version, '.', ChromatographyGUI.date];
 
-fprintf([...
-    ChromatographyGUI.name, ' (v',...
-    ChromatographyGUI.version, '.',...
-    ChromatographyGUI.date, ')\n']);
+if strcmpi(currentVersion, previousVersion)
+    fprintf(' STATUS  %s \n', 'Already up-to-date! \n');
+else
+    fprintf(' STATUS  %s \n', 'Update complete! \n');
+    fprintf([ChromatographyGUI.name, ' (', currentVersion, ')\n']);
+end
 
 fprintf(['\n', repmat('-',1,50), '\n']);
 fprintf(' %s', 'EXIT');
@@ -899,6 +909,11 @@ fprintf(['\n', repmat('-',1,50), '\n\n']);
 if ishandle(h)
     waitbar(1.0, h, msg);
     close(h)
+end
+
+if ~strcmpi(currentVersion, previousVersion)
+    msg = 'Please restart ChromatographyGUI to complete update...';
+    questdlg(msg, currentVersion, 'OK', 'OK');
 end
 
 end
