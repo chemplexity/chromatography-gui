@@ -896,9 +896,9 @@ end
 currentVersion = ['v', ChromatographyGUI.version, '.', ChromatographyGUI.date];
 
 if strcmpi(currentVersion, previousVersion)
-    fprintf(' STATUS  %s \n', 'Already up-to-date! \n');
+    fprintf(' STATUS  %s \n', 'Already up-to-date!');
 else
-    fprintf(' STATUS  %s \n', 'Update complete! \n');
+    fprintf(' STATUS  %s \n', 'Update complete!');
     fprintf([ChromatographyGUI.name, ' (', currentVersion, ')\n']);
 end
 
