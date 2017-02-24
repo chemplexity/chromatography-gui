@@ -725,7 +725,7 @@ end
 
 function developerModeCallback(~, src, ~)
 
-[gitStatus, ~] = system('git');
+[gitStatus, ~] = system('git --version');
 
 if gitStatus
     return
