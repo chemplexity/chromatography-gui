@@ -4,8 +4,8 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.4';
-        date        = '20170223';
+        version     = '0.0.5';
+        date        = '20170224';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -688,13 +688,15 @@ classdef ChromatographyGUI < handle
                 y = y - b(:,2);
             end
             
-            peak = exponentialgaussian(x, y, 'center', time, 'width', width);
+            peak = exponentialgaussian(x, y,...
+                'center', time,...
+                'width', width);
             
             if ~isempty(peak) && peak.area ~= 0 && peak.width ~= 0
                 
                 if ~isempty(peak.fit)
                     
-                    y = peak.fit;
+                    yfit = peak.fit;
                     
                     if length(peak.fit) == length(x)
                         
@@ -728,20 +730,20 @@ classdef ChromatographyGUI < handle
                             end
                             
                             x = x(yFilter);
-                            y = y(yFilter);
+                            yfit = yfit(yFilter);
                             b = b(yFilter,2);
                             
                             yCutoff = 1E-5;
-                            yFilter = y >= yCutoff;
+                            yFilter = yfit >= yCutoff;
                             
                             if any(yFilter)
                                 x = x(yFilter);
-                                y = y(yFilter);
+                                yfit = yfit(yFilter);
                                 b = b(yFilter);
                             end
                             
-                            if size(y,1) == size(b,1)
-                                y = y + b;
+                            if size(yfit,1) == size(b,1)
+                                yfit = yfit + b;
                             end
                             
                         end
@@ -753,11 +755,11 @@ classdef ChromatographyGUI < handle
                             
                             if any(xFilter)
                                 x(xFilter) = [];
-                                y(xFilter) = [];
+                                yfit(xFilter) = [];
                             end
                             
-                            if ~isempty(x) && ~isempty(y) && length(x) == length(y)
-                                peak.fit = [x,y];
+                            if ~isempty(x) && ~isempty(yfit) && length(x) == length(yfit)
+                                peak.fit = [x,yfit];
                             end
                             
                         end

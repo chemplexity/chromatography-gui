@@ -62,9 +62,9 @@ addRequired(p, 'y', @ismatrix);
 
 addOptional(p, 'x', [], @isnumeric);
 
-addParameter(p, 'center', default.center);
-addParameter(p, 'width',  default.width);
-    
+addParameter(p, 'center',   default.center);
+addParameter(p, 'width',    default.width);
+
 parse(p, varargin{:});
 
 % ---------------------------------------
@@ -348,9 +348,9 @@ for i = 1:length(y(1,:))
     
     peaks.time(i)   = c(index);
     peaks.height(i) = h(index);
-    peaks.width(i) = w(yIndex);
+    peaks.width(i)  = w(yIndex);
     peaks.error(i)  = rmsd(yIndex);
-    peaks.fit(:,i) = yfit(:,yIndex);
+    peaks.fit(:,i)  = yfit(:,yIndex);
     
     if size(x,1) == size(peaks.fit(:,i), 1)
         peaks.area(i) = peakArea(x, y, peaks.fit(:,i));
@@ -437,36 +437,73 @@ end
 
 function area = peakArea(x0, y0, y1)
 
-ymin = min(y1);
-ymax = max(y1);
+yFilter = y1 >= min(y1) + 0.001 * (max(y1)-min(y1));
 
-x0 = x0(y1 >= ymin + 0.001 * (ymax-ymin));
-y0 = y0(y1 >= ymin + 0.001 * (ymax-ymin));
+x0 = x0(yFilter);
+y0 = y0(yFilter);
+y1 = y1(yFilter);
 
-if length(y0) <= 1 || length(x0) ~= length(y0)
+if isempty(y0) || length(x0) ~= length(y0)
     area = 0;
     return
 end
 
-x0 = [x0(1)-(x0(2)-x0(1)); x0; x0(end)+x0(end)-x0(end-1)];
-y0 = [0; y0; 0];
+[~, xi] = max(y1);
 
-f0 = 5000;
+dy0 = diff(y0);
+dy1 = diff(y1);
+
+% Filter peak tail
+[~, dyi] = min(dy1(xi:end));
+dyi = xi + dyi - 1;
+
+yTailFilter = find(dy0(dyi:end) > 0, 2);
+
+if ~isempty(yTailFilter)
+    
+    yTailFilter = max(yTailFilter)  + dyi;
+    
+    if yTailFilter <= length(y0)
+        x0(yTailFilter:end) = [];
+        y0(yTailFilter:end) = [];
+    end
+end
+
+% Filter peak front
+[~, dyi] = max(dy1(1:xi));
+
+yFrontFilter = find(dy0(1:dyi) < 0);
+
+if ~isempty(yFrontFilter)
+    
+    if length(yFrontFilter) > 1
+        yFrontFilter = yFrontFilter(end-1);
+    else
+        yFrontFilter = yFrontFilter(end);
+    end
+
+    if yFrontFilter <= length(y0)
+        x0(1:yFrontFilter) = [];
+        y0(1:yFrontFilter) = [];
+    end
+end
+
+f0 = 3000;
 f1 = 1/mean(diff(x0));
 
 if f1 < f0
     xi = min(x0) : 1/f0 : max(x0);
     yi = interp1(x0, y0, xi, 'pchip');
 else
-    xi = x;
-    yi = y;
+    xi = x0;
+    yi = y0;
 end
 
 dx = diff(xi);
-dy = 0.5 * (yi(1:end-1) + yi(2:end));
+dy = yi(1:end-1) + yi(2:end);
 
 if length(dx) == length(dy)
-    area = sum(dx.*dy);
+    area = sum(dx.*dy) / 2;
 else
     area = 0;
 end

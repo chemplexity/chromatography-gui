@@ -68,7 +68,7 @@ obj.menu.file.csv.save = uimenu(...
     'parent',   obj.menu.file.saveas,...
     'label',    'CSV (*.csv)',...
     'tag',      'saveasxlsmenu',...
-    'callback', @(src, event) saveCSVCallback(obj, src, event));
+    'callback', @(src, event) saveCsvCallback(obj, src, event));
 
 obj.menu.file.img.save = uimenu(...
     'parent',   obj.menu.file.saveas,...
@@ -140,11 +140,6 @@ obj.menu.view.label = uimenu(...
     'checked',  'on',...
     'callback', @(src, event) labelMenuCallback(obj, src, event));
 
-%obj.menu.view.preferences = uimenu(...
-%    'parent',   obj.menu.view.main,...
-%    'label',    'Preferences',...
-%    'tag',      'preferencemenu');
-
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
@@ -158,6 +153,37 @@ obj.menu.help.update = uimenu(...
     'label',    'Check for updates...',...
     'tag',      'updatemenu',...
     'callback', @(src, event) updateToolboxCallback(obj, src, event));
+
+% ---------------------------------------
+% Developer Mode
+% ---------------------------------------
+sourcePath = dir(fileparts(fileparts(mfilename('fullpath'))));
+
+if any(strcmpi('.git', {sourcePath.name}))
+    [gitStatus, ~] = system('git --version');
+    
+    if ~gitStatus
+        [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
+        
+        if ~gitStatus
+            gitBranch = deblank(strtrim(gitBranch));
+            
+            if strcmpi(gitBranch, 'develop')
+                developerMode = 'on';
+            else
+                developerMode = 'off';
+            end
+            
+            obj.menu.help.experimental = uimenu(...
+                'parent',   obj.menu.help.main,...
+                'label',    'Developer Mode',...
+                'tag',      'developermode',...
+                'checked',  developerMode,...
+                'callback', @(src, event) developerModeCallback(obj, src, event));
+            
+        end
+    end
+end
 
 end
 
@@ -173,31 +199,14 @@ if ~isempty(data) && isstruct(data)
     for i = 1:length(data)
         
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
-            
             obj.data = [obj.data; data(i)];
-            
-            if ~isempty(obj.peaks.name)
-                
-                nCol = length(obj.peaks.name);
-                nRow = length(obj.data);
-                
-                obj.peaks.time{nRow, nCol}   = [];
-                obj.peaks.width{nRow, nCol}  = [];
-                obj.peaks.height{nRow, nCol} = [];
-                obj.peaks.area{nRow, nCol}   = [];
-                obj.peaks.error{nRow, nCol}  = [];
-                obj.peaks.fit{nRow, nCol}    = [];
-                
-            end
-            
             obj.appendTableData();
-            
         end
+        
     end
     
-    if ~isempty(obj.data)
-        obj.updateFigure();
-    end
+    obj.validatePeakData(length(obj.data), length(obj.peaks.name));
+    obj.updateFigure();
     
 end
 
@@ -235,7 +244,8 @@ if ischar(fileName) && ischar(filePath)
             listboxRefreshCallback(obj);
             
             obj.updatePeakEditText();
-            obj.updateFigure(); 
+            obj.updateFigure();
+            
         end
     end
 end
@@ -335,13 +345,30 @@ end
 % ---------------------------------------
 function saveImageCallback(obj, varargin)
 
-if isempty(obj.data)
+if isempty(obj.data) || obj.view.index == 0
     return
 end
 
-filterExtensions = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
+row = obj.view.index;
+
+filterExtensions  = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
 filterDescription = 'Image file (*.jpg, *.png, *.tif)';
-filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+filterDefaultName = '';
+
+if ~isempty(obj.data(row).datetime) && length(obj.data(row).datetime) >= 10
+    filterDefaultName = [obj.data(row).datetime(1:10), ' - '];
+end
+
+if ~isempty(obj.data(row).sample_name)
+    sampleName = obj.data(row).sample_name;
+    sampleName = regexprep(sampleName, '[/\*:?!%^#@"<>|.]', '_');
+    sampleName = deblank(strtrim(sampleName));
+    filterDefaultName = [filterDefaultName, sampleName];
+end
+
+if isempty(filterDefaultName)
+    filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+end
 
 [fileName, filePath] = uiputfile(...
     {filterExtensions, filterDescription},...
@@ -349,9 +376,9 @@ filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
     filterDefaultName);
 
 if ischar(fileName) && ischar(filePath)
-
+    
     [~, ~, fileExtension] = fileparts(fileName);
-
+    
     switch fileExtension
         case {'.png'}
             fileType = '-dpng';
@@ -378,7 +405,7 @@ if ischar(fileName) && ischar(filePath)
             'position', [0, 0, 1, 1],....
             'backgroundcolor', 'white');
         
-        axesHandles = get(exportPanel, 'children');
+        axesHandles = exportPanel.Children;
         axesTags = get(axesHandles, 'tag');
         axesPlot = strcmpi(axesTags, 'axesplot');
         
@@ -386,9 +413,9 @@ if ischar(fileName) && ischar(filePath)
         p2 = [];
         
         if any(axesPlot)
-
+            
             uiProperties = properties(axesHandles(axesPlot));
-
+            
             if any(strcmp(uiProperties, 'OuterPosition'))
                 p1 = get(axesHandles(axesPlot), 'position');
                 p2 = get(axesHandles(axesPlot), 'outerposition');
@@ -476,7 +503,7 @@ if length(excelData(1,:)) >= 14
             if ~isempty(excelData{i,j}) && isnumeric(excelData{i,j})
                 excelData{i,j} = round(excelData{i,j},4);
             end
-        end 
+        end
     end
 end
 
@@ -501,7 +528,7 @@ end
 % ---------------------------------------
 % Save CSV
 % ---------------------------------------
-function saveCSVCallback(obj, varargin)
+function saveCsvCallback(obj, varargin)
 
 if isempty(obj.data) || isempty(obj.table.main.Data)
     return
@@ -529,11 +556,20 @@ if ischar(fileName) && ischar(filePath)
     cd(filePath);
     
     for i = 1:length(tableData(:,1))
+        
         for j = 1:length(tableData(1,:))
+            
             if isempty(tableData{i,j})
                 tableData{i,j} = ' ';
+                
             elseif isnumeric(tableData{i,j})
-                tableData{i,j} = num2str(tableData{i,j});
+                
+                if j >= 14
+                    tableData{i,j} = num2str(round(tableData{i,j},4));
+                else
+                    tableData{i,j} = num2str(tableData{i,j});
+                end
+                
             end
         end
     end
@@ -567,7 +603,7 @@ if isempty(x) || x == 0 || x > length(obj.peaks.name)
     obj.controls.peakList.Value = 1;
 end
 
-set(obj.controls.peakList, 'string', obj.peaks.name);
+obj.controls.peakList.String = obj.peaks.name;
 
 end
 
@@ -652,13 +688,13 @@ switch evt.EventName
     
     case 'Action'
         
-        switch get(src, 'checked')
+        switch src.Checked
             case 'on'
-                set(src, 'checked', 'off');
+                src.Checked = 'off';
                 obj.userZoom(0);
             case 'off'
-                set(src, 'checked', 'on');
-                obj.userZoom(1);                
+                src.Checked = 'on';
+                obj.userZoom(1);
         end
 end
 
@@ -673,17 +709,63 @@ switch evt.EventName
     
     case 'Action'
         
-        switch get(src, 'checked')
+        switch src.Checked
             case 'on'
-                set(src, 'checked', 'off');
+                src.Checked = 'off';
                 obj.view.showLabel = 0;
                 obj.plotPeaks();
             case 'off'
-                set(src, 'checked', 'on');
+                src.Checked = 'on';
                 obj.view.showLabel = 1;
                 obj.plotPeaks();
         end
 end
+
+end
+
+function developerModeCallback(~, src, ~)
+
+[gitStatus, ~] = system('git');
+
+if gitStatus
+    return
+end
+
+if strcmpi(src.Checked, 'on')
+    src.Checked = 'off';
+else
+    src.Checked = 'on';
+end
+
+currentPath = pwd;
+sourcePath = fileparts(fileparts(mfilename('fullpath')));
+cd(sourcePath);
+
+[gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
+
+if gitStatus
+    return
+else
+    gitBranch = deblank(strtrim(gitBranch));
+end
+
+if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
+    [~,~] = system('git checkout develop');
+    msg = 'Please restart ChromatographyGUI to enter developer mode...';
+    
+elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')    
+    [~,~] = system('git checkout master');
+    msg = 'Please restart ChromatographyGUI to exit developer mode...';
+    
+else
+    msg = '';
+end
+
+if ~isempty(msg)
+    questdlg(msg, 'Developer Mode', 'OK', 'OK');
+end
+
+cd(currentPath);
 
 end
 
@@ -697,7 +779,6 @@ link.mac     = 'https://git-scm.com/download/mac';
 link.linux   = 'https://git-scm.com/download/linux';
 
 option.git     = [];
-option.verbose = true;
 
 previousVersion = ['v', obj.version, '.', obj.date];
 
@@ -731,21 +812,77 @@ end
 % ---------------------------------------
 % Locate git
 % ---------------------------------------
-if ispc
+[gitStatus, ~] = system('git');
+
+if ~gitStatus
     
-    [gitStatus, gitPath] = system('where git');
+    option.git = 'git';
     
-    if gitStatus
+else
+    
+    if ispc
         
-        fprintf(' STATUS  %s \n', 'Searching system for ''git.exe''...');
-        
-        [gitStatus, gitPath] = system('dir C:\Users\*git.exe /s');
+        [gitStatus, gitPath] = system('where git');
         
         if gitStatus
             
-            msg = ['Visit ', link.windows, ' to install Git for Windows...'];
+            fprintf(' STATUS  %s \n', 'Searching system for ''git.exe''...');
             
-            fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
+            windowsGit = {...
+                '"C:\Program Files\Git\*git.exe"',...
+                '"C:\Program Files (x86)\Git\*git.exe"',...
+                '"C:\Users\*git.exe"'};
+            
+            for i = 1:length(windowsGit)
+                
+                [gitStatus, gitPath] = system(['dir ', windowsGit{i}, ' /S']);
+                
+                if ~gitStatus
+                    break
+                end
+                
+            end
+            
+            if gitStatus
+                
+                msg = ['Visit ', link.windows, ' to install Git for Windows...'];
+                
+                fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
+                fprintf(' STATUS  %s \n', msg);
+                
+                fprintf(['\n', repmat('-',1,50), '\n']);
+                fprintf(' %s', 'EXIT');
+                fprintf(['\n', repmat('-',1,50), '\n\n']);
+                
+                if ishandle(h)
+                    waitbar(1, h, msg);
+                    close(h);
+                end
+                
+                return
+                
+            end
+            
+            gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
+            gitPath = [gitPath{1}, filesep, 'git.exe'];
+            
+        end
+        
+        option.git = deblank(strtrim(gitPath));
+        
+    elseif isunix
+        
+        [gitStatus, gitPath] = system('which git');
+        
+        if gitStatus
+            
+            if ismac
+                msg = ['Visit ', link.mac, ' to install Git for OSX...'];
+            else
+                msg = ['Visit ', link.linux, ' to install Git for Linux...'];
+            end
+            
+            fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
             fprintf(' STATUS  %s \n', msg);
             
             fprintf(['\n', repmat('-',1,50), '\n']);
@@ -761,42 +898,9 @@ if ispc
             
         end
         
-        gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
-        gitPath = [gitPath{1}, filesep, 'git.exe'];
+        option.git = deblank(strtrim(gitPath));
         
     end
-    
-    option.git = deblank(strtrim(gitPath));
-    
-elseif isunix
-    
-    [gitStatus, gitPath] = system('which git');
-    
-    if gitStatus
-        
-        if ismac
-            msg = ['Visit ', link.mac, ' to install Git for OSX...'];
-        else
-            msg = ['Visit ', link.linux, ' to install Git for Linux...'];
-        end
-        
-        fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
-        fprintf(' STATUS  %s \n', msg);
-        
-        fprintf(['\n', repmat('-',1,50), '\n']);
-        fprintf(' %s', 'EXIT');
-        fprintf(['\n', repmat('-',1,50), '\n\n']);
-        
-        if ishandle(h)
-            waitbar(1, h, msg);
-            close(h);
-        end
-        
-        return
-        
-    end
-    
-    option.git = deblank(strtrim(gitPath));
     
 end
 
@@ -867,6 +971,7 @@ fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
 if gitTest || isempty(branchName)
     branchName = 'master';
+    
 elseif ischar(branchName)
     branchName = deblank(strtrim(branchName));
 end
@@ -877,11 +982,12 @@ switch branchName
     
     case {'master', 'HEAD'}
         [~,~] = system(['"', option.git, '" pull origin master']);
-    
+        
     case {'develop', 'dev'}
         [~,~] = system(['"', option.git, '" pull origin develop']);
-    
+        
     otherwise
+        [~,~] = system(['"', option.git, '" checkout master']);
         [~,~] = system(['"', option.git, '" pull origin master']);
         
 end
