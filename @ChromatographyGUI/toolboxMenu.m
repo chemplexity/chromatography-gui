@@ -403,6 +403,7 @@ if ischar(fileName) && ischar(filePath)
         set(exportPanel,....
             'parent',   exportFigure,...
             'position', [0, 0, 1, 1],....
+            'bordertype', 'none',...
             'backgroundcolor', 'white');
         
         axesHandles = exportPanel.Children;
@@ -562,15 +563,17 @@ if ischar(fileName) && ischar(filePath)
             if isempty(tableData{i,j})
                 tableData{i,j} = ' ';
                 
+            elseif isnumeric(tableData{i,j}) && j >= 14
+                tableData{i,j} = num2str(round(tableData{i,j},4));
+                
             elseif isnumeric(tableData{i,j})
+                tableData{i,j} = num2str(tableData{i,j});
                 
-                if j >= 14
-                    tableData{i,j} = num2str(round(tableData{i,j},4));
-                else
-                    tableData{i,j} = num2str(tableData{i,j});
-                end
-                
+            elseif ischar(tableData{i,j})
+                tableData{i,j} = regexprep(tableData{i,j}, '([,]|\t)', ' ');
+                tableData{i,j} = deblank(strtrim(tableData{i,j}));
             end
+            
         end
     end
     
@@ -719,6 +722,7 @@ switch evt.EventName
                 obj.view.showLabel = 1;
                 obj.plotPeaks();
         end
+        
 end
 
 end
@@ -753,7 +757,7 @@ if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
     [~,~] = system('git checkout develop');
     msg = 'Please restart ChromatographyGUI to enter developer mode...';
     
-elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')    
+elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')
     [~,~] = system('git checkout master');
     msg = 'Please restart ChromatographyGUI to exit developer mode...';
     
@@ -812,7 +816,7 @@ end
 % ---------------------------------------
 % Locate git
 % ---------------------------------------
-[gitStatus, ~] = system('git');
+[gitStatus, ~] = system('git --version');
 
 if ~gitStatus
     
