@@ -5,7 +5,7 @@ classdef ChromatographyGUI < handle
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.5';
-        date        = '20170224';
+        date        = '20170225';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -695,15 +695,12 @@ classdef ChromatographyGUI < handle
             if ~isempty(peak) && peak.area ~= 0 && peak.width ~= 0
                 
                 if ~isempty(peak.fit)
-                    
                     yfit = peak.fit;
                     
                     if length(peak.fit) == length(x)
-                        
                         yFilter = peak.fit ~= 0;
                         
                         if any(yFilter)
-                            
                             i0 = find(yFilter > 0, 1);
                             
                             if i0 > 1
@@ -726,7 +723,6 @@ classdef ChromatographyGUI < handle
                                 if i0+5 <= length(yFilter)
                                     yFilter(i0:i0+5) = 1;
                                 end
-                                
                             end
                             
                             x = x(yFilter);
@@ -961,55 +957,49 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function peakDeleteColumn(obj, m)
+        function peakDeleteColumn(obj, col)
             
-            if m == 0
+            if col == 0
                 return
+            else
+                nCol = length(obj.peaks.name);
             end
             
-            offset = length(obj.peaks.name);
+            obj.peaks.name(col) = [];
             
-            tableData = obj.table.main.Data;
-            tableHeader = obj.table.main.ColumnName;
-            
-            obj.peaks.name(m) = [];
-            
-            if ~isempty(obj.peaks.time) && length(obj.peaks.time(1,:)) >= m
-                obj.peaks.time(:,m)   = [];
-                obj.peaks.width(:,m)  = [];
-                obj.peaks.height(:,m) = [];
-                obj.peaks.area(:,m)   = [];
-                obj.peaks.error(:,m)  = [];
-                obj.peaks.fit(:,m)    = [];
+            if ~isempty(obj.peaks.time) && length(obj.peaks.time(1,:)) >= col
+                obj.peaks.time(:,col)   = [];
+                obj.peaks.width(:,col)  = [];
+                obj.peaks.height(:,col) = [];
+                obj.peaks.area(:,col)   = [];
+                obj.peaks.error(:,col)  = [];
+                obj.peaks.fit(:,col)    = [];
             end
             
-            if isempty(tableData) || length(tableData(1,:)) < length(tableHeader)
+            if isempty(obj.table.main.Data) || length(obj.table.main.Data(1,:)) < length(obj.table.main.ColumnName)
                 if ~isempty(obj.data)
-                    tableData{end, length(tableHeader)} = [];
+                    obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
                 end
             end
             
-            if length(tableHeader) >= m
-                tableHeader(m+13 + offset*0 - 0) = [];
-                tableHeader(m+13 + offset*1 - 1) = [];
-                tableHeader(m+13 + offset*2 - 2) = [];
-                tableHeader(m+13 + offset*3 - 3) = [];
+            if length(obj.table.main.ColumnName) >= col
+                obj.table.main.ColumnName(col+13 + nCol*0 - 0) = [];
+                obj.table.main.ColumnName(col+13 + nCol*1 - 1) = [];
+                obj.table.main.ColumnName(col+13 + nCol*2 - 2) = [];
+                obj.table.main.ColumnName(col+13 + nCol*3 - 3) = [];
             end
             
-            if ~isempty(tableData) && length(tableData(1,:)) >= m
-                tableData(:, m+13 + offset*0 - 0) = [];
-                tableData(:, m+13 + offset*1 - 1) = [];
-                tableData(:, m+13 + offset*2 - 2) = [];
-                tableData(:, m+13 + offset*3 - 3) = [];
+            if ~isempty(obj.table.main.Data) && length(obj.table.main.Data(1,:)) >= col
+                obj.table.main.Data(:, col+13 + nCol*0 - 0) = [];
+                obj.table.main.Data(:, col+13 + nCol*1 - 1) = [];
+                obj.table.main.Data(:, col+13 + nCol*2 - 2) = [];
+                obj.table.main.Data(:, col+13 + nCol*3 - 3) = [];
             end
             
-            if isempty(tableData) && size(tableData,2) > length(tableHeader)
-                tableData(:, length(tableHeader)+1:end) = [];
+            if isempty(obj.table.main.Data) && size(obj.table.main.Data,2) > length(obj.table.main.ColumnName)
+                obj.table.main.Data(:, length(obj.table.main.ColumnName)+1:end) = [];
             end
-            
-            obj.table.main.Data = tableData;
-            obj.table.main.ColumnName = tableHeader;
-            
+                        
             if isempty(obj.controls.peakList.String) && ~isempty(obj.peaks.name)
                 if isempty(obj.controls.peakList.Value) || obj.controls.peakList.Value == 0
                     obj.controls.peakList.Value = 1;
@@ -1021,9 +1011,16 @@ classdef ChromatographyGUI < handle
             end
             
             obj.controls.peakList.String = obj.peaks.name;
+            obj.clearPeakLine(col);
+
+            if length(obj.view.peak) >= col && ishandle(obj.view.peak{col})
+                delete(obj.view.peak{col});
+                obj.view.peak(col) = [];
+            end
             
-            if ~isempty(obj.data)
-                obj.plotPeaks();
+            if length(obj.view.label) >= col && ishandle(obj.view.label{col})
+                delete(obj.view.label{col});
+                obj.view.label(col) = [];
             end
             
         end
@@ -1204,7 +1201,6 @@ classdef ChromatographyGUI < handle
                 switch xObj.Tag
                     
                     case 'peaklist'
-                        
                         obj.userPeak(1);
                         
                     case 'selectpeak'
@@ -1216,7 +1212,6 @@ classdef ChromatographyGUI < handle
                         end
                         
                     otherwise
-                        
                         obj.userPeak(0);
                         
                 end
@@ -1280,10 +1275,7 @@ classdef ChromatographyGUI < handle
             obj.toolboxResize();
             
             obj.axes.zoom = zoom(obj.figure);
-            
-            set(obj.axes.zoom,...
-                'actionpostcallback', @(src, evt) zoomCallback(obj, src, evt));
-            
+            set(obj.axes.zoom, 'actionpostcallback', @obj.zoomCallback);
             obj.userZoom(0);
             
         end
@@ -1317,6 +1309,7 @@ classdef ChromatographyGUI < handle
                 
                 obj.updateSampleText();
                 obj.updatePeakText();
+                obj.clearPlotAll();
                 obj.updatePlot();
                 obj.userPeak(1);
                 
@@ -1344,7 +1337,6 @@ classdef ChromatographyGUI < handle
                 end
                 
                 obj.figure.CurrentObject = obj.controls.peakList;
-                
                 obj.updatePeakText();
                 obj.userPeak(1);
                 
@@ -1379,7 +1371,26 @@ classdef ChromatographyGUI < handle
                 obj.controls.peakWidthEdit.String  = str(obj.peaks.width{row,col});
             end
             
-            obj.updatePlot();
+        end
+        
+        function updatePeakLine(obj, row, col)
+            
+            if size(obj.peaks.fit,1) >= row && size(obj.peaks.fit,2) >= col
+                
+                if isempty(obj.peaks.fit{row,col})
+                    return
+                elseif size(obj.peaks.fit{row,col},2) ~= 2
+                    return
+                else
+                    x = obj.peaks.fit{row,col}(:,1);
+                    y = obj.peaks.fit{row,col}(:,2);
+                end
+                
+                if length(obj.view.peak) >= col && ishandle(obj.view.peak{col})
+                    set(obj.view.peak{col}, 'xdata', x, 'ydata', y);
+                end
+                
+            end
             
         end
         
@@ -1406,25 +1417,30 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function clearTableData(obj, varargin)
+            
+            obj.table.main.Data = [];
+            
+        end
+        
         function clearPeak(obj, varargin)
             
             row = obj.view.index;
             col = obj.controls.peakList.Value;
             
-            obj.clearPeakText(col);
-            
-            if ~isempty(col) && col ~= 0 && row ~= 0
+            if row ~= 0 && col ~= 0
+                obj.clearPeakText(col);
+                obj.clearPeakLine(col);
+                obj.clearPeakLabel(col);
                 obj.clearPeakData(row, col);
                 obj.clearPeakTable(row, col);
             end
-            
-            obj.updatePlot();
             
         end
         
         function clearPeakText(obj, col)
             
-            if ~isempty(col) && col ~= 0
+            if col ~= 0
                 obj.controls.peakIDEdit.String = obj.peaks.name{col};
             else
                 obj.controls.peakIDEdit.String = '';
@@ -1459,9 +1475,68 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function clearTableData(obj, varargin)
+        function clearPeakLine(obj, col)
             
-            obj.table.main.Data = [];
+            if length(obj.view.peak) >= col && ishandle(obj.view.peak{col})
+                set(obj.view.peak{col}, 'xdata', [], 'ydata', []);
+            end
+            
+        end
+        
+        function clearPeakLabel(obj, col)
+            
+            if length(obj.view.label) >= col && ishandle(obj.view.label{col})
+                obj.view.label{col}.Visible = 'off';
+            end
+            
+        end
+        
+        function clearPlotAll(obj)
+           
+            obj.clearPlotLine();
+            obj.clearPlotBaseline();
+            obj.clearPlotPeakLine();
+            obj.clearPlotPeakLabel();
+            
+        end
+        
+        function clearPlotLine(obj)
+        
+            if ishandle(obj.view.plot)
+                set(obj.view.plot, 'xdata', [], 'ydata', []);
+            end
+            
+        end
+        
+        function clearPlotBaseline(obj)
+        
+            if ishandle(obj.view.baseline)
+                set(obj.view.baseline, 'xdata', [], 'ydata', []);
+            end
+            
+        end
+        
+        function clearPlotPeakLine(obj)
+        
+            if ~isempty(obj.view.peak)
+                for i = 1:length(obj.view.peak)
+                    if ishandle(obj.view.peak{i})
+                        set(obj.view.peak{i}, 'xdata', [], 'ydata', []);
+                    end
+                end
+            end
+            
+        end
+        
+        function clearPlotPeakLabel(obj)
+        
+            if ~isempty(obj.view.label)
+                for i = 1:length(obj.view.label)
+                    if ishandle(obj.view.label{i})
+                        delete(obj.view.label{i});
+                    end
+                end
+            end
             
         end
         
@@ -1569,19 +1644,15 @@ classdef ChromatographyGUI < handle
                     obj.view.selectZoom = 0;
                     obj.axes.zoom.Enable = 'off';
                     
-                    set(obj.figure, 'windowbuttonmotionfcn',...
-                        @(src, evt) figureMotionCallback(obj, src, evt));
-                    
-                    set(obj.figure, 'windowkeypressfcn',...
-                        @(src, evt) keyboardCallback(obj, src, evt));
+                    set(obj.figure, 'windowkeypressfcn', @obj.keyboardCallback);
+                    set(obj.figure, 'windowbuttonmotionfcn', @obj.figureMotionCallback);
                     
                 case 1
                     
                     obj.view.selectZoom = 1;
                     obj.axes.zoom.Enable = 'on';
                     
-                    set(obj.figure, 'windowbuttonmotionfcn',...
-                        @(src, evt) figureMotionCallback(obj, src, evt));
+                    set(obj.figure, 'windowbuttonmotionfcn', @obj.figureMotionCallback);
                     
             end
             
@@ -1604,6 +1675,7 @@ classdef ChromatographyGUI < handle
                         obj.userZoom(1);
                     end
                     
+                    set(obj.figure, 'pointer', 'arrow');
                     set(obj.axes.main, 'buttondownfcn', '');
                     
                 case 1
@@ -1615,8 +1687,8 @@ classdef ChromatographyGUI < handle
                         obj.userZoom(0);
                     end
                     
-                    set(obj.axes.main, 'buttondownfcn',...
-                        @(src, evt) peakTimeSelectCallback(obj, src, evt));
+                    set(obj.figure, 'pointer', 'circle');
+                    set(obj.axes.main, 'buttondownfcn', @obj.peakTimeSelectCallback);
                     
             end
             
@@ -1642,24 +1714,14 @@ classdef ChromatographyGUI < handle
                     
                     if ~isempty(evt.Modifier) && obj.view.index
                         
-                        switch evt.Modifier{:}
-                            
-                            case 'command'
-                                
-                                if ismac
-                                    obj.copyFigure();
-                                end
-                                
-                            case 'control'
-                                
-                                if ispc || ~ismac
-                                    obj.copyFigure();
-                                end
-                                
+                        if strcmpi(evt.Modifier{:}, 'command') && ismac
+                            obj.copyFigure();
+                        elseif strcmpi(evt.Modifier{:}, 'control') && ~ismac
+                            obj.copyFigure();
                         end
                         
                     end
-                    
+
                 case 'space'
                     
                     if isempty(evt.Modifier)

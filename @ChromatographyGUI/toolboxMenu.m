@@ -138,7 +138,7 @@ obj.menu.view.label = uimenu(...
     'label',    'Labels',...
     'tag',      'labelmenu',...
     'checked',  'on',...
-    'callback', @(src, event) labelMenuCallback(obj, src, event));
+    'callback', {@labelMenuCallback, obj});
 
 % ---------------------------------------
 % Help Menu
@@ -706,7 +706,7 @@ end
 % ---------------------------------------
 % Enable/Disable Peak Labels
 % ---------------------------------------
-function labelMenuCallback(obj, src, evt)
+function labelMenuCallback(src, evt, obj)
 
 switch evt.EventName
     
