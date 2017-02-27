@@ -754,12 +754,24 @@ else
 end
 
 if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
-    [~,~] = system('git checkout develop');
-    msg = 'Please restart ChromatographyGUI to enter developer mode...';
+    
+    [gitStatus,~] = system('git checkout develop');
+    
+    if gitStatus
+        msg = 'Error switching to developer mode...';
+    else
+        msg = 'Please restart ChromatographyGUI to enter developer mode...';
+    end
     
 elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')
-    [~,~] = system('git checkout master');
-    msg = 'Please restart ChromatographyGUI to exit developer mode...';
+    
+    [gitStatus,~] = system('git checkout master');
+    
+    if gitStatus
+        msg = 'Error switching from developer mode...';
+    else
+        msg = 'Please restart ChromatographyGUI to exit developer mode...';
+    end
     
 else
     msg = '';
@@ -782,8 +794,9 @@ link.windows = 'https://git-scm.com/download/windows';
 link.mac     = 'https://git-scm.com/download/mac';
 link.linux   = 'https://git-scm.com/download/linux';
 
-option.git     = [];
+option.git = [];
 
+previousPath = pwd;
 previousVersion = ['v', obj.version, '.', obj.date];
 
 msg = 'Updating toolbox...';
@@ -863,8 +876,9 @@ else
                     close(h);
                 end
                 
-                return
+                cd(previousPath);
                 
+                return
             end
             
             gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
@@ -897,6 +911,8 @@ else
                 waitbar(1, h, msg);
                 close(h);
             end
+            
+            cd(previousPath);
             
             return
             
@@ -939,6 +955,8 @@ if gitTest
         waitbar(1, h, msg);
         close(h);
     end
+
+    cd(previousPath);
     
     return
     
@@ -958,7 +976,32 @@ if gitTest
     fprintf(' STATUS  %s \n', 'Initializing git repository...');
     
     [~,~] = system(['"', option.git, '" init']);
-    [~,~] = system(['"', option.git, '" remote add origin ', obj.url, '.git']);
+    [gitStatus, ~] = system(['"', option.git, '" remote add origin ', obj.url, '.git']);
+    
+    if gitStatus
+        
+        try
+            rmdir('.git', 's');
+        catch
+        end
+        
+        fprintf(2, ' ERROR  ');
+        fprintf('%s \n', 'Unable to connect to online repository...');
+        
+        fprintf(['\n', repmat('-',1,50), '\n']);
+        fprintf(' %s', 'EXIT');
+        fprintf(['\n', repmat('-',1,50), '\n\n']);
+        
+        if ishandle(h)
+            waitbar(1, h, msg);
+            close(h);
+        end
+        
+        cd(previousPath);
+        
+        return
+        
+    end
     
 end
 
@@ -985,14 +1028,14 @@ end
 switch branchName
     
     case {'master', 'HEAD'}
-        [~,~] = system(['"', option.git, '" pull origin master']);
+        [~,~] = system(['"', option.git, '" pull --rebase origin master']);
         
     case {'develop', 'dev'}
-        [~,~] = system(['"', option.git, '" pull origin develop']);
+        [~,~] = system(['"', option.git, '" pull --rebase origin develop']);
         
     otherwise
         [~,~] = system(['"', option.git, '" checkout master']);
-        [~,~] = system(['"', option.git, '" pull origin master']);
+        [~,~] = system(['"', option.git, '" pull --rebase origin master']);
         
 end
 
@@ -1020,6 +1063,8 @@ if ishandle(h)
     waitbar(1.0, h, msg);
     close(h)
 end
+
+cd(previousPath);
 
 if ~strcmpi(currentVersion, previousVersion)
     msg = 'Please restart ChromatographyGUI to complete update...';
