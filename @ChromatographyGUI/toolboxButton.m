@@ -419,7 +419,7 @@ switch src.String
                 obj.controls.peakList.Value = length(obj.peaks.name);
             end
            
-            obj.updatePeakEditText();
+            obj.updatePeakText();
             
         end
         
@@ -703,15 +703,21 @@ end
 switch src.Tag
     
     case 'showbaseline'
-        obj.plotBaseline();
+        
+        if src.Value
+            obj.updateBaseLine();
+        else
+            obj.clearAllBaseLine();
+        end
         
     case 'applybaseline'
+        
         obj.getBaseline();
-        obj.plotBaseline();
+        obj.updateBaseLine();
         
     case 'clearbaseline'
         
-        obj.clearAxesChildren('baseline');
+        obj.clearAllBaseLine();
         
         if obj.controls.showBaseline.Value
             obj.controls.showBaseline.Value = 0;
@@ -735,7 +741,7 @@ end
 % ---------------------------------------
 function peakListboxCallback(obj, ~, ~)
 
-obj.updatePeakEditText();
+obj.updatePeakText();
 obj.userPeak(1);
 
 end
@@ -752,6 +758,8 @@ switch src.Tag
         if ~isempty(obj.peaks.name)
             str = obj.peaks.name(obj.controls.peakList.Value, 1);
             obj.controls.peakIDEdit.String = str;
+        else
+            obj.controls.peakIDEdit.String = '';
         end
         
     case 'peaktimeedit'
@@ -800,15 +808,16 @@ end
 % ---------------------------------------
 function peakSelectCallback(obj, src, evt)
 
-switch evt.EventName
+if isempty(obj.data) || isempty(obj.peaks.name)
+    src.Value = 0;
+    return
+end
+
+if strcmpi(evt.EventName, 'Action')
     
-    case 'Action'
+    if isprop(obj.figure.CurrentObject, 'Tag')
         
-        if ~isprop(obj.figure.CurrentObject, 'tag')
-            return
-        else
-            currentObject = obj.figure.CurrentObject.Tag;
-        end
+        currentObject = obj.figure.CurrentObject.Tag;
         
         if strcmpi(currentObject, src.Tag)
             
@@ -822,6 +831,7 @@ switch evt.EventName
             src.Value = obj.view.selectPeak;
         end
         
+    end
 end
 
 end

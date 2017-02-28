@@ -126,19 +126,64 @@ obj.menu.view.main = uimenu(...
     'label',    'View',...
     'tag',      'viewmenu');
 
-obj.menu.view.zoom = uimenu(...
+obj.menu.view.peak = uimenu(...
     'parent',   obj.menu.view.main,...
-    'label',    'Zoom',...
-    'tag',      'zoommenu',...
-    'checked',  'off',...
-    'callback', @(src, event) zoomMenuCallback(obj, src, event));
+    'label',    'Peak',...
+    'tag',      'peakViewMenu');
 
-obj.menu.view.label = uimenu(...
-    'parent',   obj.menu.view.main,...
-    'label',    'Labels',...
-    'tag',      'labelmenu',...
+obj.menu.view.peakLabel = uimenu(...
+    'parent',   obj.menu.view.peak,...
+    'label',    'Show labels',...
+    'tag',      'showPeakLabel',...
     'checked',  'on',...
-    'callback', {@labelMenuCallback, obj});
+    'callback', {@peakViewMenuCallback, obj});
+
+obj.menu.view.peakLine = uimenu(...
+    'parent',   obj.menu.view.peak,...
+    'label',    'Show lines',...
+    'tag',      'showPeakLine',...
+    'checked',  'on',...
+    'callback', {@peakViewMenuCallback, obj});
+
+obj.menu.view.zoom = uimenu(...
+    'parent',    obj.menu.view.main,...
+    'label',     'Zoom',...
+    'tag',       'zoommenu',...
+    'separator', 'on',...
+    'checked',   'off',...
+    'callback',  @(src, event) zoomMenuCallback(obj, src, event));
+
+% ---------------------------------------
+% Analysis Menu
+% ---------------------------------------
+obj.menu.options.main = uimenu(...
+    'parent',   obj.figure,...
+    'label',    'Options',...
+    'tag',      'optionmenu');
+
+obj.menu.options.peak = uimenu(...
+    'parent',   obj.menu.options.main,...
+    'label',    'Peak',...
+    'tag',      'peakOptionMenu');
+
+obj.menu.options.peakModel = uimenu(...
+    'parent',   obj.menu.options.peak,...
+    'label',    'Model',...
+    'tag',      'peakModelMenu');
+
+obj.menu.options.peakNeuralNetwork = uimenu(...
+    'parent',   obj.menu.options.peakModel,...
+    'label',    'Neural Network (NN)',...
+    'tag',      'peakNN',...
+    'checked',  'on',...
+    'callback', {@peakModelMenuCallback, obj});
+
+obj.menu.options.peakExponentialGaussian = uimenu(...
+    'parent',   obj.menu.options.peakModel,...
+    'label',    'Exponential Gaussian Hybrid (EGH)',...
+    'tag',      'peakEGH',...
+    'checked',  'off',...
+    'callback', {@peakModelMenuCallback, obj});
 
 % ---------------------------------------
 % Help Menu
@@ -152,7 +197,7 @@ obj.menu.help.update = uimenu(...
     'parent',   obj.menu.help.main,...
     'label',    'Check for updates...',...
     'tag',      'updatemenu',...
-    'callback', @(src, event) updateToolboxCallback(obj, src, event));
+    'callback', {@updateToolboxCallback, obj});
 
 % ---------------------------------------
 % Developer Mode
@@ -243,7 +288,7 @@ if ischar(fileName) && ischar(filePath)
             
             listboxRefreshCallback(obj);
             
-            obj.updatePeakEditText();
+            obj.updatePeakText();
             obj.updateFigure();
             
         end
@@ -698,35 +743,83 @@ switch evt.EventName
             case 'off'
                 src.Checked = 'on';
                 obj.userZoom(1);
+                obj.userPeak(0);
         end
 end
 
 end
 
 % ---------------------------------------
-% Enable/Disable Peak Labels
+% Enable/Disable Peak Labels, Lines
 % ---------------------------------------
-function labelMenuCallback(src, evt, obj)
+function peakViewMenuCallback(src, evt, obj)
 
-switch evt.EventName
+if strcmpi(evt.EventName, 'Action')
     
-    case 'Action'
+    switch src.Checked
+        case 'on'
+            src.Checked = 'off';
+        case 'off'
+            src.Checked = 'on';
+    end
+    
+    switch src.Tag
         
-        switch src.Checked
-            case 'on'
-                src.Checked = 'off';
-                obj.view.showLabel = 0;
-                obj.plotPeaks();
-            case 'off'
-                src.Checked = 'on';
-                obj.view.showLabel = 1;
-                obj.plotPeaks();
+        case 'showPeakLabel'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.view.showPeakLabel = 1;
+                obj.plotPeakLabels();
+            else
+                obj.view.showPeakLabel = 0;
+                obj.clearAllPeakLabel();
+            end
+            
+        case 'showPeakLine'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.view.showPeakLine = 1;
+                obj.updatePeakLine();
+            else
+                obj.view.showPeakLine = 0;
+                obj.clearAllPeakLine();
+            end
+    end
+    
+end
+
+end
+
+% ---------------------------------------
+% Set Peak Model
+% ---------------------------------------
+function peakModelMenuCallback(src, evt, obj)
+
+if strcmpi(evt.EventName, 'Action')
+    
+    if strcmpi(src.Checked, 'off')
+        
+        for i = 1:length(src.Parent.Children)
+            src.Parent.Children(i).Checked = 'off';
         end
         
+        src.Checked = 'on';
+        
+        switch src.Tag
+            case 'peakNN'
+                obj.preferences.peakModel = 'nn';
+            case 'peakEGH'
+                obj.preferences.peakModel = 'egh';     
+        end
+    end
+    
 end
 
 end
 
+% ---------------------------------------
+% Enable/Disable Developer Mode
+% ---------------------------------------
 function developerModeCallback(~, src, ~)
 
 [gitStatus, ~] = system('git --version');
@@ -785,7 +878,10 @@ cd(currentPath);
 
 end
 
-function updateToolboxCallback(obj, ~, ~)
+% ---------------------------------------
+% Update ChromatographyGUI
+% ---------------------------------------
+function updateToolboxCallback(~, ~, obj)
 
 % ---------------------------------------
 % Options
@@ -955,7 +1051,7 @@ if gitTest
         waitbar(1, h, msg);
         close(h);
     end
-
+    
     cd(previousPath);
     
     return

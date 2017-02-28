@@ -1,26 +1,23 @@
-function varargout = exponentialgaussian(varargin)
+function peak = peakfitEGH(varargin)
 % ------------------------------------------------------------------------
-% Method      : exponentialgaussian
-% Description : Curve fitting analysis of chromatographic peaks
+% Method      : peakfitEGH
+% Description : Exponential Gaussian Hybrid (EGH) curve fitting
 % ------------------------------------------------------------------------
 %
 % ------------------------------------------------------------------------
 % Syntax
 % ------------------------------------------------------------------------
-%   peaks = exponentialgaussian(x, y)
-%   peaks = exponentialgaussian( __ , Name, Value)
-%
-% ------------------------------------------------------------------------
-% Input (Optional)
-% ------------------------------------------------------------------------
-%   x -- time values (size = n x 1)
-%       array
+%   peak = peakfitEGH(x, y)
+%   peak = peakfitEGH( __ , Name, Value)
 %
 % ------------------------------------------------------------------------
 % Input (Required)
 % ------------------------------------------------------------------------
+%   x -- time values
+%       array (size = m x 1)
+%
 %   y -- intensity values
-%       array | matrix (size = n x m)
+%       array (size = m x 1)
 %       
 % ------------------------------------------------------------------------
 % Input (Name, Value)
@@ -31,12 +28,15 @@ function varargout = exponentialgaussian(varargin)
 %   'width' -- search window width
 %       1 (default) | number
 %
+%   'minarea' -- minimum area of peak
+%       1E-5 (default) | number
+%
 % ------------------------------------------------------------------------
 % Examples
 % ------------------------------------------------------------------------
-%   peaks = exponentialgaussian(x, y)
-%   peaks = exponentialgaussian(x, y, 'center', 22.10)
-%   peaks = exponentialgaussian(x, y, 'center', 12.44, 'width', 0.24)
+%   peak = peakfitEGH(x, y)
+%   peak = peakfitEGH(x, y, 'center', 22.10)
+%   peak = peakfitEGH(x, y, 'center', 12.44, 'width', 0.24)
 %
 % ------------------------------------------------------------------------
 % References
@@ -46,59 +46,49 @@ function varargout = exponentialgaussian(varargin)
 % ---------------------------------------
 % Defaults
 % ---------------------------------------
-default.center = 0;
-default.width  = 1;
+default.center  = 0;
+default.width   = 1;
+default.minArea = 1E-5;
 
-default.cutoff.area = 1E-5;
-
-varargout{1} = [];
+% ---------------------------------------
+% Variables
+% ---------------------------------------
+peak = struct(...
+    'time',   0,...
+    'width',  0,...
+    'height', 0,...
+    'area',   0,...
+    'fit',    0,...
+    'error',  0);
 
 % ---------------------------------------
 % Input
 % ---------------------------------------
 p = inputParser;
 
+addRequired(p, 'x', @ismatrix);
 addRequired(p, 'y', @ismatrix);
 
-addOptional(p, 'x', [], @isnumeric);
-
-addParameter(p, 'center',   default.center);
-addParameter(p, 'width',    default.width);
+addParameter(p, 'center',  default.center);
+addParameter(p, 'width',   default.width);
+addParameter(p, 'minarea', default.minArea);
 
 parse(p, varargin{:});
 
 % ---------------------------------------
 % Parse
 % ---------------------------------------
-x      = p.Results.x;
-y      = p.Results.y;
-center = p.Results.center;
-width  = p.Results.width;
-
-if isempty(center)
-    center = default.center;
-end
-
-if isempty(width)
-    width = default.width;
-end
+x       = p.Results.x;
+y       = p.Results.y;
+center  = p.Results.center;
+width   = p.Results.width;
+minArea = p.Results.minarea;
 
 % ---------------------------------------
 % Validate
 % ---------------------------------------
 
 % Input: x
-if ~isempty(x)
-    y = p.Results.x;
-    x = p.Results.y;
-else
-    x = (1:size(y,1))';
-end
-
-if isempty(x)
-    x = 1:size(y,1);
-end
-
 if size(x,1) == 1 && size(x,2) > 1
     x = x';
 end
@@ -113,147 +103,61 @@ end
 
 if size(y,1) == 1 && size(y,2) > 1
     y = y';
+elseif size(y,2) > 1 && size(y,1) < size(y,2)
+    y = y';
+    y = y(:,1);
 end
 
-if size(x,1) ~= size(y,1)
+if size(x,1) > size(y,1)
+    x = x(1:size(y,1));
+elseif size(x,1) ~= size(y,1)
     x = 1:size(y,1);
 end
 
-% Parameter: 'center'
+if size(y,1) <= 5 || ~nnz(y)
+    return
+end
+
+% Parameter: 'center', 'width'
 if center == 0
     [~,index] = max(y);
     center = x(index,1);
+    
 elseif center > max(x)
     center = max(x) - width/2;
+    
 elseif center < min(x)
     center = min(x) + width/2;
+    
 elseif center + width/2 > max(x)
     width = (max(x) - center) * 2;
+    
 elseif center - width/2 < min(x)
     width = (center - min(x)) * 2;
 end
 
-% ---------------------------------------
-% Variables
-% ---------------------------------------
-peaks = struct(...
-    'time',   [],...
-    'width',  [],...
-    'height', [],...
-    'area',   [],...
-    'fit',    [],...
-    'error',  []...
-);
+center = findPeakCenter(x,y,center);
 
-if size(y,1) <= 1 || ~nnz(y)
-    return
+if width ~= 0.10
+    width = 0.10;
 end
 
-pIndex = find(x>=center,1);
-
-pSlope = '';
-pDown = 0;
-pUp = 0;
-
-pLX = x(pIndex,1);
-pRX = x(pIndex,1);
-pLY = y(pIndex,1);
-pRY = y(pIndex,1);
-pLimit = 0.3;
-pMax = 10;
-
-for i = pIndex:length(x)
-    
-    if y(i,1) >= pRY
-        pRX = x(i);
-        pRY = y(i,1);
-        pUp = pUp + 1;
-        if pUp > 2
-            pDown = 0;
-        end
-    elseif y(i,1) < pRY
-        pDown = pDown + 1;
-        if pDown > 2
-            pUp = 0;
-        end
-    end
-    
-    if pUp == pMax
-        pSlope = [pSlope, 'u'];
-    end
-    
-    if pDown == pMax
-        pSlope = [pSlope, 'd'];
-    end
-    
-    if x(i) > center + pLimit
-        break
-    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
-        break
-    end
-    
+% Parameter: 'minarea'
+if isempty(minArea)
+    minArea = default.minArea;
 end
-
-pDown = 0;
-pUp = 0;
-pSlope = '';
-
-for i = pIndex:-1:1
-    
-    if y(i,1) > pLY
-        pLX = x(i);
-        pLY = y(i,1);
-        pUp = pUp + 1;
-        if pUp > 2
-            pDown = 0;
-        end
-    elseif y(i,1) < pLY
-        pDown = pDown + 1;
-        if pDown > 2
-            pUp = 0;
-        end
-    end
-    
-    if pUp == pMax
-        pSlope = [pSlope, 'u'];
-    end
-    
-    if pDown == pMax
-        pSlope = [pSlope, 'd'];
-    end
-    
-    if x(i) < center - pLimit
-        break
-    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
-        break
-    end
-    
-end
-
-pLCount = pIndex - find(x>=pLX,1);
-pRCount = find(x>=pRX,1) - pIndex;
-
-if pRCount == 0 && pLCount == 0
-    center = x(pIndex);
-elseif pRCount ~= 0 && (pRCount < pLCount || pLCount == 0)
-    center = pRX;
-elseif pLCount ~= 0 && (pLCount < pRCount || pRCount == 0)
-    center = pLX;
-end
-
-width = 0.10;
 
 % ---------------------------------------
 % Peak detection
 % ---------------------------------------
-peak = peakdetection(x, y, 'center', center, 'width', width);
+peakParameter = peakdetection(x, y, 'center', center, 'width', width);
 
-if ~isempty(peak)
-    peak = addParameters(x, y, peak);
+if ~isempty(peakParameter)
+    peakParameter = addParameters(x, y, peakParameter);
 end
 
 % ---------------------------------------
-% Exponentially modified gaussian
+% EGH Functions
 % ---------------------------------------
 EGH.y = @(x, c, h, w, e) h .* exp((-(x-c).^2) ./ ((2.*(w.^2)) + (e.*(x-c))));
 EGH.w = @(a, b, alpha) sqrt((-1 ./ (2 .* log(alpha))) .* (a .* b));
@@ -268,113 +172,110 @@ EGH.c = @(t) 4.000000 * t^0 + -6.293724 * t^1 + 9.2328340 * t^2 + ...
 % ---------------------------------------
 % Curve fitting
 % ---------------------------------------
-for i = 1:length(y(1,:))
+if isempty(peakParameter) || any(peakParameter.center(:,1) == 0)
+    return
+end
+
+% Get peak parameters
+c = peakParameter.center;
+h = peakParameter.height;
+w = EGH.w(peakParameter.a, peakParameter.b, peakParameter.alpha);
+e = EGH.e(peakParameter.a, peakParameter.b, peakParameter.alpha);
+
+% Determine limits of function
+lim(:,1) = (2 * w(1)^2) + (e(1) .* (x-c(1))) > 0;
+lim(:,2) = (2 * w(2)^2) + (e(2) .* (x-c(2))) > 0;
+lim(:,3) = (2 * w(3)^2) + (e(3) .* (x-c(3))) > 0;
+lim(:,4) = (2 * w(4)^2) + (e(4) .* (x-c(4))) > 0;
+lim(:,5) = (2 * w(1)^2) + (-e(1) .* (x-c(1))) > 0;
+lim(:,6) = (2 * w(2)^2) + (-e(2) .* (x-c(2))) > 0;
+lim(:,7) = (2 * w(3)^2) + (-e(3) .* (x-c(3))) > 0;
+lim(:,8) = (2 * w(4)^2) + (-e(4) .* (x-c(4))) > 0;
+
+% Calculate fit
+yfit = zeros(length(y), 8);
+
+yfit(lim(:,1),1) = EGH.y(x(lim(:,1)), c(1), h(1), w(1), e(1));
+yfit(lim(:,2),2) = EGH.y(x(lim(:,2)), c(2), h(2), w(2), e(2));
+yfit(lim(:,3),3) = EGH.y(x(lim(:,3)), c(3), h(3), w(3), e(3));
+yfit(lim(:,4),4) = EGH.y(x(lim(:,4)), c(4), h(4), w(4), e(4));
+yfit(lim(:,5),5) = EGH.y(x(lim(:,5)), c(1), h(1), w(1), -e(1));
+yfit(lim(:,6),6) = EGH.y(x(lim(:,6)), c(2), h(2), w(2), -e(2));
+yfit(lim(:,7),7) = EGH.y(x(lim(:,7)), c(3), h(3), w(3), -e(3));
+yfit(lim(:,8),8) = EGH.y(x(lim(:,8)), c(4), h(4), w(4), -e(4));
+
+% Set values outside normal range to zero
+yfit(yfit(:,1) < h(1) * 10^-9 | yfit(:,1) > h(1) * 10, 1) = 0;
+yfit(yfit(:,2) < h(2) * 10^-9 | yfit(:,2) > h(2) * 10, 2) = 0;
+yfit(yfit(:,3) < h(3) * 10^-9 | yfit(:,3) > h(3) * 10, 3) = 0;
+yfit(yfit(:,4) < h(4) * 10^-9 | yfit(:,4) > h(4) * 10, 4) = 0;
+yfit(yfit(:,5) < h(1) * 10^-9 | yfit(:,5) > h(1) * 10, 5) = 0;
+yfit(yfit(:,6) < h(2) * 10^-9 | yfit(:,6) > h(2) * 10, 6) = 0;
+yfit(yfit(:,7) < h(3) * 10^-9 | yfit(:,7) > h(3) * 10, 7) = 0;
+yfit(yfit(:,8) < h(4) * 10^-9 | yfit(:,8) > h(4) * 10, 8) = 0;
+
+w(5:8) = w(1:4);
+
+for i = 1:size(yfit,2)
+    w(i) = peakWidth(x, yfit(:,i));
+    rmsd(i) = peakError(x, y, yfit(:,i), w(i));
+end
+
+[~, index] = min(rmsd);
+yIndex = index;
+
+if index > 4
+    index = index - 4;
+    e = -e(index);
+else
+    e = e(index);
+end
+
+if isnan(rmsd(yIndex))
+    return
+end
+
+[~, ii] = max(yfit(:,yIndex));
+
+if ii < length(yfit(:,1)) * 0.02 || ii > length(yfit(:,1)) - length(yfit(:,1)) * 0.02
     
-    peaks.time(i)   = 0;
-    peaks.width(i)  = 0;
-    peaks.height(i) = 0;
-    peaks.area(i)   = 0;
-    peaks.fit(:,i)  = zeros(size(y,1), 1, type);
-    peaks.error(i)  = 0;
+    peak.time   = 0;
+    peak.width  = 0;
+    peak.height = 0;
+    peak.area   = 0;
+    peak.fit    = 0;
+    peak.error  = 0;
     
-    % Check y-values
-    if ~nnz(y(:,i))
-        continue
-    end
+else
     
-    % Check peak values
-    if isempty(peak) || any(peak.center(:,i) == 0)
-        continue
-    end
+    peak.time   = c(index);
+    peak.height = h(index);
+    peak.width  = w(yIndex);
+    peak.error  = rmsd(yIndex);
+    peak.fit    = yfit(:,yIndex);
     
-    % Get peak parameters
-    c = peak.center(:,i);
-    h = peak.height(:,i);
-    w = EGH.w(peak.a(:,i), peak.b(:,i), peak.alpha(:,i));
-    e = EGH.e(peak.a(:,i), peak.b(:,i), peak.alpha(:,i));
-    
-    % Determine limits of function
-    lim(:,1) = (2 * w(1)^2) + (e(1) .* (x-c(1))) > 0;
-    lim(:,2) = (2 * w(2)^2) + (e(2) .* (x-c(2))) > 0;
-    lim(:,3) = (2 * w(3)^2) + (e(3) .* (x-c(3))) > 0;
-    lim(:,4) = (2 * w(4)^2) + (e(4) .* (x-c(4))) > 0;
-    lim(:,5) = (2 * w(1)^2) + (-e(1) .* (x-c(1))) > 0;
-    lim(:,6) = (2 * w(2)^2) + (-e(2) .* (x-c(2))) > 0;
-    lim(:,7) = (2 * w(3)^2) + (-e(3) .* (x-c(3))) > 0;
-    lim(:,8) = (2 * w(4)^2) + (-e(4) .* (x-c(4))) > 0;
-    
-    % Calculate fit
-    yfit = zeros(length(y(:,i)), 8);
-    
-    yfit(lim(:,1),1) = EGH.y(x(lim(:,1)), c(1), h(1), w(1), e(1));
-    yfit(lim(:,2),2) = EGH.y(x(lim(:,2)), c(2), h(2), w(2), e(2));
-    yfit(lim(:,3),3) = EGH.y(x(lim(:,3)), c(3), h(3), w(3), e(3));
-    yfit(lim(:,4),4) = EGH.y(x(lim(:,4)), c(4), h(4), w(4), e(4));
-    yfit(lim(:,5),5) = EGH.y(x(lim(:,5)), c(1), h(1), w(1), -e(1));
-    yfit(lim(:,6),6) = EGH.y(x(lim(:,6)), c(2), h(2), w(2), -e(2));
-    yfit(lim(:,7),7) = EGH.y(x(lim(:,7)), c(3), h(3), w(3), -e(3));
-    yfit(lim(:,8),8) = EGH.y(x(lim(:,8)), c(4), h(4), w(4), -e(4));
-    
-    % Set values outside normal range to zero
-    yfit(yfit(:,1) < h(1) * 10^-9 | yfit(:,1) > h(1) * 10, 1) = 0;
-    yfit(yfit(:,2) < h(2) * 10^-9 | yfit(:,2) > h(2) * 10, 2) = 0;
-    yfit(yfit(:,3) < h(3) * 10^-9 | yfit(:,3) > h(3) * 10, 3) = 0;
-    yfit(yfit(:,4) < h(4) * 10^-9 | yfit(:,4) > h(4) * 10, 4) = 0;
-    yfit(yfit(:,5) < h(1) * 10^-9 | yfit(:,5) > h(1) * 10, 5) = 0;
-    yfit(yfit(:,6) < h(2) * 10^-9 | yfit(:,6) > h(2) * 10, 6) = 0;
-    yfit(yfit(:,7) < h(3) * 10^-9 | yfit(:,7) > h(3) * 10, 7) = 0;
-    yfit(yfit(:,8) < h(4) * 10^-9 | yfit(:,8) > h(4) * 10, 8) = 0;
-    
-    w(5:8) = w(1:4);
-    
-    for j = 1:size(yfit,2)
-        w(j) = peakWidth(x, yfit(:,j));
-        rmsd(j) = peakError(x, y(:,i), yfit(:,j), w(j));
-    end
-    
-    [~, index] = min(rmsd);
-    yIndex = index;
-    
-    if index > 4
-        index = index - 4;
-        e = -e(index);
+    if size(x,1) == size(peak.fit, 1)
+        peak.area = peakArea(x, y, peak.fit);
     else
-        e = e(index);
+        peak.width = w(yIndex);
+        peak.area = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
     end
     
-    if isnan(rmsd(yIndex))
-        continue
-    end
-    
-    peaks.time(i)   = c(index);
-    peaks.height(i) = h(index);
-    peaks.width(i)  = w(yIndex);
-    peaks.error(i)  = rmsd(yIndex);
-    peaks.fit(:,i)  = yfit(:,yIndex);
-    
-    if size(x,1) == size(peaks.fit(:,i), 1)
-        peaks.area(i) = peakArea(x, y, peaks.fit(:,i));
-    else
-        peaks.width(i) = w(yIndex);
-        peaks.area(i) = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
-    end
-    
-    if peaks.area(i) < std(y) * default.cutoff.area
-        peaks.time(i)   = 0;
-        peaks.width(i)  = 0;
-        peaks.height(i) = 0;
-        peaks.area(i)   = 0;
-        peaks.fit(:,i)  = zeros(size(y,1), 1, type);
-        peaks.error(i)  = 0;
+    if peak.area < std(y) * minArea
+        peak.time   = 0;
+        peak.width  = 0;
+        peak.height = 0;
+        peak.area   = 0;
+        peak.fit    = 0;
+        peak.error  = 0;
     end
     
 end
 
+
 if ~strcmpi(type, 'double')
-    peaks.fit = cast(peaks.fit, type);
+    peak.fit = cast(peak.fit, type);
 end
-    
-varargout{1} = peaks;
 
 end
 
@@ -386,7 +287,7 @@ f1 = 1 / mean(diff(x));
 if f1 < 1000
     
     xi = min(x) : 1/f0 : max(x);
-    yi = interp1(x, y, xi, 'pchip');
+    yi = interp1(x, y, xi);
     
     [ymax, i] = max(yi);
     
@@ -450,8 +351,8 @@ end
 
 [~, xi] = max(y1);
 
-dy0 = diff(y0);
-dy1 = diff(y1);
+dy0 = [0; diff(y0)];
+dy1 = [0; diff(y1)];
 
 % Filter peak tail
 [~, dyi] = min(dy1(xi:end));
@@ -489,21 +390,23 @@ if ~isempty(yFrontFilter)
 end
 
 f0 = 3000;
-f1 = 1/mean(diff(x0));
+
+if length(x0) >= 20
+    f1 = 1/mean(diff(x0(1:20)));
+else
+    f1 = 1/mean(diff(x0));
+end
 
 if f1 < f0
     xi = min(x0) : 1/f0 : max(x0);
-    yi = interp1(x0, y0, xi, 'pchip');
+    yi = interp1(x0, y0, xi);
 else
     xi = x0;
     yi = y0;
 end
 
-dx = diff(xi);
-dy = yi(1:end-1) + yi(2:end);
-
-if length(dx) == length(dy)
-    area = sum(dx.*dy) / 2;
+if length(xi) == length(yi)
+    area = trapz(xi, yi);
 else
     area = 0;
 end
@@ -521,7 +424,7 @@ t = mean(peak.center);
 
 if 1 / mean(diff(x)) < 200
     xi = min(x) : 1/200 : max(x);
-    y = interp1(x, y, xi, 'pchip');
+    y = interp1(x, y, xi);
 end
 
 xx = x(x <= t+1 & x >= t-1);
@@ -543,42 +446,56 @@ if ~isempty(xx)
     noiseCounter = 0;
     
     for i = idx:length(yy)
+        
         if yy(i) < hy(2) && yy(i) >= yy(idx) / 2
+            
             hx(2) = xx(i);
             hy(2) = yy(i);
             counter = 0;
             noiseCounter = 0;
+            
         elseif yy(i) > hy(2)
+            
             noiseCounter = noiseCounter + 1;
+            
             if counter + 1 > counterMax
                 break
             elseif noiseCounter > 3
                 counter = counter + 1;
             end
+            
         elseif yy(i) < yy(idx) / 2
             break
         end
+        
     end
     
     counter = 0;
     noiseCounter = 0;
     
     for i = idx:-1:1
+        
         if yy(i) < hy(1) && yy(i) >= yy(idx) / 2
+            
             hx(1) = xx(i);
             hy(1) = yy(i);
             counter = 0;
             noiseCounter = 0;
+            
         elseif yy(i) > hy(1)
+            
             noiseCounter = noiseCounter + 1;
+            
             if counter + 1 > counterMax
                 break
             elseif noiseCounter > 3
                 counter = counter + 1;
             end
+            
         elseif yy(i) < yy(idx) / 2
             break
         end
+        
     end
     
     yy = yy + ymin;
@@ -606,42 +523,55 @@ if ~isempty(xx)
     noiseCounter = 0;
     
     for i = idx:length(yy)
+        
         if yy(i) < hy(2) && yy(i) >= yy(idx) / 4
+            
             hx(2) = xx(i);
             hy(2) = yy(i);
             counter = 0;
             noiseCounter = 0;
+            
         elseif yy(i) > hy(2)
+            
             noiseCounter = noiseCounter + 1;
+            
             if counter + 1 > counterMax
                 break
             elseif noiseCounter > 3
                 counter = counter + 1;
             end
+            
         elseif yy(i) < yy(idx) / 4
             break
         end
+        
     end
     
     counter = 0;
     noiseCounter = 0;
     
     for i = idx:-1:1
+        
         if yy(i) < hy(1) && yy(i) >= yy(idx) / 4
             hx(1) = xx(i);
             hy(1) = yy(i);
             counter = 0;
             noiseCounter = 0;
+            
         elseif yy(i) > hy(1)
+            
             noiseCounter = noiseCounter + 1;
+            
             if counter + 1 > counterMax
                 break
             elseif noiseCounter > 3
                 counter = counter + 1;
             end
+            
         elseif yy(i) < yy(idx) / 4
             break
         end
+        
     end
     
     yy = yy + ymin;
@@ -660,6 +590,117 @@ if ~isempty(xx)
     peak.a = [peak.a; xx(idx) - hx(1)];
     peak.b = [peak.b; hx(2) - xx(idx)];
     
+end
+
+end
+
+function peakCenter = findPeakCenter(x,y,peakCenter)
+
+pIndex = find(x >= peakCenter, 1);
+
+pSlope = '';
+pLimit = 0.3;
+pStop  = 10;
+
+pLX = x(pIndex,1);
+pRX = x(pIndex,1);
+pLY = y(pIndex,1);
+pRY = y(pIndex,1);
+
+pDown = 0;
+pUp   = 0;
+
+for i = pIndex:length(x)
+    
+    if y(i,1) >= pRY
+        
+        pRX = x(i);
+        pRY = y(i,1);
+        pUp = pUp + 1;
+    
+        if pUp > 2
+            pDown = 0;
+        end
+        
+    elseif y(i,1) < pRY
+        
+        pDown = pDown + 1;
+        
+        if pDown > 2
+            pUp = 0;
+        end
+        
+    end
+    
+    if pUp == pStop
+        pSlope = [pSlope, 'u'];
+    end
+    
+    if pDown == pStop
+        pSlope = [pSlope, 'd'];
+    end
+    
+    if x(i) > peakCenter + pLimit
+        break
+    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
+        break
+    end
+    
+end
+
+pSlope = '';
+pDown  = 0;
+pUp    = 0;
+
+for i = pIndex:-1:1
+    
+    if y(i,1) > pLY
+        
+        pLX = x(i);
+        pLY = y(i,1);
+        pUp = pUp + 1;
+        
+        if pUp > 2
+            pDown = 0;
+        end
+        
+    elseif y(i,1) < pLY 
+        
+        pDown = pDown + 1;
+        
+        if pDown > 2
+            pUp = 0;
+        end
+        
+    end
+    
+    if pUp == pStop
+        pSlope = [pSlope, 'u'];
+    end
+    
+    if pDown == pStop
+        pSlope = [pSlope, 'd'];
+    end
+    
+    if x(i) < peakCenter - pLimit
+        break
+    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
+        break
+    end
+    
+end
+
+pLCount = pIndex - find(x >= pLX, 1);
+pRCount = find(x >= pRX, 1) - pIndex;
+
+if pRCount == 0 && pLCount == 0
+    peakCenter = x(pIndex);
+    
+elseif pRCount ~= 0 && (pRCount < pLCount || pLCount == 0)
+    peakCenter = pRX;
+    
+elseif pLCount ~= 0 && (pLCount < pRCount || pRCount == 0)
+    peakCenter = pLX;
 end
 
 end

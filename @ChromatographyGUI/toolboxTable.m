@@ -153,10 +153,14 @@ if strcmpi(evt.EventName, 'KeyPress')
             end
             
             obj.updateSampleText();
-            obj.updatePeakEditText();
+            obj.updatePeakText();
             obj.updatePlot();
             
         case 'delete'
+            
+            if isempty(obj.table.selection) || isempty(obj.data)
+                return
+            end
             
             msgPrompt = tableDeleteMessage(obj);
             
