@@ -5,7 +5,7 @@ classdef ChromatographyGUI < handle
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.5';
-        date        = '20170228';
+        date        = '20170301';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -72,7 +72,8 @@ classdef ChromatographyGUI < handle
             obj.preferences.labels.legend = {...
                 'instrument',...
                 'datetime',...
-                'sample_name'};
+                'sample_name',...
+                'vial'};
             
             obj.preferences.peakModel = 'nn';
             obj.preferences.peakArea  = 'rawData';
@@ -245,34 +246,29 @@ classdef ChromatographyGUI < handle
                 y = [0, 1];
             end
             
-            if obj.view.index ~= 0
+            switch obj.axes.ymode
                 
-                switch obj.axes.ymode
+                case 'auto'
                     
-                    case 'auto'
+                    if ~isempty(y)
                         
-                        if ~isempty(y)
-                            
-                            y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
-                            
-                            if any(y)
-                                ymargin = (max(y) - min(y)) * 0.02;
-                                obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
-                            end
-                            
+                        y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
+                        
+                        if any(y)
+                            ymargin = (max(y) - min(y)) * 0.02;
+                            obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
                         end
                         
-                    case 'manual'
-                        
-                        ymin = obj.controls.yMin.String;
-                        ymax = obj.controls.yMax.String;
-                        
-                        obj.axes.ylim = [str2double(ymin), str2double(ymax)];
-                end
-                
-            else
-                obj.axes.ylim = [0,1];
+                    end
+                    
+                case 'manual'
+                    
+                    ymin = obj.controls.yMin.String;
+                    ymax = obj.controls.yMax.String;
+                    
+                    obj.axes.ylim = [str2double(ymin), str2double(ymax)];
             end
+            
             
             obj.axes.main.YLim = obj.axes.ylim;
             obj.updateAxesLimitEditText();
@@ -1955,16 +1951,20 @@ classdef ChromatographyGUI < handle
                                 
                                 switch obj.preferences.peakModel
                                     case 'nn'
-                                        peakModelMenuCallback(obj.menu.peakNeuralNetwork, [], obj);
+                                        obj.menu.peakNeuralNetwork.Checked = 'on';
+                                        obj.menu.peakExponentialGaussian.Checked = 'off';
                                     case 'egh'
-                                        peakModelMenuCallback(obj.menu.peakExponentialGaussian, [], obj);
+                                        obj.menu.peakNeuralNetwork.Checked = 'off';
+                                        obj.menu.peakExponentialGaussian.Checked = 'on';
                                 end
                                 
                                 switch obj.preferences.peakArea
                                     case 'rawData'
-                                        peakAreaMenuCallback(obj.menu.peakOptionsAreaActual, [], obj);
+                                        obj.menu.peakOptionsAreaActual.Checked = 'on';
+                                        obj.menu.peakOptionsAreaFit.Checked = 'off';
                                     case 'fitData'
-                                        peakAreaMenuCallback(obj.menu.peakOptionsAreaFit, [], obj);
+                                        obj.menu.peakOptionsAreaActual.Checked = 'off';
+                                        obj.menu.peakOptionsAreaFit.Checked = 'on';
                                 end
                                 
                                 if obj.view.showPlotLabel
