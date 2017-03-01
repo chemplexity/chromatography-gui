@@ -77,7 +77,9 @@ else
     peakCenter = findPeakCenter(x, y, peakCenter);
 end
 
-peak = peakfitNN(x, y, peakCenter, 'area', 'actual');
+peak = peakfitNN(...
+    x, y, peakCenter,...
+    'area', obj.preferences.peakArea);
 
 if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     
@@ -104,7 +106,10 @@ col = obj.controls.peakList.Value;
 
 baseline = getBaselineEGH(obj, row, y);
 
-peak = peakfitEGH(x, y-baseline, 'center', peakCenter);
+peak = peakfitEGH(...
+    x, y-baseline,...
+    'center', peakCenter,...
+    'area', obj.preferences.peakArea);
 
 if ~isempty(peak) && ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     

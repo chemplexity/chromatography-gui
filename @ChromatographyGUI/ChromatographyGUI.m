@@ -5,7 +5,7 @@ classdef ChromatographyGUI < handle
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
         version     = '0.0.5';
-        date        = '20170227';
+        date        = '20170228';
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         
@@ -67,7 +67,13 @@ classdef ChromatographyGUI < handle
             obj.preferences.labels.fontsize    = 11.0;
             obj.preferences.labels.font        = obj.font;
             
+            obj.preferences.labels.legend = {...
+                'instrument',...
+                'datetime',...
+                'sample_name'};
+            
             obj.preferences.peakModel = 'nn';
+            obj.preferences.peakArea  = 'rawData';
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
@@ -79,12 +85,14 @@ classdef ChromatographyGUI < handle
             obj.view.name  = 'N/A';
             
             obj.view.plotLine   = [];
+            obj.view.plotLabel  = [];
             obj.view.baseLine   = [];
             obj.view.peakLine   = [];
             obj.view.peakLabel  = [];
             obj.view.selectZoom = 1;
             obj.view.selectPeak = 0;
             
+            obj.view.showPlotLabel = 1;
             obj.view.showPeakLabel = 1;
             obj.view.showPeakLine  = 1;
             
@@ -134,6 +142,7 @@ classdef ChromatographyGUI < handle
             cla(obj.axes.main);
             
             if isempty(obj.data) || obj.view.index == 0
+                obj.updateAxesLimits();
                 return
             else
                 row = obj.view.index;
@@ -166,6 +175,8 @@ classdef ChromatographyGUI < handle
                 obj.plotPeaks();
             end
             
+            obj.updatePlotLabel();
+                    
         end
         
         function updateAxesXLim(obj, varargin)
@@ -177,30 +188,36 @@ classdef ChromatographyGUI < handle
                     if obj.view.index ~= 0
                         xmin = min(obj.data(obj.view.index).time);
                         xmax = max(obj.data(obj.view.index).time);
+                        xmargin = (xmax - xmin) * 0.02;
+                        obj.axes.xlim = [xmin - xmargin, xmax + xmargin];
                     else
-                        xmin = 0;
-                        xmax = 1;
+                        obj.axes.xlim = [0,1];
                     end
-                    
-                    xmargin = (xmax - xmin) * 0.02;
-                    obj.axes.xlim = [xmin - xmargin, xmax + xmargin];
                     
                     obj.axes.main.XLim = obj.axes.xlim;
                     
                 case 'manual'
                     
-                    xmin = str2double(obj.controls.xMin.String);
-                    xmax = str2double(obj.controls.xMax.String);
-                    
-                    if xmin ~= round(obj.axes.xlim(2), 3)
-                        obj.axes.xlim(1) = xmin;
+                    if obj.view.index ~= 0
+                        
+                        xmin = str2double(obj.controls.xMin.String);
+                        xmax = str2double(obj.controls.xMax.String);
+                        
+                        if xmin ~= round(obj.axes.xlim(2), 3)
+                            obj.axes.xlim(1) = xmin;
+                            obj.axes.main.XLim = obj.axes.xlim;
+                        end
+                        
+                        if xmax ~= round(obj.axes.xlim(2), 3)
+                            obj.axes.xlim(2) = xmax;
+                            obj.axes.main.XLim = obj.axes.xlim;
+                        end
+                        
+                    else
+                        obj.axes.xlim = [0,1];
                         obj.axes.main.XLim = obj.axes.xlim;
                     end
                     
-                    if xmax ~= round(obj.axes.xlim(2), 3)
-                        obj.axes.xlim(2) = xmax;
-                        obj.axes.main.XLim = obj.axes.xlim;
-                    end
             end
             
             obj.updateAxesLimitEditText();
@@ -222,39 +239,49 @@ classdef ChromatographyGUI < handle
                 y = [0, 1];
             end
             
-            switch obj.axes.ymode
+            if obj.view.index ~= 0
                 
-                case 'auto'
+                switch obj.axes.ymode
                     
-                    y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
-                    
-                    if any(y)
-                        ymargin = (max(y) - min(y)) * 0.02;
-                        obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
-                    end
-                    
-                case 'manual'
-                    
-                    ymin = obj.controls.yMin.String;
-                    ymax = obj.controls.yMax.String;
-                    
-                    obj.axes.ylim = [str2double(ymin), str2double(ymax)];
+                    case 'auto'
+                        
+                        if ~isempty(y)
+                            
+                            y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
+                        
+                            if any(y)
+                                ymargin = (max(y) - min(y)) * 0.02;
+                                obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
+                            end
+                        end
+                        
+                    case 'manual'
+                        
+                        ymin = obj.controls.yMin.String;
+                        ymax = obj.controls.yMax.String;
+                        
+                        obj.axes.ylim = [str2double(ymin), str2double(ymax)];
+                end
+                
+            else
+                obj.axes.ylim = [0,1];
             end
             
             obj.axes.main.YLim = obj.axes.ylim;
             obj.updateAxesLimitEditText();
+            obj.updatePlotLabelPosition();
             
         end
         
         function updateAxesLimitMode(obj, varargin)
             
-            if obj.controls.xManual.Value
+            if obj.controls.xUser.Value
                 obj.axes.xmode = 'manual';
             else
                 obj.axes.xmode = 'auto';
             end
             
-            if obj.controls.yManual.Value
+            if obj.controls.yUser.Value
                 obj.axes.ymode = 'manual';
             else
                 obj.axes.ymode = 'auto';
@@ -266,19 +293,19 @@ classdef ChromatographyGUI < handle
             
             switch obj.axes.xmode
                 case 'manual'
-                    obj.controls.xManual.Value = 1;
+                    obj.controls.xUser.Value = 1;
                     obj.controls.xAuto.Value = 0;
                 case 'auto'
-                    obj.controls.xManual.Value = 0;
+                    obj.controls.xUser.Value = 0;
                     obj.controls.xAuto.Value = 1;
             end
             
             switch obj.axes.ymode
                 case 'manual'
-                    obj.controls.yManual.Value = 1;
+                    obj.controls.yUser.Value = 1;
                     obj.controls.yAuto.Value = 0;
                 case 'auto'
-                    obj.controls.yManual.Value = 0;
+                    obj.controls.yUser.Value = 0;
                     obj.controls.yAuto.Value = 1;
             end
             
@@ -320,7 +347,7 @@ classdef ChromatographyGUI < handle
                     obj.view.baseLine = plot(x, y,...
                         'parent',    obj.axes.main,...
                         'color',     obj.preferences.baseline.color,...
-                        'linewidth', 1.5,...
+                        'linewidth', obj.preferences.baseline.linewidth,...
                         'visible',   'on',...
                         'tag',       'baseline');
                 end
@@ -372,7 +399,6 @@ classdef ChromatographyGUI < handle
                 end
                 
                 obj.plotPeakLabels();
-                
             end
             
         end
@@ -420,6 +446,13 @@ classdef ChromatographyGUI < handle
                     
                     textX = x(yi);
                     textY = y(yi);
+                    
+                    dataX = obj.data(row).time(:,1);
+                    xi = find(obj.data(row).time(:,1) >= textX, 1);
+                    xf = dataX >= dataX(xi)-0.05 & dataX <= dataX(xi)+0.05;
+                    dataY = max(obj.data(row).intensity(xf,1));
+                    
+                    textY = max([textY, dataY]);
                     
                     % Plot Text
                     obj.view.peakLabel{col(i)} = text(textX, textY, textStr,...
@@ -560,6 +593,8 @@ classdef ChromatographyGUI < handle
                                 
                                 obj.controls.yMax.String = sprintf('%.3f', obj.axes.ylim(2));
                                 obj.axes.main.YLim = obj.axes.ylim;
+                                
+                                obj.updatePlotLabelPosition();
                             end
                         end
                     end
@@ -1067,6 +1102,7 @@ classdef ChromatographyGUI < handle
                 obj.updateAxesLimitToggle();
                 obj.updateAxesLimitEditText();
                 obj.updateAxesLimits();
+                obj.updatePlotLabelPosition();
             else
                 obj.axes.main.XLim = obj.axes.xlim;
                 obj.axes.main.YLim = obj.axes.ylim;
@@ -1102,7 +1138,13 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(currentIndex) && currentIndex ~= 0
                 
-                newIndex = currentIndex + varargin{1};
+                if length(varargin) == 1
+                    n = varargin{1};
+                elseif length(varargin) == 3
+                    n = varargin{3};
+                end
+                
+                newIndex = currentIndex + n;
                 maxIndex = length(obj.data);
                 
                 if maxIndex == 1
@@ -1190,6 +1232,125 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function updatePlotLabel(obj, varargin)
+            
+            if any(ishandle(obj.view.plotLabel))
+                delete(obj.view.plotLabel);
+            end
+            
+            if isempty(obj.data) || obj.view.index == 0
+                return
+            elseif ~obj.view.showPlotLabel
+                return
+            else
+                row = obj.view.index;
+            end
+            
+            if isempty(obj.preferences.labels.legend)
+                return
+            else
+                labelFields = obj.preferences.labels.legend;
+            end
+            
+            str = '';
+            
+            for i = 1:length(labelFields)
+                
+                if isfield(obj.data, labelFields{i})
+                    
+                    n = obj.data(row).(labelFields{i});
+                    
+                    if isempty(n)
+                        continue
+                    elseif isnumeric(n)
+                        n = num2str(n);
+                    end
+                    
+                    switch labelFields{i}
+                        case 'datetime'
+                            n(n=='-') = '/';
+                            n(n=='T') = ' ';
+                        case 'operator'
+                            n = ['Operator: ', n];
+                        case 'seqindex'
+                            n = ['SeqIndex: ', n];
+                        case 'vial'
+                            n = ['Vial: ', n];
+                    end
+                    
+                    n(n=='_') = ' ';
+                    
+                    if i == 1 || isempty(str)
+                        str = n;
+                    else
+                        str = [str, char(10), n];  
+                    end
+                    
+                end 
+            end
+            
+            if ~isempty(str)
+                
+                str = deblank(strtrim(str(str ~= '\')));
+                str = ['\rm ', str];
+                
+                x = obj.axes.main.XLim(2);
+                y = obj.axes.main.YLim(2);
+                
+                obj.view.plotLabel = text(x, y, str,...
+                    'parent',   obj.axes.main,...
+                    'clipping', 'on',...
+                    'hittest',  'off',...
+                    'tag',      'plotlabel',...
+                    'fontsize', obj.preferences.labels.fontsize,...
+                    'fontname', obj.preferences.labels.font,...
+                    'margin',   3,...
+                    'units',    'data',...
+                    'pickableparts',       'none',...
+                    'horizontalalignment', 'right',...
+                    'verticalalignment',   'bottom',...
+                    'selectionhighlight',  'off');
+                
+                a = obj.view.plotLabel.Extent;
+                
+                xlimit = obj.axes.main.XLim;
+                ylimit = obj.axes.main.YLim;
+
+                if a(1)+a(3) >= xlimit(2) - diff(xlimit)*0.01
+                    b = obj.view.plotLabel.Position(1);
+                    b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*0.01));
+                    obj.view.plotLabel.Position(1) = b;
+                end
+                
+                if a(2)+a(4) >= ylimit(2) - diff(ylimit)*0.01
+                    b = obj.view.plotLabel.Position(2);
+                    b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*0.01));
+                    obj.view.plotLabel.Position(2) = b;
+                end
+            end
+            
+        end
+        
+        function updatePlotLabelPosition(obj, varargin)
+            
+            if any(ishandle(obj.view.plotLabel))
+                
+                a = obj.view.plotLabel.Extent;
+                xlimit = obj.axes.main.XLim;
+                ylimit = obj.axes.main.YLim;
+                
+                b = obj.view.plotLabel.Position(1);
+                b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*0.01));
+                obj.view.plotLabel.Position(1) = b;
+                
+                b = obj.view.plotLabel.Position(2);
+                b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*0.01));
+                obj.view.plotLabel.Position(2) = b;
+                
+            end
+            
+        end
+        
         function updatePeakLine(obj, varargin)
             
             if isempty(obj.data) || obj.view.index == 0
@@ -1258,7 +1419,7 @@ classdef ChromatographyGUI < handle
                     obj.view.baseLine = plot(x, y,...
                         'parent',    obj.axes.main,...
                         'color',     obj.preferences.baseline.color,...
-                        'linewidth', 1.5,...
+                        'linewidth', obj.preferences.baseline.linewidth,...
                         'visible',   'on',...
                         'tag',       'baseline');
                 end
@@ -1384,7 +1545,44 @@ classdef ChromatographyGUI < handle
         function clearPeakLabel(obj, col)
             
             if length(obj.view.peakLabel) >= col && any(ishandle(obj.view.peakLabel{col}))
+                
+                if isprop(obj.view.peakLabel{col}, 'extent')
+                    
+                    xlimit = obj.axes.main.XLim;
+                    ylimit = obj.axes.main.YLim;
+                    
+                    y = obj.view.peakLabel{col}.Extent;
+                    y = y(2) + y(4);
+                    
+                    if y >= ylimit(2) - diff(ylimit) * 0.05
+                        
+                        isReset = 1;
+                        
+                        for i = 1:length(obj.view.peakLabel)
+                            
+                            if ishandle(obj.view.peakLabel{i}) && i ~= col
+                                
+                                xy = obj.view.peakLabel{i}.Extent;
+                                
+                                if xy(1) < xlimit(1) || xy(1) > xlimit(2)
+                                    continue
+                                end
+                                
+                                if xy(2)+xy(4) >= ylimit(2) - diff(ylimit)*0.05
+                                    isReset = 0;
+                                end
+                            end
+                        end
+                        
+                        if isReset
+                            obj.updateAxesYLim();
+                            obj.updatePlotLabelPosition();
+                        end
+                    end
+                end
+                
                 delete(obj.view.peakLabel{col});
+                
             end
             
         end

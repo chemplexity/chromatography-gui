@@ -49,6 +49,7 @@ function peak = peakfitEGH(varargin)
 default.center  = 0;
 default.width   = 1;
 default.minArea = 1E-5;
+default.area    = 'rawdata';
 
 % ---------------------------------------
 % Variables
@@ -72,17 +73,19 @@ addRequired(p, 'y', @ismatrix);
 addParameter(p, 'center',  default.center);
 addParameter(p, 'width',   default.width);
 addParameter(p, 'minarea', default.minArea);
+addParameter(p, 'area',    default.area);
 
 parse(p, varargin{:});
 
 % ---------------------------------------
 % Parse
 % ---------------------------------------
-x       = p.Results.x;
-y       = p.Results.y;
-center  = p.Results.center;
-width   = p.Results.width;
-minArea = p.Results.minarea;
+x          = p.Results.x;
+y          = p.Results.y;
+center     = p.Results.center;
+width      = p.Results.width;
+minArea    = p.Results.minarea;
+targetArea = p.Results.area;
 
 % ---------------------------------------
 % Validate
@@ -145,6 +148,11 @@ end
 % Parameter: 'minarea'
 if isempty(minArea)
     minArea = default.minArea;
+end
+
+% Parameter: 'area'
+if ~ischar(targetArea) || ~any(strcmpi(targetArea, {'rawdata', 'fitdata'}))
+    targetArea = 'rawdata';
 end
 
 % ---------------------------------------
@@ -255,7 +263,7 @@ else
     peak.fit    = yfit(:,yIndex);
     
     if size(x,1) == size(peak.fit, 1)
-        peak.area = peakArea(x, y, peak.fit);
+        peak.area = peakArea(x, y, peak.fit, targetArea);
     else
         peak.width = w(yIndex);
         peak.area = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
@@ -336,7 +344,9 @@ rmsd = rmsd / (ymax - ymin) * 100;
 
 end
 
-function area = peakArea(x0, y0, y1)
+function area = peakArea(x0, y0, y1, targetArea)
+
+area = 0;
 
 yFilter = y1 >= min(y1) + 0.001 * (max(y1)-min(y1));
 
@@ -344,8 +354,7 @@ x0 = x0(yFilter);
 y0 = y0(yFilter);
 y1 = y1(yFilter);
 
-if isempty(y0) || length(x0) ~= length(y0)
-    area = 0;
+if isempty(y0) || isempty(y1) || length(x0) ~= length(y0) || length(x0) ~= length(y1)
     return
 end
 
@@ -354,26 +363,42 @@ end
 dy0 = [0; diff(y0)];
 dy1 = [0; diff(y1)];
 
+switch targetArea
+    
+    case {'rawdata', 'rawData'}
+        dyt = dy0;
+        yt = y0;
+        
+    case {'fitdata', 'fitData'}
+        dyt = dy1;
+        yt = y1;   
+        
+    otherwise
+        dyt = dy0;
+        yt = y0;
+        
+end
+
 % Filter peak tail
 [~, dyi] = min(dy1(xi:end));
 dyi = xi + dyi - 1;
 
-yTailFilter = find(dy0(dyi:end) > 0, 2);
+yTailFilter = find(dyt(dyi:end) > 0, 2);
 
 if ~isempty(yTailFilter)
     
     yTailFilter = max(yTailFilter)  + dyi;
     
-    if yTailFilter <= length(y0)
+    if yTailFilter <= length(yt)
         x0(yTailFilter:end) = [];
-        y0(yTailFilter:end) = [];
+        yt(yTailFilter:end) = [];
     end
 end
 
 % Filter peak front
 [~, dyi] = max(dy1(1:xi));
 
-yFrontFilter = find(dy0(1:dyi) < 0);
+yFrontFilter = find(dyt(1:dyi) < 0);
 
 if ~isempty(yFrontFilter)
     
@@ -383,10 +408,14 @@ if ~isempty(yFrontFilter)
         yFrontFilter = yFrontFilter(end);
     end
 
-    if yFrontFilter <= length(y0)
+    if yFrontFilter <= length(yt)
         x0(1:yFrontFilter) = [];
-        y0(1:yFrontFilter) = [];
+        yt(1:yFrontFilter) = [];
     end
+end
+
+if isempty(x0) || isempty(yt)
+    return
 end
 
 f0 = 3000;
@@ -399,10 +428,10 @@ end
 
 if f1 < f0
     xi = min(x0) : 1/f0 : max(x0);
-    yi = interp1(x0, y0, xi);
+    yi = interp1(x0, yt, xi);
 else
     xi = x0;
-    yi = y0;
+    yi = yt;
 end
 
 if length(xi) == length(yi)
