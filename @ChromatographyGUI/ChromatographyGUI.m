@@ -52,6 +52,7 @@ classdef ChromatographyGUI < handle
             
             addpath(sourcePath);
             addpath(genpath([sourcePath, filesep, 'src']));
+            addpath(genpath([sourcePath, filesep, 'lib']));
             
             % ---------------------------------------
             % Defaults
@@ -64,8 +65,9 @@ classdef ChromatographyGUI < handle
             obj.preferences.baseline.linewidth = 1.50;
             obj.preferences.peaks.linewidth    = 2.00;
             
-            obj.preferences.labels.fontsize    = 11.0;
-            obj.preferences.labels.font        = obj.font;
+            obj.preferences.gui.fontsize    = 11.0;
+            obj.preferences.labels.fontsize = 11.0;
+            obj.preferences.labels.font     = obj.font;
             
             obj.preferences.labels.legend = {...
                 'instrument',...
@@ -74,6 +76,11 @@ classdef ChromatographyGUI < handle
             
             obj.preferences.peakModel = 'nn';
             obj.preferences.peakArea  = 'rawData';
+            
+            obj.preferences.baselineSmoothness = 5.5;
+            obj.preferences.baselineAsymmetry  = -5.5;
+            
+            obj.preferences.selectZoom = 0;
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
@@ -89,10 +96,11 @@ classdef ChromatographyGUI < handle
             obj.view.baseLine   = [];
             obj.view.peakLine   = [];
             obj.view.peakLabel  = [];
-            obj.view.selectZoom = 1;
+            obj.view.selectZoom = obj.preferences.selectZoom;
             obj.view.selectPeak = 0;
             
             obj.view.showPlotLabel = 1;
+            obj.view.showBaseLine  = 1;
             obj.view.showPeakLabel = 1;
             obj.view.showPeakLine  = 1;
             
@@ -116,6 +124,7 @@ classdef ChromatographyGUI < handle
             % GUI
             % ---------------------------------------
             obj.initializeGUI();
+            obj.loadPreferences();
             
         end
         
@@ -176,7 +185,7 @@ classdef ChromatographyGUI < handle
             end
             
             obj.updatePlotLabel();
-                    
+            
         end
         
         function updateAxesXLim(obj, varargin)
@@ -190,8 +199,6 @@ classdef ChromatographyGUI < handle
                         xmax = max(obj.data(obj.view.index).time);
                         xmargin = (xmax - xmin) * 0.02;
                         obj.axes.xlim = [xmin - xmargin, xmax + xmargin];
-                    else
-                        obj.axes.xlim = [0,1];
                     end
                     
                     obj.axes.main.XLim = obj.axes.xlim;
@@ -214,7 +221,6 @@ classdef ChromatographyGUI < handle
                         end
                         
                     else
-                        obj.axes.xlim = [0,1];
                         obj.axes.main.XLim = obj.axes.xlim;
                     end
                     
@@ -248,11 +254,12 @@ classdef ChromatographyGUI < handle
                         if ~isempty(y)
                             
                             y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
-                        
+                            
                             if any(y)
                                 ymargin = (max(y) - min(y)) * 0.02;
                                 obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
                             end
+                            
                         end
                         
                     case 'manual'
@@ -323,7 +330,7 @@ classdef ChromatographyGUI < handle
         end
         
         function plotBaseline(obj)
-                        
+            
             if isempty(obj.data) || obj.view.index == 0
                 return
             elseif ~obj.controls.showBaseline.Value
@@ -578,7 +585,7 @@ classdef ChromatographyGUI < handle
                         end
                         
                         if (tT >= obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'auto')) || ...
-                           (tT >= obj.axes.ylim(2) && textPos(2) < obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'manual'))
+                                (tT >= obj.axes.ylim(2) && textPos(2) < obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'manual'))
                             
                             if textX > obj.axes.xlim(1) && textX < obj.axes.xlim(2)
                                 
@@ -702,6 +709,10 @@ classdef ChromatographyGUI < handle
                 if ~isempty(obj.data)
                     tableData{end, length(tableHeader)} = [];
                 end
+            end
+            
+            if ischar(str) && ~iscell(str)
+                str = {str};
             end
             
             if isempty(obj.peaks.name)
@@ -1126,7 +1137,7 @@ classdef ChromatographyGUI < handle
             
             obj.axes.zoom = zoom(obj.figure);
             set(obj.axes.zoom, 'actionpostcallback', @obj.zoomCallback);
-            obj.userZoom(0);
+            obj.userZoom([], 0);
             
             obj.figure.Visible = 'on';
             
@@ -1283,10 +1294,10 @@ classdef ChromatographyGUI < handle
                     if i == 1 || isempty(str)
                         str = n;
                     else
-                        str = [str, char(10), n];  
+                        str = [str, char(10), n];
                     end
                     
-                end 
+                end
             end
             
             if ~isempty(str)
@@ -1315,7 +1326,7 @@ classdef ChromatographyGUI < handle
                 
                 xlimit = obj.axes.main.XLim;
                 ylimit = obj.axes.main.YLim;
-
+                
                 if a(1)+a(3) >= xlimit(2) - diff(xlimit)*0.01
                     b = obj.view.plotLabel.Position(1);
                     b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*0.01));
@@ -1734,9 +1745,11 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function userZoom(obj, state)
+        function userZoom(obj, state, varargin)
             
-            if obj.view.selectZoom == state
+            if ~isempty(varargin)
+                state = varargin{1};
+            elseif obj.view.selectZoom == state
                 return
             end
             
@@ -1874,6 +1887,148 @@ classdef ChromatographyGUI < handle
                         obj.clearPeak();
                     end
                     
+            end
+            
+        end
+        
+        function loadPreferences(obj, varargin)
+            
+            sourceFile = fileparts(mfilename('fullpath'));
+            [sourcePath, sourceFile] = fileparts(sourceFile);
+            
+            if ~strcmpi(sourceFile, '@ChromatographyGUI')
+                sourcePath = [sourcePath, filesep, sourceFile];
+            end
+            
+            filePath = [sourcePath, filesep, 'lib', filesep, 'default', filesep];
+            fileName = 'default_preferences.mat';
+            
+            [isFile, fileInfo] = fileattrib([filePath, fileName]);
+            
+            if ~isFile
+                return
+            end
+            
+            if ~fileInfo.directory && fileInfo.UserRead
+                
+                try
+                    userSettings = load(fileInfo.Name);
+                    
+                    if isstruct(userSettings) && isfield(userSettings, 'user_preferences')
+                        userSettings = userSettings.user_preferences;
+                        
+                        if isfield(userSettings, 'name') && strcmpi(userSettings.name, 'global_settings')
+                            
+                            if isfield(userSettings, 'data') && ~isempty(userSettings.data)
+                                userSettings = userSettings.data;
+                                
+                                obj.preferences = userSettings;
+                                
+                                obj.view.showPlotLabel = obj.preferences.showPlotLabel;
+                                obj.view.showBaseLine  = obj.preferences.showBaseLine;
+                                obj.view.showPeakLabel = obj.preferences.showPeakLabel;
+                                obj.view.showPeakLine  = obj.preferences.showPeakLine;
+                                obj.view.selectZoom    = obj.preferences.selectZoom;
+                                
+                                obj.controls.asymSlider.Value   = obj.preferences.baselineAsymmetry;
+                                obj.controls.smoothSlider.Value = obj.preferences.baselineSmoothness;
+                                
+                                obj.axes.xmode = obj.preferences.xmode;
+                                obj.axes.ymode = obj.preferences.ymode;
+                                obj.axes.xlim  = obj.preferences.xlim;
+                                obj.axes.ylim  = obj.preferences.ylim;
+                                
+                                legendNames = obj.preferences.labels.legend;
+                                legendMenu  = obj.menu.dataLabel.Children;
+                                
+                                for i = 1:length(legendMenu)
+                                    
+                                    if ishandle(legendMenu(i))
+                                        if any(strcmpi(legendMenu(i).Tag, legendNames))
+                                            legendMenu(i).Checked = 'on';
+                                        else
+                                            legendMenu(i).Checked = 'off';
+                                        end
+                                    end
+                                    
+                                end
+                                
+                                switch obj.preferences.peakModel
+                                    case 'nn'
+                                        peakModelMenuCallback(obj.menu.peakNeuralNetwork, [], obj);
+                                    case 'egh'
+                                        peakModelMenuCallback(obj.menu.peakExponentialGaussian, [], obj);
+                                end
+                                
+                                switch obj.preferences.peakArea
+                                    case 'rawData'
+                                        peakAreaMenuCallback(obj.menu.peakOptionsAreaActual, [], obj);
+                                    case 'fitData'
+                                        peakAreaMenuCallback(obj.menu.peakOptionsAreaFit, [], obj);
+                                end
+                                
+                                if obj.view.showPlotLabel
+                                    obj.menu.view.dataLabel.Checked = 'on';
+                                else
+                                    obj.menu.view.dataLabel.Checked = 'off';
+                                end
+                                
+                                if obj.preferences.showBaseLine
+                                    obj.controls.showBaseline.Value = 1;
+                                else
+                                    obj.controls.showBaseline.Value = 0;
+                                end
+                                
+                                if obj.preferences.showPeaks
+                                    obj.controls.showPeak.Value = 1;
+                                else
+                                    obj.controls.showPeak.Value = 0;
+                                end
+                                
+                                if obj.view.showPeakLabel
+                                    obj.menu.view.peakLabel.Checked = 'on';
+                                else
+                                    obj.menu.view.peakLabel.Checked = 'off';
+                                end
+                                
+                                if obj.view.showPeakLine
+                                    obj.menu.view.peakLine.Checked = 'on';
+                                else
+                                    obj.menu.view.peakLine.Checked = 'off';
+                                end
+                                
+                                if strcmpi(obj.preferences.showZoom, 'on')
+                                    obj.menu.view.zoom.Checked = 'on';
+                                    obj.view.selectZoom = 1;
+                                    obj.userZoom(1);
+                                    obj.userPeak(0);
+                                else
+                                    obj.menu.view.zoom.Checked = 'off';
+                                    obj.view.selectZoom = 0;
+                                    obj.userZoom(0);
+                                end
+                                
+                                obj.updateAxesLimitToggle();
+                                obj.updateAxesLimitMode();
+                                
+                                if strcmpi(obj.axes.xmode, 'manual')
+                                    obj.axes.main.XLim = obj.axes.xlim;
+                                end
+                                
+                                if strcmpi(obj.axes.ymode, 'manual')
+                                    obj.axes.main.YLim = obj.axes.ylim;
+                                end
+                                
+                                obj.updateAxesLimitEditText();
+                                obj.updatePlot();
+                                
+                            end
+                        end
+                    end
+                    
+                catch
+                end
+                
             end
             
         end

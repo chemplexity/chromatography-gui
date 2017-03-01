@@ -38,12 +38,12 @@ yLimPos(4) = xLimPos(4);
 % ---------------------------------------
 % Resize Callbacks
 % ---------------------------------------
-set(obj.panel.table, 'resizefcn', @(src, evt) resizeTablePanel(obj, src, evt, tablePos));
-set(obj.panel.axes, 'resizefcn', @(src, evt) resizeAxesPanel(obj, src, evt, plotPos));
-set(obj.panel.control, 'resizefcn', @(src, evt) resizeCtrlPanel(obj, src, evt, ctrlPos));
-set(obj.panel.select, 'resizefcn', @(src, evt) resizeSelectPanel(obj, src, evt, selectPos));
-set(obj.panel.xlim, 'resizefcn', @(src, evt) resizeXlimPanel(obj, src, evt, xLimPos));
-set(obj.panel.ylim, 'resizefcn', @(src, evt) resizeYlimPanel(obj, src, evt, yLimPos));
+set(obj.panel.table, 'resizefcn', @(src,evt) resizeTablePanel(obj, src, evt, tablePos));
+set(obj.panel.axes, 'resizefcn', @(src,evt) resizeAxesPanel(obj, src, evt, plotPos));
+set(obj.panel.control, 'resizefcn', @(src,evt) resizeCtrlPanel(obj, src, evt, ctrlPos));
+set(obj.panel.select, 'resizefcn', @(src,evt) resizeSelectPanel(obj, src, evt, selectPos));
+set(obj.panel.xlim, 'resizefcn', @(src,evt) resizeXlimPanel(obj, src, evt, xLimPos));
+set(obj.panel.ylim, 'resizefcn', @(src,evt) resizeYlimPanel(obj, src, evt, yLimPos));
 
 end
 
@@ -56,11 +56,11 @@ obj.panel.table.Position = pos;
 
 if isprop(obj.panel.table, 'InnerPosition')
     
-    obj.table.main.Units = 'pixels';
+    obj.table.main.Units  = 'pixels';
     obj.panel.table.Units = 'pixels';
     
-    x1 = get(obj.panel.table, 'innerposition');
-    x2 = get(obj.panel.table, 'position');
+    x1 = obj.panel.table.InnerPosition;
+    x2 = obj.panel.table.Position;
     
     x(1) = x1(1) - x2(1);
     x(2) = x1(2) - x2(2);
@@ -68,7 +68,8 @@ if isprop(obj.panel.table, 'InnerPosition')
     x(4) = x1(4);
     
     obj.table.main.Position = x;
-    obj.table.main.Units = 'normalized';
+    
+    obj.table.main.Units  = 'normalized';
     obj.panel.table.Units = 'normalized';
     
 end
@@ -119,21 +120,20 @@ obj.panel.select.Position = pos;
 
 if isprop(obj.controls.editID, 'OuterPosition')
     
-    x1 = get(obj.controls.selectID, 'extent');
-    x2 = get(obj.controls.editID, 'outerposition');
+    x1 = obj.controls.selectID.Extent;
+    x2 = obj.controls.editID.OuterPosition;
     
     x(1) = 0.25 - (x1(3) / 2);
     x(2) = (x2(2) + (x2(4) / 2)) - (x1(4) / 2);
     x(3) = x1(3);
     x(4) = x1(4);
     
-    
     if all(x > 0)
         obj.controls.selectID.Position = x;
     end
     
-    x1 = get(obj.controls.selectName, 'extent');
-    x2 = get(obj.controls.editName, 'outerposition');
+    x1 = obj.controls.selectName.Extent;
+    x2 = obj.controls.editName.OuterPosition;
     
     x(1) = 0.25 - (x1(3) / 2);
     x(3) = x1(3);
@@ -157,8 +157,8 @@ obj.panel.xlim.Position = pos;
 
 if isprop(obj.controls.xMin, 'OuterPosition')
     
-    x1 = get(obj.controls.xMin, 'outerposition');
-    x2 = get(obj.controls.xSeparator, 'extent');
+    x1 = obj.controls.xMin.OuterPosition;
+    x2 = obj.controls.xSeparator.Extent;
     
     x(3) = x2(3);
     x(4) = x2(4);
@@ -182,8 +182,8 @@ obj.panel.ylim.Position = pos;
 
 if isprop(obj.controls.yMin, 'OuterPosition')
     
-    x1 = get(obj.controls.yMin, 'outerposition');
-    x2 = get(obj.controls.ySeparator, 'extent');
+    x1 = obj.controls.yMin.OuterPosition;
+    x2 = obj.controls.ySeparator.Extent;
     
     x(3) = x2(3);
     x(4) = x2(4);

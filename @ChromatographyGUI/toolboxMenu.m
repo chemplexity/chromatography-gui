@@ -15,19 +15,22 @@ obj.menu.help.main    = newMenu(obj.figure, 'Help');
 obj.menu.file.load   = newMenu(obj.menu.file.main, 'Load');
 obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
+obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
+obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
 obj.menu.file.save.Callback = {@saveCheckpoint, obj};
 obj.menu.file.exit.Callback = 'closereq';
 
-obj.menu.file.exit.Separator = 'on';
+obj.menu.file.import.Separator = 'on';
+obj.menu.file.exit.Separator   = 'on';
 
 % ---------------------------------------
 % File Menu --> Load
 % ---------------------------------------
 obj.menu.loadRaw     = newMenu(obj.menu.file.load, 'Data');
 obj.menu.loadData    = newMenu(obj.menu.file.load, 'Workspace');
-obj.menu.loadAgilent = newMenu(obj.menu.loadRaw, 'Agilent (*.D)'); 
+obj.menu.loadAgilent = newMenu(obj.menu.loadRaw, 'Agilent (*.D)');
 obj.menu.loadMat     = newMenu(obj.menu.loadData, 'MAT (*.MAT)');
 
 obj.menu.loadAgilent.Callback = {@loadAgilentCallback, obj};
@@ -51,6 +54,20 @@ if ispc
     obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
+
+% ---------------------------------------
+% File Menu --> Import/Export
+% ---------------------------------------
+obj.menu.file.importPeakList    = newMenu(obj.menu.file.import, 'Peak List');
+obj.menu.file.importPreferences = newMenu(obj.menu.file.import, 'Preferences');
+
+obj.menu.file.exportPeakList    = newMenu(obj.menu.file.export, 'Peak List');
+obj.menu.file.exportPreferences = newMenu(obj.menu.file.export, 'Preferences');
+
+obj.menu.file.importPeakList.Callback    = {@importPeakList, obj};
+obj.menu.file.importPreferences.Callback = {@importPreferences, obj};
+obj.menu.file.exportPeakList.Callback    = {@exportPeakList, obj};
+obj.menu.file.exportPreferences.Callback = {@exportPreferences, obj};
 
 % ---------------------------------------
 % Edit Menu
@@ -219,6 +236,234 @@ if any(strcmpi('.git', {sourcePath.name}))
             
         end
     end
+end
+
+end
+
+% ---------------------------------------
+% Import Peak List
+% ---------------------------------------
+function importPeakList(~, ~, obj)
+
+[fileName, filePath] = uigetfile('*.mat', 'Open');
+
+if ischar(fileName) && ischar(filePath)
+    peakList = load([filePath, fileName]);
+    
+    if isstruct(peakList) && isfield(peakList, 'user_peaks')
+        peakList = peakList.user_peaks;
+        
+        if isfield(peakList, 'name') && strcmpi(peakList.name, 'peaklist')
+            if isfield(peakList, 'data') && ~isempty(peakList.data)
+                if iscell(peakList.data)
+                    
+                    for i = 1:length(peakList.data)
+                        
+                        if ~ischar(peakList.data{i})
+                            continue
+                        end
+                        
+                        if ~any(strcmpi(peakList.data{i}, obj.peaks.name))
+                            obj.peakAddColumn(peakList.data{i})
+                        end
+                        
+                    end
+                end
+            end
+        end
+    end
+    
+end
+
+end
+
+% ---------------------------------------
+% Import Preferences
+% ---------------------------------------
+function importPreferences(~, ~, obj)
+
+[fileName, filePath] = uigetfile('*.mat', 'Open');
+
+if ischar(fileName) && ischar(filePath)
+    userSettings = load([filePath, fileName]);
+    
+    if isstruct(userSettings) && isfield(userSettings, 'user_preferences')
+        userSettings = userSettings.user_preferences;
+        
+        if isfield(userSettings, 'name') && strcmpi(userSettings.name, 'global_settings')
+            
+            if isfield(userSettings, 'data') && ~isempty(userSettings.data)
+                userSettings = userSettings.data;
+                
+                obj.preferences = userSettings;
+                
+                obj.view.showPlotLabel = obj.preferences.showPlotLabel;
+                obj.view.showBaseLine  = obj.preferences.showBaseLine;
+                obj.view.showPeakLabel = obj.preferences.showPeakLabel;
+                obj.view.showPeakLine  = obj.preferences.showPeakLine;
+                obj.view.selectZoom    = obj.preferences.selectZoom;
+                
+                obj.controls.asymSlider.Value   = obj.preferences.baselineAsymmetry;
+                obj.controls.smoothSlider.Value = obj.preferences.baselineSmoothness;
+                
+                obj.axes.xmode = obj.preferences.xmode;
+                obj.axes.ymode = obj.preferences.ymode;
+                obj.axes.xlim  = obj.preferences.xlim;
+                obj.axes.ylim  = obj.preferences.ylim;
+                
+                legendNames = obj.preferences.labels.legend;
+                legendMenu  = obj.menu.dataLabel.Children;
+                
+                for i = 1:length(legendMenu)
+                    
+                    if ishandle(legendMenu(i))
+                        if any(strcmpi(legendMenu(i).Tag, legendNames))
+                            legendMenu(i).Checked = 'on';
+                        else
+                            legendMenu(i).Checked = 'off';
+                        end
+                    end
+                    
+                end
+                
+                switch obj.preferences.peakModel
+                    case 'nn'
+                        peakModelMenuCallback(obj.menu.peakNeuralNetwork, [], obj);
+                    case 'egh'
+                        peakModelMenuCallback(obj.menu.peakExponentialGaussian, [], obj);
+                end
+                
+                switch obj.preferences.peakArea
+                    case 'rawData'
+                        peakAreaMenuCallback(obj.menu.peakOptionsAreaActual, [], obj);
+                    case 'fitData'
+                        peakAreaMenuCallback(obj.menu.peakOptionsAreaFit, [], obj);
+                end
+                
+                if obj.view.showPlotLabel
+                    obj.menu.view.dataLabel.Checked = 'on';
+                else
+                    obj.menu.view.dataLabel.Checked = 'off';
+                end
+                
+                if obj.preferences.showBaseLine
+                    obj.controls.showBaseline.Value = 1;
+                else
+                    obj.controls.showBaseline.Value = 0;
+                end
+                
+                if obj.preferences.showPeaks
+                    obj.controls.showPeak.Value = 1;
+                else
+                    obj.controls.showPeak.Value = 0;
+                end
+                
+                if obj.view.showPeakLabel
+                    obj.menu.view.peakLabel.Checked = 'on';
+                else
+                    obj.menu.view.peakLabel.Checked = 'off';
+                end
+                
+                if obj.view.showPeakLine
+                    obj.menu.view.peakLine.Checked = 'on';
+                else
+                    obj.menu.view.peakLine.Checked = 'off';
+                end
+                
+                if strcmpi(obj.preferences.showZoom, 'on')
+                    obj.menu.view.zoom.Checked = 'on';
+                    obj.view.selectZoom = 1;
+                    obj.userZoom(1);
+                    obj.userPeak(0);
+                else
+                    obj.menu.view.zoom.Checked = 'off';
+                    obj.view.selectZoom = 0;
+                    obj.userZoom(0);
+                end
+                
+                obj.updateAxesLimitToggle();
+                obj.updateAxesLimitMode();
+                
+                if strcmpi(obj.axes.xmode, 'manual')
+                    obj.axes.main.XLim = obj.axes.xlim;
+                end
+                
+                if strcmpi(obj.axes.ymode, 'manual')
+                    obj.axes.main.YLim = obj.axes.ylim;
+                end
+                
+                obj.updateAxesLimitEditText();
+                obj.updatePlot();
+                
+            end
+        end
+    end
+end
+
+end
+
+% ---------------------------------------
+% Export Peak List
+% ---------------------------------------
+function exportPeakList(~, ~, obj)
+
+if isempty(obj.peaks.name)
+    return
+end
+
+user_peaks.version = ['v', obj.version, '.', obj.date];
+user_peaks.name    = 'peaklist';
+user_peaks.data    = obj.peaks.name;
+
+[fileName, filePath] = uiputfile(...
+    {'*.mat', 'MAT-files (*.mat)'},...
+    'Save As...',...
+    'user_peaklist');
+
+if ischar(fileName) && ischar(filePath) && ~isempty(user_peaks)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'user_peaks', '-mat');
+    cd(currentPath);
+end
+
+end
+
+% ---------------------------------------
+% Export Preferences
+% ---------------------------------------
+function exportPreferences(~, ~, obj)
+
+obj.preferences.showPlotLabel = obj.view.showPlotLabel;
+obj.preferences.showBaseLine  = obj.controls.showBaseline.Value;
+obj.preferences.showPeaks     = obj.controls.showPeak.Value;
+obj.preferences.showPeakLabel = obj.view.showPeakLabel;
+obj.preferences.showPeakLine  = obj.view.showPeakLine;
+obj.preferences.showZoom      = obj.menu.view.zoom.Checked;
+obj.preferences.selectZoom    = obj.view.selectZoom;
+
+obj.preferences.baselineAsymmetry  = obj.controls.asymSlider.Value;
+obj.preferences.baselineSmoothness = obj.controls.smoothSlider.Value;
+
+obj.preferences.xmode = obj.axes.xmode;
+obj.preferences.ymode = obj.axes.ymode;
+obj.preferences.xlim  = obj.axes.xlim;
+obj.preferences.ylim  = obj.axes.ylim;
+
+user_preferences.version = ['v', obj.version, '.', obj.date];
+user_preferences.name    = 'global_settings';
+user_preferences.data    = obj.preferences;
+
+[fileName, filePath] = uiputfile(...
+    {'*.mat', 'MAT-files (*.mat)'},...
+    'Save As...',...
+    'user_preferences');
+
+if ischar(fileName) && ischar(filePath) && ~isempty(user_preferences)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'user_preferences', '-mat');
+    cd(currentPath);
 end
 
 end
@@ -730,7 +975,7 @@ if strcmpi(evt.EventName, 'Action')
         case 'on'
             src.Checked = 'off';
             obj.userZoom(0);
-        
+            
         case 'off'
             src.Checked = 'on';
             obj.userZoom(1);
@@ -834,7 +1079,7 @@ switch src.Checked
 end
 
 updatePlotLabel(src, obj);
- 
+
 end
 
 function plotLabelQuickSelectCallback(src, ~, obj)
@@ -909,26 +1154,19 @@ end
 % ---------------------------------------
 % Set Peak Model
 % ---------------------------------------
-function peakModelMenuCallback(src, evt, obj)
+function peakModelMenuCallback(src, ~, obj)
 
-if strcmpi(evt.EventName, 'Action')
-    
-    if strcmpi(src.Checked, 'off')
-        
-        for i = 1:length(src.Parent.Children)
-            src.Parent.Children(i).Checked = 'off';
-        end
-        
-        src.Checked = 'on';
-        
-        switch src.Tag
-            case 'peakNN'
-                obj.preferences.peakModel = 'nn';
-            case 'peakEGH'
-                obj.preferences.peakModel = 'egh';     
-        end
-    end
-    
+for i = 1:length(src.Parent.Children)
+    src.Parent.Children(i).Checked = 'off';
+end
+
+src.Checked = 'on';
+
+switch src.Tag
+    case 'peakNN'
+        obj.preferences.peakModel = 'nn';
+    case 'peakEGH'
+        obj.preferences.peakModel = 'egh';
 end
 
 end
@@ -936,23 +1174,15 @@ end
 % ---------------------------------------
 % Set Peak Area Target
 % ---------------------------------------
-function peakAreaMenuCallback(src, evt, obj)
+function peakAreaMenuCallback(src, ~, obj)
 
-if strcmpi(evt.EventName, 'Action')
-    
-    if strcmpi(src.Checked, 'off')
-        
-        for i = 1:length(src.Parent.Children)
-            src.Parent.Children(i).Checked = 'off';
-        end
-        
-        src.Checked = 'on';
-        
-        obj.preferences.peakArea = src.Tag;
-        
-    end
-    
+for i = 1:length(src.Parent.Children)
+    src.Parent.Children(i).Checked = 'off';
 end
+
+src.Checked = 'on';
+
+obj.preferences.peakArea = src.Tag;
 
 end
 
