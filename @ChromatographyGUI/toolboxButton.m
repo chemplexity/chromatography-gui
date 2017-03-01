@@ -70,7 +70,7 @@ obj.controls.clearBaseline = newPushButton(...
 % Select Tab --> ID, Sample Name
 t1(1) = 0.15;
 t1(2) = 1.00 - 0.30;
-t1(3) = 0.20;
+t1(3) = 0.25;
 t1(4) = 0.20;
 
 t2(1) = t1(1);

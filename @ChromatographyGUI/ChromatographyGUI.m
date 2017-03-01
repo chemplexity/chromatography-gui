@@ -161,7 +161,7 @@ classdef ChromatographyGUI < handle
             x = obj.data(row).time;
             y = obj.data(row).intensity(:,1);
             
-            if ishandle(obj.view.peakLine)
+            if any(ishandle(obj.view.peakLine))
                 set(obj.view.plotLine, 'xdata', x, 'ydata', y);
             else
                 obj.view.plotLine = plot(x, y,...
@@ -344,7 +344,7 @@ classdef ChromatographyGUI < handle
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if ishandle(obj.view.baseLine)
+                if any(ishandle(obj.view.baseLine))
                     set(obj.view.baseLine, 'xdata', x, 'ydata', y);
                 else
                     obj.view.baseLine = plot(x, y,...
@@ -937,7 +937,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(axesHandles)
                 
-                if ishandle(exportFigure)
+                if any(ishandle(exportFigure))
                     close(exportFigure);
                 end
                 
@@ -987,7 +987,7 @@ classdef ChromatographyGUI < handle
             
             print(exportFigure, '-clipboard', '-dbitmap');
             
-            if ishandle(exportFigure)
+            if any(ishandle(exportFigure))
                 close(exportFigure);
             end
             
@@ -1420,7 +1420,7 @@ classdef ChromatographyGUI < handle
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if ishandle(obj.view.baseLine)
+                if any(ishandle(obj.view.baseLine))
                     set(obj.view.baseLine, 'xdata', x, 'ydata', y);
                 else
                     obj.view.baseLine = plot(x, y,...
@@ -1567,7 +1567,7 @@ classdef ChromatographyGUI < handle
                         
                         for i = 1:length(obj.view.peakLabel)
                             
-                            if ishandle(obj.view.peakLabel{i}) && i ~= col
+                            if any(ishandle(obj.view.peakLabel{i})) && i ~= col
                                 
                                 xy = obj.view.peakLabel{i}.Extent;
                                 
@@ -1605,7 +1605,7 @@ classdef ChromatographyGUI < handle
         
         function clearAllPlotLine(obj)
             
-            if ishandle(obj.view.plotLine)
+            if any(ishandle(obj.view.plotLine))
                 set(obj.view.plotLine, 'xdata', [], 'ydata', []);
             end
             
@@ -1613,7 +1613,7 @@ classdef ChromatographyGUI < handle
         
         function clearAllBaseLine(obj)
             
-            if ishandle(obj.view.baseLine)
+            if any(ishandle(obj.view.baseLine))
                 set(obj.view.baseLine, 'xdata', [], 'ydata', []);
             end
             
@@ -1623,7 +1623,7 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(obj.view.peakLine)
                 for i = 1:length(obj.view.peakLine)
-                    if ishandle(obj.view.peakLine{i})
+                    if any(ishandle(obj.view.peakLine{i}))
                         set(obj.view.peakLine{i}, 'xdata', [], 'ydata', []);
                     end
                 end
@@ -1635,7 +1635,7 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(obj.view.peakLabel)
                 for i = 1:length(obj.view.peakLabel)
-                    if ishandle(obj.view.peakLabel{i})
+                    if any(ishandle(obj.view.peakLabel{i}))
                         delete(obj.view.peakLabel{i});
                     end
                 end
@@ -1939,7 +1939,7 @@ classdef ChromatographyGUI < handle
                                 
                                 for i = 1:length(legendMenu)
                                     
-                                    if ishandle(legendMenu(i))
+                                    if any(ishandle(legendMenu(i)))
                                         if any(strcmpi(legendMenu(i).Tag, legendNames))
                                             legendMenu(i).Checked = 'on';
                                         else

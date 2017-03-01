@@ -48,7 +48,7 @@ function [x,y] = getXY(obj)
 
 row = obj.view.index;
 
-x = obj.data(row).time;
+x = obj.data(row).time(:,1);
 y = obj.data(row).intensity(:,1);
 
 if isempty(x) || isempty(y)
@@ -65,15 +65,20 @@ function getNN(obj, x, y, peakCenter)
 row = obj.view.index;
 col = obj.controls.peakList.Value;
 
-px = findpeaks(x, y,...
-    'xmin', peakCenter - 0.5,...
-    'xmax', peakCenter + 0.5,...
-    'sensitivity', 200);
-
-if ~isempty(px)
-    [~, ii] = min(abs(peakCenter - px(:,1)));
-    peakCenter = px(ii,1);
-else
+try
+    px = findpeaks(x, y,...
+        'xmin', peakCenter - 0.5,...
+        'xmax', peakCenter + 0.5,...
+        'sensitivity', 200);
+    
+    if ~isempty(px)
+        [~, ii] = min(abs(peakCenter - px(:,1)));
+        peakCenter = px(ii,1);
+    else
+        peakCenter = findPeakCenter(x, y, peakCenter);
+    end
+    
+catch
     peakCenter = findPeakCenter(x, y, peakCenter);
 end
 

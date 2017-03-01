@@ -435,7 +435,18 @@ else
 end
 
 if length(xi) == length(yi)
-    area = trapz(xi, yi);
+    
+    try
+        area = trapz(xi,yi);
+    catch
+        dx = diff(xi);
+        dy = (yi(1:end-1) + yi(2:end));
+
+        if length(dx) == length(dy)
+            area = sum(dx.*dy) / 2;
+        end
+    end
+    
 else
     area = 0;
 end
