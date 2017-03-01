@@ -1,170 +1,477 @@
 function toolboxMenu(obj, varargin)
 
 % ---------------------------------------
+% Menu
+% ---------------------------------------
+obj.menu.file.main    = newMenu(obj.figure, 'File');
+obj.menu.edit.main    = newMenu(obj.figure, 'Edit');
+obj.menu.view.main    = newMenu(obj.figure, 'View');
+obj.menu.options.main = newMenu(obj.figure, 'Options');
+obj.menu.help.main    = newMenu(obj.figure, 'Help');
+
+% ---------------------------------------
 % File Menu
 % ---------------------------------------
-obj.menu.file.main = uimenu(...
-    'parent',   obj.figure,...
-    'label',    'File',...
-    'tag',      'filemenu');
+obj.menu.file.load   = newMenu(obj.menu.file.main, 'Load');
+obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
+obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
+obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
+obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
+obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
-obj.menu.file.load = uimenu(...
-    'parent',   obj.menu.file.main,...
-    'label',    'Load',...
-    'tag',      'loadmenu');
+obj.menu.file.save.Callback = {@saveCheckpoint, obj};
+obj.menu.file.exit.Callback = 'closereq';
 
-obj.menu.file.save = uimenu(...
-    'parent',   obj.menu.file.main,...
-    'label',    'Save',...
-    'tag',      'savemenu',...
-    'callback', @(src, event) saveCheckpoint(obj, src, event));
-
-obj.menu.file.saveas = uimenu(...
-    'parent',   obj.menu.file.main,...
-    'label',    'Save As...',...
-    'tag',      'saveasmenu');
-
-obj.menu.file.exit = uimenu(...
-    'parent',   obj.menu.file.main,...
-    'label',    'Exit',...
-    'tag',      'exitmenu',...
-    'callback', 'closereq');
+obj.menu.file.import.Separator = 'on';
+obj.menu.file.exit.Separator   = 'on';
 
 % ---------------------------------------
 % File Menu --> Load
 % ---------------------------------------
-obj.menu.file.agilent.load = uimenu(...
-    'parent',   obj.menu.file.load,...
-    'label',    'Agilent (*.D)',...
-    'tag',      'loadagilentmenu',...
-    'callback', @(src, event) loadAgilentCallback(obj, src, event));
+obj.menu.loadRaw     = newMenu(obj.menu.file.load, 'Data');
+obj.menu.loadData    = newMenu(obj.menu.file.load, 'Workspace');
+obj.menu.loadAgilent = newMenu(obj.menu.loadRaw, 'Agilent (*.D)');
+obj.menu.loadMat     = newMenu(obj.menu.loadData, 'MAT (*.MAT)');
 
-obj.menu.file.mat.load = uimenu(...
-    'parent',   obj.menu.file.load,...
-    'label',    'MAT (*.mat)',...
-    'tag',      'loadmatmenu',...
-    'callback', @(src, event) loadMatlabCallback(obj, src, event));
+obj.menu.loadAgilent.Callback = {@loadAgilentCallback, obj};
+obj.menu.loadMat.Callback     = {@loadMatlabCallback, obj};
 
 % ---------------------------------------
 % File Menu --> Save As
 % ---------------------------------------
-obj.menu.file.mat.save = uimenu(...
-    'parent',   obj.menu.file.saveas,...
-    'label',    'MAT (*.mat)',...
-    'tag',      'saveasmatmenu',...
-    'callback', @(src, event) saveMatlabCallback(obj, src, event));
+obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
+obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
+obj.menu.saveData  = newMenu(obj.menu.file.saveAs, 'Workspace');
+obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
+obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
+obj.menu.saveMat   = newMenu(obj.menu.saveData, 'MAT (*.MAT)');
+
+obj.menu.saveImg.Callback = {@saveImageCallback, obj};
+obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};
+obj.menu.saveMat.Callback = {@saveMatlabCallback, obj};
 
 if ispc
-    
-    obj.menu.file.xls.save = uimenu(...
-        'parent',   obj.menu.file.saveas,...
-        'label',    'Excel (*.xls, *.xlsx)',...
-        'tag',      'saveasxlsmenu',...
-        'callback', @(src, event) saveExcelCallback(obj, src, event));
-    
+    obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
+    obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
 
-obj.menu.file.csv.save = uimenu(...
-    'parent',   obj.menu.file.saveas,...
-    'label',    'CSV (*.csv)',...
-    'tag',      'saveasxlsmenu',...
-    'callback', @(src, event) saveCSVCallback(obj, src, event));
+% ---------------------------------------
+% File Menu --> Import/Export
+% ---------------------------------------
+obj.menu.file.importPeakList    = newMenu(obj.menu.file.import, 'Peak List');
+obj.menu.file.importPreferences = newMenu(obj.menu.file.import, 'Preferences');
 
-obj.menu.file.img.save = uimenu(...
-    'parent',   obj.menu.file.saveas,...
-    'label',    'Image (*.jpg, *.png, *.tiff)',...
-    'tag',      'saveasimagemenu',...
-    'callback', @(src, event) saveImageCallback(obj, src, event));
+obj.menu.file.exportPeakList    = newMenu(obj.menu.file.export, 'Peak List');
+obj.menu.file.exportPreferences = newMenu(obj.menu.file.export, 'Preferences');
+
+obj.menu.file.importPeakList.Callback    = {@importPeakList, obj};
+obj.menu.file.importPreferences.Callback = {@importPreferences, obj};
+obj.menu.file.exportPeakList.Callback    = {@exportPeakList, obj};
+obj.menu.file.exportPreferences.Callback = {@exportPreferences, obj};
 
 % ---------------------------------------
 % Edit Menu
 % ---------------------------------------
-obj.menu.edit.main = uimenu(...
-    'parent',   obj.figure,...
-    'label',    'Edit',...
-    'tag',      'editmenu');
+obj.menu.edit.copy   = newMenu(obj.menu.edit.main, 'Copy');
+obj.menu.edit.delete = newMenu(obj.menu.edit.main, 'Delete');
 
 % ---------------------------------------
 % Edit Menu --> Copy
 % ---------------------------------------
-obj.menu.edit.copy.main = uimenu(...
-    'parent',   obj.menu.edit.main,...
-    'label',    'Copy',...
-    'tag',      'editcopymenu');
+obj.menu.edit.copyFigure = newMenu(obj.menu.edit.copy, 'Figure');
+obj.menu.edit.copyTable  = newMenu(obj.menu.edit.copy, 'Table');
 
-obj.menu.edit.copy.figure = uimenu(...
-    'parent',   obj.menu.edit.copy.main,...
-    'label',    'Figure',...
-    'tag',      'copyfiguremenu',...
-    'callback', @obj.copyFigure);
-
-obj.menu.edit.copy.table = uimenu(...
-    'parent',   obj.menu.edit.copy.main,...
-    'label',    'Table',...
-    'tag',      'copytablemenu',...
-    'callback', @obj.copyTable);
+obj.menu.edit.copyFigure.Callback = @obj.copyFigure;
+obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.delete.main = uimenu(...
-    'parent',   obj.menu.edit.main,...
-    'label',    'Delete',...
-    'tag',      'deletemenu');
+obj.menu.edit.deleteSample   = newMenu(obj.menu.edit.delete, 'Data');
+obj.menu.edit.deleteSelected = newMenu(obj.menu.edit.deleteSample, 'Selected rows...');
 
-obj.menu.edit.delete.selected = uimenu(...
-    'parent',   obj.menu.edit.delete.main,...
-    'label',    'Selected rows...',...
-    'tag',      'deletetablerowmenu',...
-    'callback', @(src, event) tableDeleteRowMenu(obj, src, event));
+obj.menu.edit.deleteSelected.Callback = {@tableDeleteRowMenu, obj};
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.main = uimenu(...
-    'parent',   obj.figure,...
-    'label',    'View',...
-    'tag',      'viewmenu');
+obj.menu.view.data      = newMenu(obj.menu.view.main, 'Data');
+obj.menu.view.peak      = newMenu(obj.menu.view.main, 'Peak');
+obj.menu.view.zoom      = newMenu(obj.menu.view.main, 'Zoom');
+obj.menu.view.dataLabel = newMenu(obj.menu.view.data, 'Show Label');
+obj.menu.view.peakLabel = newMenu(obj.menu.view.peak, 'Show Label');
+obj.menu.view.peakLine  = newMenu(obj.menu.view.peak, 'Show Line');
 
-obj.menu.view.zoom = uimenu(...
-    'parent',   obj.menu.view.main,...
-    'label',    'Zoom',...
-    'tag',      'zoommenu',...
-    'checked',  'off',...
-    'callback', @(src, event) zoomMenuCallback(obj, src, event));
+obj.menu.view.dataLabel.Tag      = 'showPlotLabel';
+obj.menu.view.peakLabel.Tag      = 'showPeakLabel';
+obj.menu.view.peakLine.Tag       = 'showPeakLine';
 
-obj.menu.view.label = uimenu(...
-    'parent',   obj.menu.view.main,...
-    'label',    'Labels',...
-    'tag',      'labelmenu',...
-    'checked',  'on',...
-    'callback', @(src, event) labelMenuCallback(obj, src, event));
+obj.menu.view.dataLabel.Checked  = 'on';
+obj.menu.view.peakLabel.Checked  = 'on';
+obj.menu.view.peakLine.Checked   = 'on';
+obj.menu.view.zoom.Checked       = 'off';
 
-%obj.menu.view.preferences = uimenu(...
-%    'parent',   obj.menu.view.main,...
-%    'label',    'Preferences',...
-%    'tag',      'preferencemenu');
+obj.menu.view.dataLabel.Callback = {@plotViewMenuCallback, obj};
+obj.menu.view.peakLabel.Callback = {@peakViewMenuCallback, obj};
+obj.menu.view.peakLine.Callback  = {@peakViewMenuCallback, obj};
+obj.menu.view.zoom.Callback      = {@zoomMenuCallback, obj};
+
+obj.menu.view.zoom.Separator     = 'on';
+
+% ---------------------------------------
+% Options Menu
+% ---------------------------------------
+obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Data');
+obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
+
+% ---------------------------------------
+% Options --> Data
+% ---------------------------------------
+obj.menu.dataLabel       = newMenu(obj.menu.dataOptions, 'Label');
+obj.menu.labelFilePath   = newMenu(obj.menu.dataLabel, 'File Path');
+obj.menu.labelFileName   = newMenu(obj.menu.dataLabel, 'File Name');
+obj.menu.labelInstrument = newMenu(obj.menu.dataLabel, 'Instrument');
+obj.menu.labelDatetime   = newMenu(obj.menu.dataLabel, 'Date/Time');
+obj.menu.labelMethodName = newMenu(obj.menu.dataLabel, 'Method Name');
+obj.menu.labelSampleName = newMenu(obj.menu.dataLabel, 'Sample Name');
+obj.menu.labelOperator   = newMenu(obj.menu.dataLabel, 'Operator');
+obj.menu.labelSeqIndex   = newMenu(obj.menu.dataLabel, 'Sequence Index');
+obj.menu.labelVialNum    = newMenu(obj.menu.dataLabel, 'Vial #');
+obj.menu.labelSelectAll  = newMenu(obj.menu.dataLabel, 'Select All');
+obj.menu.labelSelectNone = newMenu(obj.menu.dataLabel, 'Select None');
+
+obj.menu.labelFilePath.Tag        = 'file_path';
+obj.menu.labelFileName.Tag        = 'file_name';
+obj.menu.labelInstrument.Tag      = 'instrument';
+obj.menu.labelDatetime.Tag        = 'datetime';
+obj.menu.labelMethodName.Tag      = 'method_name';
+obj.menu.labelSampleName.Tag      = 'sample_name';
+obj.menu.labelOperator.Tag        = 'operator';
+obj.menu.labelSeqIndex.Tag        = 'seqindex';
+obj.menu.labelVialNum.Tag         = 'vial';
+obj.menu.labelSelectAll.Tag       = 'selectAll';
+obj.menu.labelSelectNone.Tag      = 'selectNone';
+
+obj.menu.labelFilePath.Checked    = 'off';
+obj.menu.labelFileName.Checked    = 'off';
+obj.menu.labelInstrument.Checked  = 'on';
+obj.menu.labelDatetime.Checked    = 'on';
+obj.menu.labelMethodName.Checked  = 'off';
+obj.menu.labelSampleName.Checked  = 'on';
+obj.menu.labelOperator.Checked    = 'off';
+obj.menu.labelSeqIndex.Checked    = 'off';
+obj.menu.labelVialNum.Checked     = 'on';
+
+obj.menu.labelFilePath.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelFileName.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelInstrument.Callback = {@plotLabelCallback, obj};
+obj.menu.labelDatetime.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelMethodName.Callback = {@plotLabelCallback, obj};
+obj.menu.labelSampleName.Callback = {@plotLabelCallback, obj};
+obj.menu.labelOperator.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelSeqIndex.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelVialNum.Callback    = {@plotLabelCallback, obj};
+obj.menu.labelSelectAll.Callback  = {@plotLabelQuickSelectCallback, obj};
+obj.menu.labelSelectNone.Callback = {@plotLabelQuickSelectCallback, obj};
+
+obj.menu.labelSelectAll.Separator = 'on';
+
+% ---------------------------------------
+% Options --> Peak
+% ---------------------------------------
+obj.menu.peakOptionsModel        = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea         = newMenu(obj.menu.peakOptions, 'Area');
+obj.menu.peakNeuralNetwork       = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
+obj.menu.peakExponentialGaussian = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
+obj.menu.peakOptionsAreaActual   = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
+obj.menu.peakOptionsAreaFit      = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
+
+obj.menu.peakNeuralNetwork.Tag            = 'peakNN';
+obj.menu.peakExponentialGaussian.Tag      = 'peakEGH';
+obj.menu.peakOptionsAreaActual.Tag        = 'rawData';
+obj.menu.peakOptionsAreaFit.Tag           = 'fitData';
+
+obj.menu.peakNeuralNetwork.Checked        = 'on';
+obj.menu.peakExponentialGaussian.Checked  = 'off';
+obj.menu.peakOptionsAreaActual.Checked    = 'on';
+obj.menu.peakOptionsAreaFit.Checked       = 'off';
+
+obj.menu.peakNeuralNetwork.Callback       = {@peakModelMenuCallback, obj};
+obj.menu.peakExponentialGaussian.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakOptionsAreaActual.Callback   = {@peakAreaMenuCallback, obj};
+obj.menu.peakOptionsAreaFit.Callback      = {@peakAreaMenuCallback, obj};
 
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
-obj.menu.help.main = uimenu(...
-    'parent',   obj.figure,...
-    'label',    'Help',...
-    'tag',      'helpmenu');
+obj.menu.help.update = newMenu(obj.menu.help.main, 'Check for updates...');
 
-obj.menu.help.update = uimenu(...
-    'parent',   obj.menu.help.main,...
-    'label',    'Check for updates...',...
-    'tag',      'updatemenu',...
-    'callback', @(src, event) updateToolboxCallback(obj, src, event));
+obj.menu.help.update.Callback = {@updateToolboxCallback, obj};
+
+% ---------------------------------------
+% Developer Mode
+% ---------------------------------------
+sourcePath = dir(fileparts(fileparts(mfilename('fullpath'))));
+
+if any(strcmpi('.git', {sourcePath.name}))
+    [gitStatus, ~] = system('git --version');
+    
+    if ~gitStatus
+        [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
+        
+        if ~gitStatus
+            gitBranch = deblank(strtrim(gitBranch));
+            
+            if strcmpi(gitBranch, 'develop')
+                developerMode = 'on';
+            else
+                developerMode = 'off';
+            end
+            
+            obj.menu.help.update = newMenu(obj.menu.help.main, 'Developer Mode');
+            
+            obj.menu.help.update.Checked   = developerMode;
+            obj.menu.help.update.Callback  = @developerModeCallback;
+            obj.menu.help.update.Separator = 'on';
+            
+        end
+    end
+end
+
+end
+
+% ---------------------------------------
+% Import Peak List
+% ---------------------------------------
+function importPeakList(~, ~, obj)
+
+[fileName, filePath] = uigetfile('*.mat', 'Open');
+
+if ischar(fileName) && ischar(filePath)
+    peakList = load([filePath, fileName]);
+    
+    if isstruct(peakList) && isfield(peakList, 'user_peaks')
+        peakList = peakList.user_peaks;
+        
+        if isfield(peakList, 'name') && strcmpi(peakList.name, 'peaklist')
+            if isfield(peakList, 'data') && ~isempty(peakList.data)
+                if iscell(peakList.data)
+                    
+                    for i = 1:length(peakList.data)
+                        
+                        if ~ischar(peakList.data{i})
+                            continue
+                        end
+                        
+                        if ~any(strcmpi(peakList.data{i}, obj.peaks.name))
+                            obj.peakAddColumn(peakList.data{i})
+                        end
+                        
+                    end
+                end
+            end
+        end
+    end
+    
+end
+
+end
+
+% ---------------------------------------
+% Import Preferences
+% ---------------------------------------
+function importPreferences(~, ~, obj)
+
+[fileName, filePath] = uigetfile('*.mat', 'Open');
+
+if ischar(fileName) && ischar(filePath)
+    userSettings = load([filePath, fileName]);
+    
+    if isstruct(userSettings) && isfield(userSettings, 'user_preferences')
+        userSettings = userSettings.user_preferences;
+        
+        if isfield(userSettings, 'name') && strcmpi(userSettings.name, 'global_settings')
+            
+            if isfield(userSettings, 'data') && ~isempty(userSettings.data)
+                userSettings = userSettings.data;
+                
+                obj.preferences = userSettings;
+                
+                obj.view.showPlotLabel = obj.preferences.showPlotLabel;
+                obj.view.showBaseLine  = obj.preferences.showBaseLine;
+                obj.view.showPeakLabel = obj.preferences.showPeakLabel;
+                obj.view.showPeakLine  = obj.preferences.showPeakLine;
+                obj.view.selectZoom    = obj.preferences.selectZoom;
+                
+                obj.controls.asymSlider.Value   = obj.preferences.baselineAsymmetry;
+                obj.controls.smoothSlider.Value = obj.preferences.baselineSmoothness;
+                
+                obj.axes.xmode = obj.preferences.xmode;
+                obj.axes.ymode = obj.preferences.ymode;
+                obj.axes.xlim  = obj.preferences.xlim;
+                obj.axes.ylim  = obj.preferences.ylim;
+                
+                legendNames = obj.preferences.labels.legend;
+                legendMenu  = obj.menu.dataLabel.Children;
+                
+                for i = 1:length(legendMenu)
+                    
+                    if ishandle(legendMenu(i))
+                        if any(strcmpi(legendMenu(i).Tag, legendNames))
+                            legendMenu(i).Checked = 'on';
+                        else
+                            legendMenu(i).Checked = 'off';
+                        end
+                    end
+                    
+                end
+                
+                switch obj.preferences.peakModel
+                    case 'nn'
+                        peakModelMenuCallback(obj.menu.peakNeuralNetwork, [], obj);
+                    case 'egh'
+                        peakModelMenuCallback(obj.menu.peakExponentialGaussian, [], obj);
+                end
+                
+                switch obj.preferences.peakArea
+                    case 'rawData'
+                        peakAreaMenuCallback(obj.menu.peakOptionsAreaActual, [], obj);
+                    case 'fitData'
+                        peakAreaMenuCallback(obj.menu.peakOptionsAreaFit, [], obj);
+                end
+                
+                if obj.view.showPlotLabel
+                    obj.menu.view.dataLabel.Checked = 'on';
+                else
+                    obj.menu.view.dataLabel.Checked = 'off';
+                end
+                
+                if obj.preferences.showBaseLine
+                    obj.controls.showBaseline.Value = 1;
+                else
+                    obj.controls.showBaseline.Value = 0;
+                end
+                
+                if obj.preferences.showPeaks
+                    obj.controls.showPeak.Value = 1;
+                else
+                    obj.controls.showPeak.Value = 0;
+                end
+                
+                if obj.view.showPeakLabel
+                    obj.menu.view.peakLabel.Checked = 'on';
+                else
+                    obj.menu.view.peakLabel.Checked = 'off';
+                end
+                
+                if obj.view.showPeakLine
+                    obj.menu.view.peakLine.Checked = 'on';
+                else
+                    obj.menu.view.peakLine.Checked = 'off';
+                end
+                
+                if strcmpi(obj.preferences.showZoom, 'on')
+                    obj.menu.view.zoom.Checked = 'on';
+                    obj.view.selectZoom = 1;
+                    obj.userZoom(1);
+                    obj.userPeak(0);
+                else
+                    obj.menu.view.zoom.Checked = 'off';
+                    obj.view.selectZoom = 0;
+                    obj.userZoom(0);
+                end
+                
+                obj.updateAxesLimitToggle();
+                obj.updateAxesLimitMode();
+                
+                if strcmpi(obj.axes.xmode, 'manual')
+                    obj.axes.main.XLim = obj.axes.xlim;
+                end
+                
+                if strcmpi(obj.axes.ymode, 'manual')
+                    obj.axes.main.YLim = obj.axes.ylim;
+                end
+                
+                obj.updateAxesLimitEditText();
+                obj.updatePlot();
+                
+            end
+        end
+    end
+end
+
+end
+
+% ---------------------------------------
+% Export Peak List
+% ---------------------------------------
+function exportPeakList(~, ~, obj)
+
+if isempty(obj.peaks.name)
+    return
+end
+
+user_peaks.version = ['v', obj.version, '.', obj.date];
+user_peaks.name    = 'peaklist';
+user_peaks.data    = obj.peaks.name;
+
+[fileName, filePath] = uiputfile(...
+    {'*.mat', 'MAT-files (*.mat)'},...
+    'Save As...',...
+    'user_peaklist');
+
+if ischar(fileName) && ischar(filePath) && ~isempty(user_peaks)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'user_peaks', '-mat');
+    cd(currentPath);
+end
+
+end
+
+% ---------------------------------------
+% Export Preferences
+% ---------------------------------------
+function exportPreferences(~, ~, obj)
+
+obj.preferences.showPlotLabel = obj.view.showPlotLabel;
+obj.preferences.showBaseLine  = obj.controls.showBaseline.Value;
+obj.preferences.showPeaks     = obj.controls.showPeak.Value;
+obj.preferences.showPeakLabel = obj.view.showPeakLabel;
+obj.preferences.showPeakLine  = obj.view.showPeakLine;
+obj.preferences.showZoom      = obj.menu.view.zoom.Checked;
+obj.preferences.selectZoom    = obj.view.selectZoom;
+
+obj.preferences.baselineAsymmetry  = obj.controls.asymSlider.Value;
+obj.preferences.baselineSmoothness = obj.controls.smoothSlider.Value;
+
+obj.preferences.xmode = obj.axes.xmode;
+obj.preferences.ymode = obj.axes.ymode;
+obj.preferences.xlim  = obj.axes.xlim;
+obj.preferences.ylim  = obj.axes.ylim;
+
+user_preferences.version = ['v', obj.version, '.', obj.date];
+user_preferences.name    = 'global_settings';
+user_preferences.data    = obj.preferences;
+
+[fileName, filePath] = uiputfile(...
+    {'*.mat', 'MAT-files (*.mat)'},...
+    'Save As...',...
+    'user_preferences');
+
+if ischar(fileName) && ischar(filePath) && ~isempty(user_preferences)
+    currentPath = pwd;
+    cd(filePath);
+    save(fileName, 'user_preferences', '-mat');
+    cd(currentPath);
+end
 
 end
 
 % ---------------------------------------
 % Load Agilent
 % ---------------------------------------
-function loadAgilentCallback(obj, varargin)
+function loadAgilentCallback(~, ~, obj)
 
 data = importagilent('verbose', 'off', 'depth', 3);
 
@@ -173,31 +480,14 @@ if ~isempty(data) && isstruct(data)
     for i = 1:length(data)
         
         if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
-            
             obj.data = [obj.data; data(i)];
-            
-            if ~isempty(obj.peaks.name)
-                
-                nCol = length(obj.peaks.name);
-                nRow = length(obj.data);
-                
-                obj.peaks.time{nRow, nCol}   = [];
-                obj.peaks.width{nRow, nCol}  = [];
-                obj.peaks.height{nRow, nCol} = [];
-                obj.peaks.area{nRow, nCol}   = [];
-                obj.peaks.error{nRow, nCol}  = [];
-                obj.peaks.fit{nRow, nCol}    = [];
-                
-            end
-            
             obj.appendTableData();
-            
         end
+        
     end
     
-    if ~isempty(obj.data)
-        obj.updateFigure();
-    end
+    obj.validatePeakData(length(obj.data), length(obj.peaks.name));
+    obj.updateFigure();
     
 end
 
@@ -206,7 +496,7 @@ end
 % ---------------------------------------
 % Load MAT
 % ---------------------------------------
-function loadMatlabCallback(obj, varargin)
+function loadMatlabCallback(~, ~, obj)
 
 [fileName, filePath] = uigetfile('*.mat', 'Open');
 
@@ -234,8 +524,9 @@ if ischar(fileName) && ischar(filePath)
             
             listboxRefreshCallback(obj);
             
-            obj.updatePeakEditText();
-            obj.updateFigure(); 
+            obj.updatePeakText();
+            obj.updateFigure();
+            
         end
     end
 end
@@ -245,7 +536,7 @@ end
 % ---------------------------------------
 % Save MAT
 % ---------------------------------------
-function saveCheckpoint(obj, varargin)
+function saveCheckpoint(~, ~, obj)
 
 if ~isempty(obj.data)
     data = obj.data;
@@ -297,7 +588,7 @@ end
 % ---------------------------------------
 % Save MAT
 % ---------------------------------------
-function saveMatlabCallback(obj, varargin)
+function saveMatlabCallback(~, ~, obj)
 
 if ~isempty(obj.data)
     data = obj.data;
@@ -333,15 +624,32 @@ end
 % ---------------------------------------
 % Save Image
 % ---------------------------------------
-function saveImageCallback(obj, varargin)
+function saveImageCallback(~, ~, obj)
 
-if isempty(obj.data)
+if isempty(obj.data) || obj.view.index == 0
     return
 end
 
-filterExtensions = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
+row = obj.view.index;
+
+filterExtensions  = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
 filterDescription = 'Image file (*.jpg, *.png, *.tif)';
-filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+filterDefaultName = '';
+
+if ~isempty(obj.data(row).datetime) && length(obj.data(row).datetime) >= 10
+    filterDefaultName = [obj.data(row).datetime(1:10), ' - '];
+end
+
+if ~isempty(obj.data(row).sample_name)
+    sampleName = obj.data(row).sample_name;
+    sampleName = regexprep(sampleName, '[/\*:?!%^#@"<>|.]', '_');
+    sampleName = deblank(strtrim(sampleName));
+    filterDefaultName = [filterDefaultName, sampleName];
+end
+
+if isempty(filterDefaultName)
+    filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+end
 
 [fileName, filePath] = uiputfile(...
     {filterExtensions, filterDescription},...
@@ -349,9 +657,9 @@ filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
     filterDefaultName);
 
 if ischar(fileName) && ischar(filePath)
-
+    
     [~, ~, fileExtension] = fileparts(fileName);
-
+    
     switch fileExtension
         case {'.png'}
             fileType = '-dpng';
@@ -376,9 +684,10 @@ if ischar(fileName) && ischar(filePath)
         set(exportPanel,....
             'parent',   exportFigure,...
             'position', [0, 0, 1, 1],....
+            'bordertype', 'none',...
             'backgroundcolor', 'white');
         
-        axesHandles = get(exportPanel, 'children');
+        axesHandles = exportPanel.Children;
         axesTags = get(axesHandles, 'tag');
         axesPlot = strcmpi(axesTags, 'axesplot');
         
@@ -386,9 +695,9 @@ if ischar(fileName) && ischar(filePath)
         p2 = [];
         
         if any(axesPlot)
-
+            
             uiProperties = properties(axesHandles(axesPlot));
-
+            
             if any(strcmp(uiProperties, 'OuterPosition'))
                 p1 = get(axesHandles(axesPlot), 'position');
                 p2 = get(axesHandles(axesPlot), 'outerposition');
@@ -450,7 +759,7 @@ end
 % ---------------------------------------
 % Save Excel
 % ---------------------------------------
-function saveExcelCallback(obj, varargin)
+function saveXlsCallback(~, ~, obj)
 
 if isempty(obj.data)
     return
@@ -476,7 +785,7 @@ if length(excelData(1,:)) >= 14
             if ~isempty(excelData{i,j}) && isnumeric(excelData{i,j})
                 excelData{i,j} = round(excelData{i,j},4);
             end
-        end 
+        end
     end
 end
 
@@ -501,7 +810,7 @@ end
 % ---------------------------------------
 % Save CSV
 % ---------------------------------------
-function saveCSVCallback(obj, varargin)
+function saveCsvCallback(~, ~, obj)
 
 if isempty(obj.data) || isempty(obj.table.main.Data)
     return
@@ -529,12 +838,23 @@ if ischar(fileName) && ischar(filePath)
     cd(filePath);
     
     for i = 1:length(tableData(:,1))
+        
         for j = 1:length(tableData(1,:))
+            
             if isempty(tableData{i,j})
                 tableData{i,j} = ' ';
+                
+            elseif isnumeric(tableData{i,j}) && j >= 14
+                tableData{i,j} = num2str(round(tableData{i,j},4));
+                
             elseif isnumeric(tableData{i,j})
                 tableData{i,j} = num2str(tableData{i,j});
+                
+            elseif ischar(tableData{i,j})
+                tableData{i,j} = regexprep(tableData{i,j}, '([,]|\t)', ' ');
+                tableData{i,j} = deblank(strtrim(tableData{i,j}));
             end
+            
         end
     end
     
@@ -567,14 +887,14 @@ if isempty(x) || x == 0 || x > length(obj.peaks.name)
     obj.controls.peakList.Value = 1;
 end
 
-set(obj.controls.peakList, 'string', obj.peaks.name);
+obj.controls.peakList.String = obj.peaks.name;
 
 end
 
 % ---------------------------------------
 % Delete Table Row
 % ---------------------------------------
-function tableDeleteRowMenu(obj, varargin)
+function tableDeleteRowMenu(~, ~, obj)
 
 if isempty(obj.data) || isempty(obj.table.main.Data) || isempty(obj.table.selection)
     return
@@ -646,48 +966,291 @@ end
 % ---------------------------------------
 % Enable/Disable Zoom
 % ---------------------------------------
-function zoomMenuCallback(obj, src, evt)
+function zoomMenuCallback(src, evt, obj)
 
-switch evt.EventName
+if strcmpi(evt.EventName, 'Action')
     
-    case 'Action'
+    switch src.Checked
         
-        switch get(src, 'checked')
-            case 'on'
-                set(src, 'checked', 'off');
-                obj.userZoom(0);
-            case 'off'
-                set(src, 'checked', 'on');
-                obj.userZoom(1);                
-        end
+        case 'on'
+            src.Checked = 'off';
+            obj.userZoom(0);
+            
+        case 'off'
+            src.Checked = 'on';
+            obj.userZoom(1);
+            obj.userPeak(0);
+            
+    end
+    
 end
 
 end
 
 % ---------------------------------------
-% Enable/Disable Peak Labels
+% Enable/Disable Peak Labels, Lines
 % ---------------------------------------
-function labelMenuCallback(obj, src, evt)
+function peakViewMenuCallback(src, evt, obj)
 
-switch evt.EventName
+if strcmpi(evt.EventName, 'Action')
     
-    case 'Action'
+    switch src.Checked
+        case 'on'
+            src.Checked = 'off';
+        case 'off'
+            src.Checked = 'on';
+    end
+    
+    switch src.Tag
         
-        switch get(src, 'checked')
-            case 'on'
-                set(src, 'checked', 'off');
-                obj.view.showLabel = 0;
-                obj.plotPeaks();
-            case 'off'
-                set(src, 'checked', 'on');
-                obj.view.showLabel = 1;
-                obj.plotPeaks();
+        case 'showPeakLabel'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.view.showPeakLabel = 1;
+                obj.plotPeakLabels();
+            else
+                obj.view.showPeakLabel = 0;
+                obj.clearAllPeakLabel();
+            end
+            
+        case 'showPeakLine'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.view.showPeakLine = 1;
+                obj.updatePeakLine();
+            else
+                obj.view.showPeakLine = 0;
+                obj.clearAllPeakLine();
+            end
+    end
+    
+end
+
+end
+
+% ---------------------------------------
+% Enable/Disable Data Labels
+% ---------------------------------------
+function plotViewMenuCallback(src, evt, obj)
+
+if strcmpi(evt.EventName, 'Action')
+    
+    switch src.Checked
+        case 'on'
+            src.Checked = 'off';
+        case 'off'
+            src.Checked = 'on';
+    end
+    
+    switch src.Tag
+        
+        case 'showPlotLabel'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.view.showPlotLabel = 1;
+                obj.updatePlotLabel();
+            else
+                obj.view.showPlotLabel = 0;
+                obj.clearAxesChildren('plotlabel');
+            end
+            
+    end
+    
+end
+
+end
+
+% ---------------------------------------
+% Select Fields for Plot Label
+% ---------------------------------------
+function plotLabelCallback(src, ~, obj)
+
+switch src.Checked
+    
+    case 'on'
+        src.Checked = 'off';
+        
+    case 'off'
+        src.Checked = 'on';
+        
+    otherwise
+        src.Checked = 'off';
+        
+end
+
+updatePlotLabel(src, obj);
+
+end
+
+function plotLabelQuickSelectCallback(src, ~, obj)
+
+switch src.Tag
+    
+    case 'selectAll'
+        labelState = 'on';
+        
+    case 'selectNone'
+        labelState = 'off';
+        
+    otherwise
+        labelState = 'off';
+        
+end
+
+for i = 1:length(src.Parent.Children)
+    
+    if ~any(strcmpi(src.Parent.Children(i).Tag, {'selectAll', 'selectNone'}))
+        src.Parent.Children(i).Checked = labelState;
+    end
+    
+end
+
+updatePlotLabel(src, obj);
+
+end
+
+function updatePlotLabel(src, obj)
+
+plotLabel = {};
+
+for i = 1:length(src.Parent.Children)
+    
+    if strcmpi(src.Parent.Children(i).Checked, 'on')
+        
+        switch src.Parent.Children(i).Tag
+            case 'file_path'
+                plotLabel{1} = src.Parent.Children(i).Tag;
+            case 'file_name'
+                plotLabel{2} = src.Parent.Children(i).Tag;
+            case 'instrument'
+                plotLabel{3} = src.Parent.Children(i).Tag;
+            case 'datetime'
+                plotLabel{4} = src.Parent.Children(i).Tag;
+            case 'method_name'
+                plotLabel{5} = src.Parent.Children(i).Tag;
+            case 'sample_name'
+                plotLabel{6} = src.Parent.Children(i).Tag;
+            case 'operator'
+                plotLabel{7} = src.Parent.Children(i).Tag;
+            case 'seqindex'
+                plotLabel{8} = src.Parent.Children(i).Tag;
+            case 'vial'
+                plotLabel{9} = src.Parent.Children(i).Tag;
         end
+        
+    end
+    
+end
+
+plotLabel(cellfun(@isempty, plotLabel)) = [];
+obj.preferences.labels.legend = plotLabel;
+
+if obj.view.showPlotLabel
+    obj.updatePlotLabel();
 end
 
 end
 
-function updateToolboxCallback(obj, ~, ~)
+% ---------------------------------------
+% Set Peak Model
+% ---------------------------------------
+function peakModelMenuCallback(src, ~, obj)
+
+for i = 1:length(src.Parent.Children)
+    src.Parent.Children(i).Checked = 'off';
+end
+
+src.Checked = 'on';
+
+switch src.Tag
+    case 'peakNN'
+        obj.preferences.peakModel = 'nn';
+    case 'peakEGH'
+        obj.preferences.peakModel = 'egh';
+end
+
+end
+
+% ---------------------------------------
+% Set Peak Area Target
+% ---------------------------------------
+function peakAreaMenuCallback(src, ~, obj)
+
+for i = 1:length(src.Parent.Children)
+    src.Parent.Children(i).Checked = 'off';
+end
+
+src.Checked = 'on';
+
+obj.preferences.peakArea = src.Tag;
+
+end
+
+% ---------------------------------------
+% Enable/Disable Developer Mode
+% ---------------------------------------
+function developerModeCallback(src, ~)
+
+[gitStatus, ~] = system('git --version');
+
+if gitStatus
+    return
+end
+
+if strcmpi(src.Checked, 'on')
+    src.Checked = 'off';
+else
+    src.Checked = 'on';
+end
+
+currentPath = pwd;
+sourcePath = fileparts(fileparts(mfilename('fullpath')));
+cd(sourcePath);
+
+[gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
+
+if gitStatus
+    return
+else
+    gitBranch = deblank(strtrim(gitBranch));
+end
+
+if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
+    
+    [gitStatus,~] = system('git checkout develop');
+    
+    if gitStatus
+        msg = 'Error switching to developer mode...';
+    else
+        msg = 'Please restart ChromatographyGUI to enter developer mode...';
+    end
+    
+elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')
+    
+    [gitStatus,~] = system('git checkout master');
+    
+    if gitStatus
+        msg = 'Error switching from developer mode...';
+    else
+        msg = 'Please restart ChromatographyGUI to exit developer mode...';
+    end
+    
+else
+    msg = '';
+end
+
+if ~isempty(msg)
+    questdlg(msg, 'Developer Mode', 'OK', 'OK');
+end
+
+cd(currentPath);
+
+end
+
+% ---------------------------------------
+% Update ChromatographyGUI
+% ---------------------------------------
+function updateToolboxCallback(~, ~, obj)
 
 % ---------------------------------------
 % Options
@@ -696,9 +1259,9 @@ link.windows = 'https://git-scm.com/download/windows';
 link.mac     = 'https://git-scm.com/download/mac';
 link.linux   = 'https://git-scm.com/download/linux';
 
-option.git     = [];
-option.verbose = true;
+option.git = [];
 
+previousPath = pwd;
 previousVersion = ['v', obj.version, '.', obj.date];
 
 msg = 'Updating toolbox...';
@@ -731,21 +1294,78 @@ end
 % ---------------------------------------
 % Locate git
 % ---------------------------------------
-if ispc
+[gitStatus, ~] = system('git --version');
+
+if ~gitStatus
     
-    [gitStatus, gitPath] = system('where git');
+    option.git = 'git';
     
-    if gitStatus
+else
+    
+    if ispc
         
-        fprintf(' STATUS  %s \n', 'Searching system for ''git.exe''...');
-        
-        [gitStatus, gitPath] = system('dir C:\Users\*git.exe /s');
+        [gitStatus, gitPath] = system('where git');
         
         if gitStatus
             
-            msg = ['Visit ', link.windows, ' to install Git for Windows...'];
+            fprintf(' STATUS  %s \n', 'Searching system for ''git.exe''...');
             
-            fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
+            windowsGit = {...
+                '"C:\Program Files\Git\*git.exe"',...
+                '"C:\Program Files (x86)\Git\*git.exe"',...
+                '"C:\Users\*git.exe"'};
+            
+            for i = 1:length(windowsGit)
+                
+                [gitStatus, gitPath] = system(['dir ', windowsGit{i}, ' /S']);
+                
+                if ~gitStatus
+                    break
+                end
+                
+            end
+            
+            if gitStatus
+                
+                msg = ['Visit ', link.windows, ' to install Git for Windows...'];
+                
+                fprintf(' STATUS  %s \n', 'Unable to find ''git.exe''...');
+                fprintf(' STATUS  %s \n', msg);
+                
+                fprintf(['\n', repmat('-',1,50), '\n']);
+                fprintf(' %s', 'EXIT');
+                fprintf(['\n', repmat('-',1,50), '\n\n']);
+                
+                if ishandle(h)
+                    waitbar(1, h, msg);
+                    close(h);
+                end
+                
+                cd(previousPath);
+                
+                return
+            end
+            
+            gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
+            gitPath = [gitPath{1}, filesep, 'git.exe'];
+            
+        end
+        
+        option.git = deblank(strtrim(gitPath));
+        
+    elseif isunix
+        
+        [gitStatus, gitPath] = system('which git');
+        
+        if gitStatus
+            
+            if ismac
+                msg = ['Visit ', link.mac, ' to install Git for OSX...'];
+            else
+                msg = ['Visit ', link.linux, ' to install Git for Linux...'];
+            end
+            
+            fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
             fprintf(' STATUS  %s \n', msg);
             
             fprintf(['\n', repmat('-',1,50), '\n']);
@@ -757,46 +1377,15 @@ if ispc
                 close(h);
             end
             
+            cd(previousPath);
+            
             return
             
         end
         
-        gitPath = regexp(gitPath,'(?i)(?!of)\S[:]\\(\\|\w)*', 'match');
-        gitPath = [gitPath{1}, filesep, 'git.exe'];
+        option.git = deblank(strtrim(gitPath));
         
     end
-    
-    option.git = deblank(strtrim(gitPath));
-    
-elseif isunix
-    
-    [gitStatus, gitPath] = system('which git');
-    
-    if gitStatus
-        
-        if ismac
-            msg = ['Visit ', link.mac, ' to install Git for OSX...'];
-        else
-            msg = ['Visit ', link.linux, ' to install Git for Linux...'];
-        end
-        
-        fprintf(' STATUS  %s \n', 'Unable to find ''git'' executable...');
-        fprintf(' STATUS  %s \n', msg);
-        
-        fprintf(['\n', repmat('-',1,50), '\n']);
-        fprintf(' %s', 'EXIT');
-        fprintf(['\n', repmat('-',1,50), '\n\n']);
-        
-        if ishandle(h)
-            waitbar(1, h, msg);
-            close(h);
-        end
-        
-        return
-        
-    end
-    
-    option.git = deblank(strtrim(gitPath));
     
 end
 
@@ -832,6 +1421,8 @@ if gitTest
         close(h);
     end
     
+    cd(previousPath);
+    
     return
     
 end
@@ -850,7 +1441,32 @@ if gitTest
     fprintf(' STATUS  %s \n', 'Initializing git repository...');
     
     [~,~] = system(['"', option.git, '" init']);
-    [~,~] = system(['"', option.git, '" remote add origin ', obj.url, '.git']);
+    [gitStatus, ~] = system(['"', option.git, '" remote add origin ', obj.url, '.git']);
+    
+    if gitStatus
+        
+        try
+            rmdir('.git', 's');
+        catch
+        end
+        
+        fprintf(2, ' ERROR  ');
+        fprintf('%s \n', 'Unable to connect to online repository...');
+        
+        fprintf(['\n', repmat('-',1,50), '\n']);
+        fprintf(' %s', 'EXIT');
+        fprintf(['\n', repmat('-',1,50), '\n\n']);
+        
+        if ishandle(h)
+            waitbar(1, h, msg);
+            close(h);
+        end
+        
+        cd(previousPath);
+        
+        return
+        
+    end
     
 end
 
@@ -867,6 +1483,7 @@ fprintf(' STATUS  %s \n', ['Fetching latest updates from ', obj.url]);
 
 if gitTest || isempty(branchName)
     branchName = 'master';
+    
 elseif ischar(branchName)
     branchName = deblank(strtrim(branchName));
 end
@@ -876,13 +1493,14 @@ end
 switch branchName
     
     case {'master', 'HEAD'}
-        [~,~] = system(['"', option.git, '" pull origin master']);
-    
+        [~,~] = system(['"', option.git, '" pull --rebase origin master']);
+        
     case {'develop', 'dev'}
-        [~,~] = system(['"', option.git, '" pull origin develop']);
-    
+        [~,~] = system(['"', option.git, '" pull --rebase origin develop']);
+        
     otherwise
-        [~,~] = system(['"', option.git, '" pull origin master']);
+        [~,~] = system(['"', option.git, '" checkout master']);
+        [~,~] = system(['"', option.git, '" pull --rebase origin master']);
         
 end
 
@@ -911,9 +1529,20 @@ if ishandle(h)
     close(h)
 end
 
+cd(previousPath);
+
 if ~strcmpi(currentVersion, previousVersion)
     msg = 'Please restart ChromatographyGUI to complete update...';
     questdlg(msg, currentVersion, 'OK', 'OK');
 end
+
+end
+
+% ---------------------------------------
+% Menu
+% ---------------------------------------
+function menu = newMenu(parent, label)
+
+menu = uimenu('parent', parent, 'label', label);
 
 end

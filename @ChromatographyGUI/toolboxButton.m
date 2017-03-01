@@ -15,8 +15,11 @@ p2(2) = p1(2);
 p2(3) = p1(3);
 p2(4) = p1(4);
 
-obj.controls.next = newPushButton(obj, obj.panel.selectTab, 'Next',     'nextsample', p1);
-obj.controls.prev = newPushButton(obj, obj.panel.selectTab, 'Previous', 'prevsample', p2);
+obj.controls.next = newPushButton(...
+    obj, obj.panel.selectTab, 'Next', 'nextsample', p1);
+
+obj.controls.prev = newPushButton(...
+    obj, obj.panel.selectTab, 'Previous', 'prevsample', p2);
 
 % Integrate Tab --> Peak List --> Add, Edit, Delete
 pl1(1) = 0.6 + 0.01 * 2;
@@ -34,9 +37,14 @@ pl3(2) = pl2(2) - pl2(4) - 0.05;
 pl3(3) = pl1(3);
 pl3(4) = pl1(4);
 
-obj.controls.addPeak  = newPushButton(obj, obj.panel.peakList, 'Add',    'addpeak',  pl1);
-obj.controls.editPeak = newPushButton(obj, obj.panel.peakList, 'Edit',   'editpeak', pl2);
-obj.controls.delPeak  = newPushButton(obj, obj.panel.peakList, 'Delete', 'delpeak',  pl3);
+obj.controls.addPeak = newPushButton(...
+    obj, obj.panel.peakList, 'Add', 'addpeak', pl1);
+
+obj.controls.editPeak = newPushButton(...
+    obj, obj.panel.peakList, 'Edit', 'editpeak', pl2);
+
+obj.controls.delPeak = newPushButton(...
+    obj, obj.panel.peakList, 'Delete', 'delpeak', pl3);
 
 % Integrate Tab --> Baseline --> Refresh, Clear
 b2(1) = 0.50 - 0.15;
@@ -49,8 +57,11 @@ b3(2) = b2(2);
 b3(3) = b2(3);
 b3(4) = b2(4);
 
-obj.controls.applyBaseline = newPushButton(obj, obj.panel.baseline, 'Apply', 'applybaseline', b2);
-obj.controls.clearBaseline = newPushButton(obj, obj.panel.baseline, 'Clear', 'clearbaseline', b3);
+obj.controls.applyBaseline = newPushButton(...
+    obj, obj.panel.baseline, 'Apply', 'applybaseline', b2);
+
+obj.controls.clearBaseline = newPushButton(...
+    obj, obj.panel.baseline, 'Clear', 'clearbaseline', b3);
 
 % ---------------------------------------
 % Static Text
@@ -59,19 +70,19 @@ obj.controls.clearBaseline = newPushButton(obj, obj.panel.baseline, 'Clear', 'cl
 % Select Tab --> ID, Sample Name
 t1(1) = 0.15;
 t1(2) = 1.00 - 0.30;
-t1(3) = 0.15;
+t1(3) = 0.20;
 t1(4) = 0.20;
 
 t2(1) = t1(1);
-t2(2) = t1(2) - t1(4) - 0.10;
+t2(2) = t1(2) - t1(4);
 t2(3) = t1(3);
 t2(4) = t1(4);
 
-obj.controls.selectID   = newStaticText(obj, obj.panel.selectTab, 'ID',     'idtext',   t1);
-obj.controls.selectName = newStaticText(obj, obj.panel.selectTab, 'Sample', 'nametext', t2);
+obj.controls.selectID = newStaticText(...
+    obj, obj.panel.selectTab, 'ID', 'idtext', t1);
 
-correctPosition(obj.controls.selectID);
-correctPosition(obj.controls.selectName);
+obj.controls.selectName = newStaticText(...
+    obj, obj.panel.selectTab, 'Sample', 'nametext', t2);
 
 % View Tab --> X-Limits, Y-Limits
 t3(1) = 0.45;
@@ -79,8 +90,11 @@ t3(2) = (0.15 + 0.25) / 2;
 t3(3) = 0.10;
 t3(4) = 0.25 / 2;
 
-obj.controls.xSeparator = newStaticText(obj, obj.panel.xlim, '-', 'xdash', t3);
-obj.controls.ySeparator = newStaticText(obj, obj.panel.ylim, '-', 'ydash', t3);
+obj.controls.xSeparator = newStaticText(...
+    obj, obj.panel.xlim, '-', 'xdash', t3);
+
+obj.controls.ySeparator = newStaticText(...
+    obj, obj.panel.ylim, '-', 'ydash', t3);
 
 % Integrate Tab --> Options
 i1(1) = 0.075;
@@ -108,11 +122,20 @@ i5(2) = 0.02 * 1 + 0.15 * 0 + 0.075;
 i5(3) = i1(3);
 i5(4) = i1(4);
 
-obj.controls.peakIDText     = newStaticText(obj, obj.panel.integrate, 'ID',     'peakidtext',     i1);
-obj.controls.peakTimeText   = newStaticText(obj, obj.panel.integrate, 'Time',   'peaktimetext',   i2);
-obj.controls.peakWidthText  = newStaticText(obj, obj.panel.integrate, 'Width',  'peakwidthtext',  i3);
-obj.controls.peakHeightText = newStaticText(obj, obj.panel.integrate, 'Height', 'peakheighttext', i4);
-obj.controls.peakAreaText   = newStaticText(obj, obj.panel.integrate, 'Area',   'peakareatext',   i5);
+obj.controls.peakIDText = newStaticText(...
+    obj, obj.panel.integrate, 'ID', 'peakidtext', i1);
+
+obj.controls.peakTimeText = newStaticText(...
+    obj, obj.panel.integrate, 'Time', 'peaktimetext', i2);
+
+obj.controls.peakWidthText = newStaticText(...
+    obj, obj.panel.integrate, 'Width', 'peakwidthtext', i3);
+
+obj.controls.peakHeightText = newStaticText(...
+    obj, obj.panel.integrate, 'Height', 'peakheighttext', i4);
+
+obj.controls.peakAreaText = newStaticText(...
+    obj, obj.panel.integrate, 'Area', 'peakareatext', i5);
 
 % ---------------------------------------
 % Edit Text
@@ -129,8 +152,11 @@ e2(2) = 0.10 + 0.25 + 0.025 + 0.25 + 0.025;
 e2(3) = 1.00 - e1(1) - 0.10;
 e2(4) = e1(4);
 
-obj.controls.editID   = newEditText(obj, obj.panel.selectTab, obj.view.id,   'idedit',   e2);
-obj.controls.editName = newEditText(obj, obj.panel.selectTab, obj.view.name, 'nameedit', e1);
+obj.controls.editID = newEditText(...
+    obj, obj.panel.selectTab, obj.view.id, 'idedit', e2);
+
+obj.controls.editName = newEditText(...
+    obj, obj.panel.selectTab, obj.view.name, 'nameedit', e1);
 
 % View Tab --> X-Limits, Y-Limits
 e3(1) = 0.50 - 0.35 - 0.05;
@@ -143,10 +169,17 @@ e4(2) = e3(2);
 e4(3) = e3(3);
 e4(4) = e3(4);
 
-obj.controls.xMin = newEditText(obj, obj.panel.xlim, num2str(obj.axes.xlim(1)), 'xminedit', e3);
-obj.controls.xMax = newEditText(obj, obj.panel.xlim, num2str(obj.axes.xlim(2)), 'xmaxedit', e4);
-obj.controls.yMin = newEditText(obj, obj.panel.ylim, num2str(obj.axes.ylim(1)), 'yminedit', e3);
-obj.controls.yMax = newEditText(obj, obj.panel.ylim, num2str(obj.axes.ylim(2)), 'ymaxedit', e4);
+obj.controls.xMin = newEditText(...
+    obj, obj.panel.xlim, sprintf('%.3f', obj.axes.xlim(1)), 'xminedit', e3);
+
+obj.controls.xMax = newEditText(...
+    obj, obj.panel.xlim, sprintf('%.3f', obj.axes.xlim(2)), 'xmaxedit', e4);
+
+obj.controls.yMin = newEditText(...
+    obj, obj.panel.ylim, sprintf('%.3f', obj.axes.ylim(1)), 'yminedit', e3);
+
+obj.controls.yMax = newEditText(...
+    obj, obj.panel.ylim, sprintf('%.3f', obj.axes.ylim(2)), 'ymaxedit', e4);
 
 % Integrate Tab --> Options
 ie1(1) = 0.075 + 0.05 + 0.25;
@@ -174,11 +207,26 @@ ie5(2) = 0.02 * 1 + 0.15 * 0 + 0.075;
 ie5(3) = ie1(3);
 ie5(4) = ie1(4);
 
-obj.controls.peakIDEdit     = newEditText(obj, obj.panel.integrate, obj.peaks.name{1}, 'peakidedit', ie1);
-obj.controls.peakTimeEdit   = newEditText(obj, obj.panel.integrate, '', 'peaktimeedit',   ie2);
-obj.controls.peakWidthEdit  = newEditText(obj, obj.panel.integrate, '', 'peakwidthedit',  ie3);
-obj.controls.peakHeightEdit = newEditText(obj, obj.panel.integrate, '', 'peakheightedit', ie4);
-obj.controls.peakAreaEdit   = newEditText(obj, obj.panel.integrate, '', 'peakareaedit',   ie5);
+if ~isempty(obj.peaks.name)
+    peakText = obj.peaks.name{1};
+else
+    peakText = '';
+end
+
+obj.controls.peakIDEdit = newEditText(...
+    obj, obj.panel.integrate, peakText, 'peakidedit', ie1);
+
+obj.controls.peakTimeEdit = newEditText(...
+    obj, obj.panel.integrate, '', 'peaktimeedit', ie2);
+
+obj.controls.peakWidthEdit = newEditText(...
+    obj, obj.panel.integrate, '', 'peakwidthedit', ie3);
+
+obj.controls.peakHeightEdit = newEditText(...
+    obj, obj.panel.integrate, '', 'peakheightedit', ie4);
+
+obj.controls.peakAreaEdit = newEditText(...
+    obj, obj.panel.integrate, '', 'peakareaedit', ie5);
 
 % ---------------------------------------
 % Toggle Buttons
@@ -195,10 +243,17 @@ x2(2) = x1(2);
 x2(3) = x1(3);
 x2(4) = x1(4);
 
-obj.controls.xManual = newToggleButton(obj, obj.panel.xlim, 'Manual', 'xmanual', 0, x1);
-obj.controls.yManual = newToggleButton(obj, obj.panel.ylim, 'Manual', 'ymanual', 0, x1);
-obj.controls.xAuto   = newToggleButton(obj, obj.panel.xlim, 'Auto',   'xauto',   1, x2);
-obj.controls.yAuto   = newToggleButton(obj, obj.panel.ylim, 'Auto',   'yauto',   1, x2);
+obj.controls.xUser = newToggleButton(...
+    obj, obj.panel.xlim, 'Manual', 'xmanual', 0, x1);
+
+obj.controls.yUser = newToggleButton(...
+    obj, obj.panel.ylim, 'Manual', 'ymanual', 0, x1);
+
+obj.controls.xAuto = newToggleButton(...
+    obj, obj.panel.xlim, 'Auto', 'xauto', 1, x2);
+
+obj.controls.yAuto = newToggleButton(...
+    obj, obj.panel.ylim, 'Auto', 'yauto', 1, x2);
 
 % Integrate Tab --> Show Baseline
 b1(1) = 0.03;
@@ -206,7 +261,8 @@ b1(2) = b2(2);
 b1(3) = b2(3);
 b1(4) = b2(4);
 
-obj.controls.showBaseline = newToggleButton(obj, obj.panel.baseline, 'Show', 'showbaseline', 0, b1);
+obj.controls.showBaseline = newToggleButton(...
+    obj, obj.panel.baseline, 'Show', 'showbaseline', 0, b1);
 
 % Integrate Tab --> Show Peaks
 it1(1) = 0.725;
@@ -224,25 +280,29 @@ it3(2) = 0.05 + 0.28 * 0 + 0.03 * 0;
 it3(3) = it1(3);
 it3(4) = it1(4);
 
-obj.controls.showPeak   = newToggleButton(obj, obj.panel.integrate, 'Show',   'showpeak',   1, it1);
-obj.controls.selectPeak = newToggleButton(obj, obj.panel.integrate, 'Select', 'selectpeak', 0, it2);
-obj.controls.clearPeak  = newPushButton(obj, obj.panel.integrate,   'Clear',  'clearpeak',     it3);
+obj.controls.showPeak = newToggleButton(...
+    obj, obj.panel.integrate, 'Show', 'showpeak', 1, it1);
+
+obj.controls.selectPeak = newToggleButton(...
+    obj, obj.panel.integrate, 'Select', 'selectpeak', 0, it2);
+
+obj.controls.clearPeak = newPushButton(...
+    obj, obj.panel.integrate, 'Clear', 'clearpeak', it3);
 
 % ---------------------------------------
 % Listbox
 % ---------------------------------------
-
 l1(1) = 0.0;
 l1(2) = 0.0;
 l1(3) = 0.6;
 l1(4) = 1.0;
 
-obj.controls.peakList = newListbox(obj, obj.panel.peakList, obj.peaks.name, 'peaklist', l1);
+obj.controls.peakList = newListbox(...
+    obj, obj.panel.peakList, obj.peaks.name, 'peaklist', l1);
 
 % ---------------------------------------
 % Sliders
 % ---------------------------------------
-
 s1(1) = 0.05;
 s1(2) = 0.65;
 s1(3) = 0.90;
@@ -253,118 +313,77 @@ s2(2) = 0.40;
 s2(3) = s1(3);
 s2(4) = s1(4);
 
-obj.controls.smoothSlider = newSlider(obj, obj.panel.baseline, 's', 'smoothslider', s1);
-obj.controls.asymSlider   = newSlider(obj, obj.panel.baseline, 'a', 'asymslider',   s2);
+obj.controls.smoothSlider = newSlider(...
+    obj, obj.panel.baseline, 's', 'smoothslider', s1);
 
-set(obj.controls.smoothSlider, 'min', 1,   'max', 10, 'value',  5.5);
-set(obj.controls.asymSlider,   'min', -10, 'max', -1, 'value', -5.5);
+obj.controls.asymSlider = newSlider(...
+    obj, obj.panel.baseline, 'a', 'asymslider', s2);
+
+s = obj.preferences.baselineSmoothness;
+a = obj.preferences.baselineAsymmetry;
+
+set(obj.controls.smoothSlider, 'min', 1,   'max', 10, 'value', s);
+set(obj.controls.asymSlider,   'min', -10, 'max', -1, 'value', a);
 
 % ---------------------------------------
 % Selection Callback
 % ---------------------------------------
 set(obj.controls.next,...
-    'callback', @(src, evt) sampleSelectionCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', {@obj.selectSample, 1},... 
+    'keypressfcn', {@browseKeyCallback, obj});
 
 set(obj.controls.prev,...
-    'callback', @(src, evt) sampleSelectionCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+    'callback', {@obj.selectSample, -1},... 
+    'keypressfcn', {@browseKeyCallback, obj});
 
-set(obj.controls.editID,...
-    'callback', @(src, evt) editIDCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.editName,...
-    'callback', @obj.updateSampleText,...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
+set(obj.controls.editID,   'callback', {@editIDCallback, obj});
+set(obj.controls.editName, 'callback', @obj.updateSampleText);
 
 % ---------------------------------------
 % Axes Callback
 % ---------------------------------------
-set(obj.controls.xManual,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
-
-set(obj.controls.xAuto,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
-
-set(obj.controls.yManual,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
-
-set(obj.controls.yAuto,...
-    'callback', @(src, evt) axesToggleCallback(obj, src, evt));
-
-set(obj.controls.xMin,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
-
-set(obj.controls.xMax,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
-
-set(obj.controls.yMin,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
-
-set(obj.controls.yMax,...
-    'callback', @(src, evt) axesLimitCallback(obj, src, evt));
+set(obj.controls.xUser, 'callback', {@axesToggleCallback, obj});
+set(obj.controls.xAuto, 'callback', {@axesToggleCallback, obj});
+set(obj.controls.yUser, 'callback', {@axesToggleCallback, obj});
+set(obj.controls.yAuto, 'callback', {@axesToggleCallback, obj});
+set(obj.controls.xMin,  'callback', {@axesLimitCallback, obj});
+set(obj.controls.xMax,  'callback', {@axesLimitCallback, obj});
+set(obj.controls.yMin,  'callback', {@axesLimitCallback, obj});
+set(obj.controls.yMax,  'callback', {@axesLimitCallback, obj});
 
 % ---------------------------------------
 % Baseline Callback
 % ---------------------------------------
-set(obj.controls.applyBaseline,...
-    'callback', @(src, evt) baselineCallback(obj, src, evt));
-
-set(obj.controls.clearBaseline,...
-    'callback', @(src, evt) baselineCallback(obj, src, evt));
-
-set(obj.controls.showBaseline,...
-    'callback', @(src, evt) baselineCallback(obj, src, evt));
+set(obj.controls.applyBaseline, 'callback', {@baselineCallback, obj});
+set(obj.controls.clearBaseline, 'callback', {@baselineCallback, obj});
+set(obj.controls.showBaseline,  'callback', {@baselineCallback, obj});
 
 % ---------------------------------------
 % Peak Callback
 % ---------------------------------------
-set(obj.controls.peakList,...
-    'callback', @(src, evt) peakListboxCallback(obj, src, evt));
+set(obj.controls.addPeak,        'callback', {@peakListCallback, obj});
+set(obj.controls.editPeak,       'callback', {@peakListCallback, obj});
+set(obj.controls.delPeak,        'callback', {@peakListCallback, obj});
+set(obj.controls.peakList,       'callback', {@peakListboxCallback, obj});
+set(obj.controls.peakIDEdit,     'callback', {@peakEditTextCallback, obj});
+set(obj.controls.peakTimeEdit,   'callback', {@peakEditTextCallback, obj});
+set(obj.controls.peakWidthEdit,  'callback', {@peakEditTextCallback, obj});
+set(obj.controls.peakHeightEdit, 'callback', {@peakEditTextCallback, obj});
+set(obj.controls.peakAreaEdit,   'callback', {@peakEditTextCallback, obj});
+set(obj.controls.showPeak,       'callback', @obj.plotPeaks);
+set(obj.controls.clearPeak,      'callback', @obj.clearPeak);
+set(obj.controls.selectPeak,     'callback', {@peakSelectCallback, obj});
 
-set(obj.controls.addPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.editPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.delPeak,...
-    'callback', @(src, evt) peakListCallback(obj, src, evt),...
-    'keypressfcn', @(src, evt) browseKeyCallback(obj, src, evt));
-
-set(obj.controls.peakIDEdit,...
-    'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
-
-set(obj.controls.peakTimeEdit,...
-    'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
-            
-set(obj.controls.peakWidthEdit,...
-    'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
-
-set(obj.controls.peakHeightEdit,...
-    'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
-
-set(obj.controls.peakAreaEdit,...
-    'callback', @(src, evt) peakEditTextCallback(obj, src, evt));
-
-set(obj.controls.showPeak,...
-    'callback', @obj.plotPeaks);
-    
-set(obj.controls.clearPeak,...
-    'callback', @obj.clearPeak);
-
-set(obj.controls.selectPeak,...
-    'callback', @(src, evt) peakSelectCallback(obj, src, evt));
+set(obj.controls.addPeak,  'keypressfcn', {@browseKeyCallback, obj});
+set(obj.controls.editPeak, 'keypressfcn', {@browseKeyCallback, obj});
+set(obj.controls.delPeak,  'keypressfcn', {@browseKeyCallback, obj});
 
 end
 
 % ---------------------------------------
 % Peak Options
 % ---------------------------------------
-function peakListCallback(obj, src, ~)
+function peakListCallback(src, ~, obj)
 
 switch src.String
     
@@ -419,7 +438,7 @@ switch src.String
                 obj.controls.peakList.Value = length(obj.peaks.name);
             end
            
-            obj.updatePeakEditText();
+            obj.updatePeakText();
             
         end
         
@@ -428,51 +447,30 @@ end
 end
 
 % ---------------------------------------
-% Selection Buttons
-% ---------------------------------------
-function sampleSelectionCallback(obj, src, ~)
-
-if isprop(src, 'tag')
-    
-    switch src.Tag
-        
-        case 'nextsample'
-            obj.selectSample(1);
-            
-        case 'prevsample'
-            obj.selectSample(-1);
-            
-    end
-    
-end
-
-end
-
-% ---------------------------------------
 % Keyboard Callback
 % ---------------------------------------
-function browseKeyCallback(obj, src, evt)
+function browseKeyCallback(src, evt, obj)
 
-if strcmpi(evt.EventName, 'KeyPress')
+if ~strcmpi(evt.EventName, 'KeyPress') || ~isprop(src, 'tag')
+    return
+end
+
+switch evt.Key
     
-    switch evt.Key
+    case 'return'
         
-        case 'return'
+        switch src.Tag
             
-            if isprop(src, 'tag')
+            case {'addpeak', 'editpeak', 'delpeak'}
+                peakListCallback(src, [], obj);
                 
-                switch src.Tag
-                    
-                    case {'addpeak', 'editpeak', 'delpeak'}
-                        peakListCallback(obj, src);
-                        
-                    case {'nextsample', 'prevsample'}
-                        sampleSelectionCallback(obj, src);
-                end 
+            case 'nextsample'
+                obj.selectSample(1);
                 
-            end
-    end
-    
+            case 'prevsample'
+                obj.selectSample(-1);
+                
+        end
 end
 
 end
@@ -480,7 +478,7 @@ end
 % ---------------------------------------
 % Selection ID
 % ---------------------------------------
-function editIDCallback(obj, varargin)
+function editIDCallback(~, ~, obj)
 
 str = obj.controls.editID.String;
 val = str2double(str);
@@ -514,28 +512,19 @@ end
 % ---------------------------------------
 % Axes Toggle
 % ---------------------------------------
-function axesToggleCallback(obj, src, ~)
-
-if ~strcmpi(get(src, 'style'), 'togglebutton')
-    return
-end
+function axesToggleCallback(src, ~, obj)
 
 switch src.Tag
     
     case 'xmanual'
         obj.controls.xAuto.Value = ~src.Value;
-        
     case 'xauto'
-        obj.controls.xManual.Value = ~src.Value;
-        
+        obj.controls.xUser.Value = ~src.Value;
     case 'ymanual'
         obj.controls.yAuto.Value = ~src.Value;
-        
     case 'yauto'
-        obj.controls.yManual.Value = ~src.Value;
+        obj.controls.yUser.Value = ~src.Value;
         
-    otherwise
-        return
 end
 
 obj.updateAxesLimitMode();
@@ -546,138 +535,136 @@ end
 % ---------------------------------------
 % Axes Limits
 % ---------------------------------------
-function axesLimitCallback(obj, src, ~)
+function axesLimitCallback(src, ~, obj)
 
-if ~strcmpi(get(src, 'style'), 'edit')
-    return
-end
+str = @(x) sprintf('%.3f', x);
 
-getStr = @(x) sprintf('%.3f', x);
+row = obj.view.index;
 
-str = src.String;
-val = str2double(str);
+n = src.String;
+x = str2double(n);
 
 switch src.Tag
     
     case 'xminedit'
         
-        if isempty(str)
+        if isempty(n)
             
-            if obj.view.index ~= 0
-                xmin = min(obj.data(obj.view.index).time);
-                xmax = max(obj.data(obj.view.index).time);
+            if row ~= 0
+                xmin = min(obj.data(row).time(:,1));
+                xmax = max(obj.data(row).time(:,1));
                 obj.axes.xlim(1) = xmin - ((xmax - xmin) * 0.02);
             else
                 obj.axes.xlim(1) = 0;
             end
 
-            src.String = getStr(obj.axes.xlim(1));
+            src.String = str(obj.axes.xlim(1));
             obj.axes.xmode = 'manual';
             obj.updateAxesXLim();
             
-        elseif isnan(val) || isinf(val) || ~isreal(val)
-            src.String = getStr(obj.axes.xlim(1));
+        elseif isnan(x) || isinf(x) || ~isreal(x)
+            src.String = str(obj.axes.xlim(1));
             return
             
-        elseif val < obj.axes.xlim(2)
+        elseif x < obj.axes.xlim(2)
             obj.axes.xmode = 'manual';
-            obj.axes.xlim(1) = val;
+            obj.axes.xlim(1) = x;
             obj.updateAxesXLim();
             
         else
-            src.String = getStr(obj.axes.xlim(1));
+            src.String = str(obj.axes.xlim(1));
             return
         end
         
     case 'xmaxedit'
         
-        if isempty(str) 
+        if isempty(n) 
             
-            if obj.view.index ~= 0
-                xmin = min(obj.data(obj.view.index).time);
-                xmax = max(obj.data(obj.view.index).time);
+            if row ~= 0
+                xmin = min(obj.data(row).time(:,1));
+                xmax = max(obj.data(row).time(:,1));
                 obj.axes.xlim(2) = xmax + ((xmax - xmin) * 0.02);
             else
                 obj.axes.xlim(2) = 1;
             end
 
-            src.String = getStr(obj.axes.xlim(2));
+            src.String = str(obj.axes.xlim(2));
             obj.axes.xmode = 'manual';
             obj.updateAxesXLim();
             
-        elseif isnan(val) || isinf(val) || ~isreal(val)
-            src.String = getStr(obj.axes.xlim(2));
+        elseif isnan(x) || isinf(x) || ~isreal(x)
+            src.String = str(obj.axes.xlim(2));
             return
             
-        elseif val > obj.axes.xlim(1)
-            obj.axes.xlim(2) = val;
+        elseif x > obj.axes.xlim(1)
+            obj.axes.xlim(2) = x;
             obj.axes.xmode = 'manual';
             obj.updateAxesXLim();
             
         else
-            src.String = getStr(obj.axes.xlim(2));
+            src.String = str(obj.axes.xlim(2));
             return
         end
         
     case 'yminedit'
         
-        if isempty(str) 
+        if isempty(n) 
             
-            if obj.view.index ~= 0
-                x = obj.data(obj.view.index).time;
-                y = obj.data(obj.view.index).intensity(:,1);
+            if row ~= 0
+                x = obj.data(row).time(:,1);
+                y = obj.data(row).intensity(:,1);
                 y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
                 obj.axes.ylim(1) = min(y) - ((obj.axes.ylim(2) - min(y)) * 0.02);
             else
                 obj.axes.ylim(1) = 0;
             end
 
-            src.String = getStr(obj.axes.ylim(1));
+            src.String = str(obj.axes.ylim(1));
             obj.axes.ymode = 'manual';
             obj.updateAxesYLim();
             
-        elseif isnan(val) || isinf(val) || ~isreal(val)
-            src.String = getStr(obj.axes.ylim(1));
+        elseif isnan(x) || isinf(x) || ~isreal(x)
+            src.String = str(obj.axes.ylim(1));
             return
             
-        elseif val < obj.axes.ylim(2)
+        elseif x < obj.axes.ylim(2)
             obj.axes.ymode = 'manual';
-            obj.axes.ylim(1) = val;
+            obj.axes.ylim(1) = x;
             obj.updateAxesYLim();
             
         else
-            src.String = getStr(obj.axes.ylim(1));
+            src.String = str(obj.axes.ylim(1));
             return
         end
         
     case 'ymaxedit'
         
-        if isempty(str)
+        if isempty(n)
             
-            if obj.view.index ~= 0
-                x = obj.data(obj.view.index).time;
-                y = obj.data(obj.view.index).intensity(:,1);
+            if row ~= 0
+                x = obj.data(row).time(:,1);
+                y = obj.data(row).intensity(:,1);
                 y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
                 obj.axes.ylim(2) = max(y) + ((max(y) - obj.axes.ylim(1)) * 0.02);
             else
                 obj.axes.ylim(2) = 1;
             end
 
-            src.String = getStr(obj.axes.ylim(2));
+            src.String = str(obj.axes.ylim(2));
             obj.axes.ymode = 'manual';
             obj.updateAxesYLim();
             
-        elseif isnan(val) || isinf(val) || ~isreal(val)
-            src.String = getStr(obj.axes.ylim(2));
+        elseif isnan(x) || isinf(x) || ~isreal(x)
+            src.String = str(obj.axes.ylim(2));
             return
             
-        elseif val > obj.axes.ylim(1)
+        elseif x > obj.axes.ylim(1)
             obj.axes.ymode = 'manual';
-            obj.axes.ylim(2) = val;
+            obj.axes.ylim(2) = x;
             obj.updateAxesYLim();
             
         else
-            src.String = getStr(obj.axes.ylim(2));
+            src.String = str(obj.axes.ylim(2));
             return
         end
         
@@ -694,36 +681,42 @@ end
 % ---------------------------------------
 % Baseline
 % ---------------------------------------
-function baselineCallback(obj, src, ~)
+function baselineCallback(src, ~, obj)
 
 if isempty(obj.data) || obj.view.index == 0
     return
+else
+    row = obj.view.index;
 end
 
 switch src.Tag
     
     case 'showbaseline'
-        obj.plotBaseline();
+        
+        if src.Value
+            obj.view.showBaseLine = 1;
+            obj.updateBaseLine();
+        else
+            obj.view.showBaseLine = 0;
+            obj.clearAllBaseLine();
+        end
         
     case 'applybaseline'
+        
         obj.getBaseline();
-        obj.plotBaseline();
+        obj.updateBaseLine();
         
     case 'clearbaseline'
         
-        obj.clearAxesChildren('baseline');
+        obj.clearAllBaseLine();
         
         if obj.controls.showBaseline.Value
+            obj.view.showBaseLine = 0;
             obj.controls.showBaseline.Value = 0;
         end
         
-        obj.controls.smoothSlider.Value = 5.5;
-        obj.controls.asymSlider.Value = -5.5;
-        
-        if isempty(obj.data) || obj.view.index == 0
-            return
-        elseif ~isempty(obj.data(obj.view.index).baseline)
-            obj.data(obj.view.index).baseline = [];
+        if ~isempty(obj.data(row).baseline)
+            obj.data(row).baseline = [];
         end
         
 end
@@ -733,9 +726,9 @@ end
 % ---------------------------------------
 % Peak Listbox
 % ---------------------------------------
-function peakListboxCallback(obj, ~, ~)
+function peakListboxCallback(~, ~, obj)
 
-obj.updatePeakEditText();
+obj.updatePeakText();
 obj.userPeak(1);
 
 end
@@ -743,7 +736,7 @@ end
 % ---------------------------------------
 % Peak Edit Text
 % ---------------------------------------
-function peakEditTextCallback(obj, src, ~)
+function peakEditTextCallback(src, ~, obj)
 
 switch src.Tag
     
@@ -752,6 +745,8 @@ switch src.Tag
         if ~isempty(obj.peaks.name)
             str = obj.peaks.name(obj.controls.peakList.Value, 1);
             obj.controls.peakIDEdit.String = str;
+        else
+            obj.controls.peakIDEdit.String = '';
         end
         
     case 'peaktimeedit'
@@ -798,17 +793,18 @@ end
 % ---------------------------------------
 % Select Peak
 % ---------------------------------------
-function peakSelectCallback(obj, src, evt)
+function peakSelectCallback(src, evt, obj)
 
-switch evt.EventName
+if isempty(obj.data) || isempty(obj.peaks.name)
+    src.Value = 0;
+    return
+end
+
+if strcmpi(evt.EventName, 'Action')
     
-    case 'Action'
+    if isprop(obj.figure.CurrentObject, 'Tag')
         
-        if ~isprop(obj.figure.CurrentObject, 'tag')
-            return
-        else
-            currentObject = obj.figure.CurrentObject.Tag;
-        end
+        currentObject = obj.figure.CurrentObject.Tag;
         
         if strcmpi(currentObject, src.Tag)
             
@@ -822,27 +818,7 @@ switch evt.EventName
             src.Value = obj.view.selectPeak;
         end
         
-end
-
-end
-
-function correctPosition(x)
-
-if isprop(x, 'extent')
-    
-    p1 = get(x, 'position');
-    p2 = get(x, 'extent');
-    
-    if p1(3) < p2(3)
-        p1(3) = p2(3);
     end
-    
-    if p1(4) < p2(4)
-        p1(4) = p2(4);
-    end
-    
-    set(x, 'position', p1);
-    
 end
 
 end
@@ -854,7 +830,6 @@ function button = newPushButton(obj, parent, title, tag, position)
 
 backgroundColor = [0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 11;
 
 button = uicontrol(...
     'style',           'pushbutton',...
@@ -864,7 +839,7 @@ button = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
     'horizontalalignment', 'center');
@@ -878,7 +853,6 @@ function button = newToggleButton(obj, parent, title, tag, value, position)
 
 backgroundColor = [0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 11;
 
 button = uicontrol(...
     'style',           'togglebutton',...
@@ -889,7 +863,7 @@ button = uicontrol(...
     'position',        position,...
     'value',           value,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
     'horizontalalignment', 'center');
@@ -903,7 +877,6 @@ function text = newStaticText(obj, parent, title, tag, position)
 
 backgroundColor = [0.99, 0.99, 0.99];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 11;
 
 text = uicontrol(...
     'style',           'text',...
@@ -913,7 +886,7 @@ text = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
     'horizontalalignment', 'center');
@@ -927,7 +900,6 @@ function text = newEditText(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 11;
 
 text = uicontrol(...
     'style',           'edit',...
@@ -937,7 +909,7 @@ text = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
     'horizontalalignment', 'center');
@@ -951,7 +923,6 @@ function listbox = newListbox(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 10;
 
 listbox = uicontrol(...
     'style',           'listbox',...
@@ -961,7 +932,7 @@ listbox = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize-1,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor);
 
@@ -974,7 +945,6 @@ function slider = newSlider(obj, parent, title, tag, position)
 
 backgroundColor = [1.00, 1.00, 1.00];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize        = 11;
 
 slider = uicontrol(...
     'style',           'slider',...
@@ -984,7 +954,7 @@ slider = uicontrol(...
     'tag',             tag,...
     'position',        position,...
     'fontname',        obj.font,...
-    'fontsize',        fontSize,...
+    'fontsize',        obj.preferences.gui.fontsize,...
     'backgroundcolor', backgroundColor,...
     'foregroundcolor', foregroundColor,...
     'horizontalalignment', 'center');
