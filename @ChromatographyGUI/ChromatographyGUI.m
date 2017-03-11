@@ -4,10 +4,14 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.5';
-        date        = '20170301';
+        version     = 'v0.0.6.20170311';
+        
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
+        
+        default_path = [filesep, 'config', filesep];
+        default_settings = 'default_settings.mat';
+        default_peaklist = 'default_peaklist.mat';
         
     end
     
@@ -26,7 +30,7 @@ classdef ChromatographyGUI < handle
         controls
         view
         
-        preferences
+        settings
         
     end
     
@@ -52,36 +56,12 @@ classdef ChromatographyGUI < handle
             
             addpath(sourcePath);
             addpath(genpath([sourcePath, filesep, 'src']));
-            addpath(genpath([sourcePath, filesep, 'lib']));
+            addpath(genpath([sourcePath, filesep, 'config']));
             
             % ---------------------------------------
-            % Defaults
+            % Settings
             % ---------------------------------------
-            obj.preferences.plot.color         = [0.10, 0.10, 0.10];
-            obj.preferences.baseline.color     = [0.95, 0.22, 0.17];
-            obj.preferences.peaks.color        = [0.00, 0.30, 0.53];
-            
-            obj.preferences.plot.linewidth     = 1.25;
-            obj.preferences.baseline.linewidth = 1.50;
-            obj.preferences.peaks.linewidth    = 2.00;
-            
-            obj.preferences.gui.fontsize    = 11.0;
-            obj.preferences.labels.fontsize = 11.0;
-            obj.preferences.labels.font     = obj.font;
-            
-            obj.preferences.labels.legend = {...
-                'instrument',...
-                'datetime',...
-                'sample_name',...
-                'vial'};
-            
-            obj.preferences.peakModel = 'nn';
-            obj.preferences.peakArea  = 'rawData';
-            
-            obj.preferences.baselineSmoothness = 5.5;
-            obj.preferences.baselineAsymmetry  = -5.5;
-            
-            obj.preferences.selectZoom = 0;
+            obj.toolboxSettings([], [], 'initialize');
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
@@ -97,7 +77,7 @@ classdef ChromatographyGUI < handle
             obj.view.baseLine   = [];
             obj.view.peakLine   = [];
             obj.view.peakLabel  = [];
-            obj.view.selectZoom = obj.preferences.selectZoom;
+            obj.view.selectZoom = obj.settings.selectZoom;
             obj.view.selectPeak = 0;
             
             obj.view.showPlotLabel = 1;
@@ -125,7 +105,7 @@ classdef ChromatographyGUI < handle
             % GUI
             % ---------------------------------------
             obj.initializeGUI();
-            obj.loadPreferences();
+            obj.toolboxSettings('load_default');
             
         end
         
@@ -166,8 +146,8 @@ classdef ChromatographyGUI < handle
             else
                 obj.view.plotLine = plot(x, y,...
                     'parent',    obj.axes.main,...
-                    'color',     obj.preferences.plot.color,...
-                    'linewidth', obj.preferences.plot.linewidth,...
+                    'color',     obj.settings.plot.color,...
+                    'linewidth', obj.settings.plot.linewidth,...
                     'visible',   'on',...
                     'hittest',   'off',...
                     'tag',       'main');
@@ -349,8 +329,8 @@ classdef ChromatographyGUI < handle
                 else
                     obj.view.baseLine = plot(x, y,...
                         'parent',    obj.axes.main,...
-                        'color',     obj.preferences.baseline.color,...
-                        'linewidth', obj.preferences.baseline.linewidth,...
+                        'color',     obj.settings.baseline.color,...
+                        'linewidth', obj.settings.baseline.linewidth,...
                         'visible',   'on',...
                         'tag',       'baseline');
                 end
@@ -391,8 +371,8 @@ classdef ChromatographyGUI < handle
                         
                         obj.view.peakLine{i} = plot(x, y,...
                             'parent',    obj.axes.main,...
-                            'color',     obj.preferences.peaks.color,...
-                            'linewidth', obj.preferences.peaks.linewidth,...
+                            'color',     obj.settings.peaks.color,...
+                            'linewidth', obj.settings.peaks.linewidth,...
                             'visible',   'on',...
                             'hittest',   'off',...
                             'tag',       'peak');
@@ -463,8 +443,8 @@ classdef ChromatographyGUI < handle
                         'clipping', 'on',...
                         'hittest',  'off',...
                         'tag',      'peaklabel',...
-                        'fontsize', obj.preferences.labels.fontsize,...
-                        'fontname', obj.preferences.labels.font,...
+                        'fontsize', obj.settings.labels.fontsize,...
+                        'fontname', obj.settings.labels.font,...
                         'margin',   3,...
                         'units',    'data',...
                         'pickableparts',       'none',...
@@ -665,31 +645,30 @@ classdef ChromatographyGUI < handle
                 obj.peakDeleteRow(row);
                 obj.table.main.Data(row, :) = [];
                 
-                if any(obj.view.index == row)
-                    
-                    if isempty(obj.data)
-                        obj.view.index = 0;
-                        obj.view.id    = 'N/A';
-                        obj.view.name  = 'N/A';
-                    elseif obj.view.index > length(obj.data)
-                        obj.view.index = length(obj.data);
-                        obj.view.id    = num2str(length(obj.data));
-                        obj.view.name  = obj.data(end).sample_name;
-                    else
-                        obj.view.id   = num2str(obj.view.index);
-                        obj.view.name = obj.data(obj.view.index).sample_name;
-                    end
-                    
-                    obj.updateSampleText();
-                    obj.updatePeakText();
-                    obj.updatePlot();
-                    
-                    if isempty(obj.data)
-                        obj.resetAxes();
-                    end
+                
+                if isempty(obj.data)
+                    obj.view.index = 0;
+                    obj.view.id    = 'N/A';
+                    obj.view.name  = 'N/A';
+                elseif obj.view.index > length(obj.data)
+                    obj.view.index = length(obj.data);
+                    obj.view.id    = num2str(length(obj.data));
+                    obj.view.name  = obj.data(end).sample_name;
+                else
+                    obj.view.id   = num2str(obj.view.index);
+                    obj.view.name = obj.data(obj.view.index).sample_name;
+                end
+                
+                obj.updateSampleText();
+                obj.updatePeakText();
+                obj.updatePlot();
+                
+                if isempty(obj.data)
+                    obj.resetAxes();
                 end
                 
                 obj.validatePeakData(length(obj.data), length(obj.peaks.name));
+                
             end
             
         end
@@ -997,7 +976,7 @@ classdef ChromatographyGUI < handle
             
             str = '';
             fmtStr = '%s%s\t';
-            fmtNum = '%s%.4f\t';
+            fmtNum = '%s%f\t';
             
             tableHeader = obj.table.main.ColumnName;
             tableData = obj.table.main.Data;
@@ -1253,10 +1232,10 @@ classdef ChromatographyGUI < handle
                 row = obj.view.index;
             end
             
-            if isempty(obj.preferences.labels.legend)
+            if isempty(obj.settings.labels.legend)
                 return
             else
-                labelFields = obj.preferences.labels.legend;
+                labelFields = obj.settings.labels.legend;
             end
             
             str = '';
@@ -1309,8 +1288,8 @@ classdef ChromatographyGUI < handle
                     'clipping', 'on',...
                     'hittest',  'off',...
                     'tag',      'plotlabel',...
-                    'fontsize', obj.preferences.labels.fontsize,...
-                    'fontname', obj.preferences.labels.font,...
+                    'fontsize', obj.settings.labels.fontsize,...
+                    'fontname', obj.settings.labels.font,...
                     'margin',   3,...
                     'units',    'data',...
                     'pickableparts',       'none',...
@@ -1394,8 +1373,8 @@ classdef ChromatographyGUI < handle
                     else
                         obj.view.peakLine{col(i)} = plot(x, y,...
                             'parent',    obj.axes.main,...
-                            'color',     obj.preferences.peaks.color,...
-                            'linewidth', obj.preferences.peaks.linewidth,...
+                            'color',     obj.settings.peaks.color,...
+                            'linewidth', obj.settings.peaks.linewidth,...
                             'visible',   'on',...
                             'hittest',   'off',...
                             'tag',       'peak');
@@ -1425,8 +1404,8 @@ classdef ChromatographyGUI < handle
                 else
                     obj.view.baseLine = plot(x, y,...
                         'parent',    obj.axes.main,...
-                        'color',     obj.preferences.baseline.color,...
-                        'linewidth', obj.preferences.baseline.linewidth,...
+                        'color',     obj.settings.baseline.color,...
+                        'linewidth', obj.settings.baseline.linewidth,...
                         'visible',   'on',...
                         'tag',       'baseline');
                 end
@@ -1887,152 +1866,6 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function loadPreferences(obj, varargin)
-            
-            sourceFile = fileparts(mfilename('fullpath'));
-            [sourcePath, sourceFile] = fileparts(sourceFile);
-            
-            if ~strcmpi(sourceFile, '@ChromatographyGUI')
-                sourcePath = [sourcePath, filesep, sourceFile];
-            end
-            
-            filePath = [sourcePath, filesep, 'lib', filesep, 'default', filesep];
-            fileName = 'default_preferences.mat';
-            
-            [isFile, fileInfo] = fileattrib([filePath, fileName]);
-            
-            if ~isFile
-                return
-            end
-            
-            if ~fileInfo.directory && fileInfo.UserRead
-                
-                try
-                    userSettings = load(fileInfo.Name);
-                    
-                    if isstruct(userSettings) && isfield(userSettings, 'user_preferences')
-                        userSettings = userSettings.user_preferences;
-                        
-                        if isfield(userSettings, 'name') && strcmpi(userSettings.name, 'global_settings')
-                            
-                            if isfield(userSettings, 'data') && ~isempty(userSettings.data)
-                                userSettings = userSettings.data;
-                                
-                                obj.preferences = userSettings;
-                                
-                                obj.view.showPlotLabel = obj.preferences.showPlotLabel;
-                                obj.view.showBaseLine  = obj.preferences.showBaseLine;
-                                obj.view.showPeakLabel = obj.preferences.showPeakLabel;
-                                obj.view.showPeakLine  = obj.preferences.showPeakLine;
-                                obj.view.selectZoom    = obj.preferences.selectZoom;
-                                
-                                obj.controls.asymSlider.Value   = obj.preferences.baselineAsymmetry;
-                                obj.controls.smoothSlider.Value = obj.preferences.baselineSmoothness;
-                                
-                                obj.axes.xmode = obj.preferences.xmode;
-                                obj.axes.ymode = obj.preferences.ymode;
-                                obj.axes.xlim  = obj.preferences.xlim;
-                                obj.axes.ylim  = obj.preferences.ylim;
-                                
-                                legendNames = obj.preferences.labels.legend;
-                                legendMenu  = obj.menu.dataLabel.Children;
-                                
-                                for i = 1:length(legendMenu)
-                                    
-                                    if ishandle(legendMenu(i))
-                                        if any(strcmpi(legendMenu(i).Tag, legendNames))
-                                            legendMenu(i).Checked = 'on';
-                                        else
-                                            legendMenu(i).Checked = 'off';
-                                        end
-                                    end
-                                    
-                                end
-                                
-                                switch obj.preferences.peakModel
-                                    case 'nn'
-                                        obj.menu.peakNeuralNetwork.Checked = 'on';
-                                        obj.menu.peakExponentialGaussian.Checked = 'off';
-                                    case 'egh'
-                                        obj.menu.peakNeuralNetwork.Checked = 'off';
-                                        obj.menu.peakExponentialGaussian.Checked = 'on';
-                                end
-                                
-                                switch obj.preferences.peakArea
-                                    case 'rawData'
-                                        obj.menu.peakOptionsAreaActual.Checked = 'on';
-                                        obj.menu.peakOptionsAreaFit.Checked = 'off';
-                                    case 'fitData'
-                                        obj.menu.peakOptionsAreaActual.Checked = 'off';
-                                        obj.menu.peakOptionsAreaFit.Checked = 'on';
-                                end
-                                
-                                if obj.view.showPlotLabel
-                                    obj.menu.view.dataLabel.Checked = 'on';
-                                else
-                                    obj.menu.view.dataLabel.Checked = 'off';
-                                end
-                                
-                                if obj.preferences.showBaseLine
-                                    obj.controls.showBaseline.Value = 1;
-                                else
-                                    obj.controls.showBaseline.Value = 0;
-                                end
-                                
-                                if obj.preferences.showPeaks
-                                    obj.controls.showPeak.Value = 1;
-                                else
-                                    obj.controls.showPeak.Value = 0;
-                                end
-                                
-                                if obj.view.showPeakLabel
-                                    obj.menu.view.peakLabel.Checked = 'on';
-                                else
-                                    obj.menu.view.peakLabel.Checked = 'off';
-                                end
-                                
-                                if obj.view.showPeakLine
-                                    obj.menu.view.peakLine.Checked = 'on';
-                                else
-                                    obj.menu.view.peakLine.Checked = 'off';
-                                end
-                                
-                                if strcmpi(obj.preferences.showZoom, 'on')
-                                    obj.menu.view.zoom.Checked = 'on';
-                                    obj.view.selectZoom = 1;
-                                    obj.userZoom(1);
-                                    obj.userPeak(0);
-                                else
-                                    obj.menu.view.zoom.Checked = 'off';
-                                    obj.view.selectZoom = 0;
-                                    obj.userZoom(0);
-                                end
-                                
-                                obj.updateAxesLimitToggle();
-                                obj.updateAxesLimitMode();
-                                
-                                if strcmpi(obj.axes.xmode, 'manual')
-                                    obj.axes.main.XLim = obj.axes.xlim;
-                                end
-                                
-                                if strcmpi(obj.axes.ymode, 'manual')
-                                    obj.axes.main.YLim = obj.axes.ylim;
-                                end
-                                
-                                obj.updateAxesLimitEditText();
-                                obj.updatePlot();
-                                
-                            end
-                        end
-                    end
-                    
-                catch
-                end
-                
-            end
-            
-        end
-        
         function validatePeakData(obj, rows, cols)
             
             obj.peaks.time   = obj.validateData(obj.peaks.time, rows, cols);
@@ -2048,28 +1881,18 @@ classdef ChromatographyGUI < handle
     methods (Static = true)
         
         function x = getPlatform()
-            
-            if ismac()
-                x = 'mac';
-            elseif isunix()
-                x = 'linux';
-            elseif ispc()
-                x = 'windows';
-            else
-                x = 'unknown';
-            end
-            
+            x = computer;
         end
         
         function x = getEnvironment()
             
             if ~isempty(ver('MATLAB'))
                 x = ver('MATLAB');
-                x = ['matlab (',  x.Version, ')'];
+                x = ['MATLAB ', x.Release];
             elseif ~isempty(ver('OCTAVE'))
-                x = 'octave';
+                x = 'OCTAVE';
             else
-                x = 'unknown';
+                x = 'UNKNOWN';
             end
             
         end

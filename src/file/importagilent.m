@@ -1,14 +1,14 @@
-function data = importagilent(varargin)
+function data = importAgilent(varargin)
 % ------------------------------------------------------------------------
-% Method      : importagilent
+% Method      : importAgilent
 % Description : Read Agilent data files (.D, .MS, .CH, .UV)
 % ------------------------------------------------------------------------
 %
 % ------------------------------------------------------------------------
 % Syntax
 % ------------------------------------------------------------------------
-%   data = importagilent()
-%   data = importagilent( __ , Name, Value)
+%   data = importAgilent()
+%   data = importAgilent( __ , Name, Value)
 %
 % ------------------------------------------------------------------------
 % Input (Name, Value)
@@ -28,12 +28,12 @@ function data = importagilent(varargin)
 % ------------------------------------------------------------------------
 % Examples
 % ------------------------------------------------------------------------
-%   data = importagilent()
-%   data = importagilent('file', '00159F.D')
-%   data = importagilent('file', {'/Data/2016/04/', '00201B.D'})
-%   data = importagilent('file', {'/Data/2016/'}, 'depth', 4)
-%   data = importagilent('content', 'header', 'depth', 8)
-%   data = importagilent('verbose', 'off')
+%   data = importAgilent()
+%   data = importAgilent('file', '00159F.D')
+%   data = importAgilent('file', {'/Data/2016/04/', '00201B.D'})
+%   data = importAgilent('file', {'/Data/2016/'}, 'depth', 4)
+%   data = importAgilent('content', 'header', 'depth', 8)
+%   data = importAgilent('verbose', 'off')
 
 % ---------------------------------------
 % Data

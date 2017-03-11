@@ -29,7 +29,7 @@ if isempty(x) || isempty(y) || userTime > max(x) || userTime < min(x)
     return
 end
 
-switch obj.preferences.peakModel
+switch obj.settings.peakModel
     
     case 'nn'
         getNN(obj, x, y, userTime)
@@ -68,7 +68,7 @@ col = obj.controls.peakList.Value;
 px = findpeaks(x, y,...
     'xmin', peakCenter - 0.5,...
     'xmax', peakCenter + 0.5,...
-    'sensitivity', 200);
+    'sensitivity', 250);
 
 if ~isempty(px)
     [~, ii] = min(abs(peakCenter - px(:,1)));
@@ -79,7 +79,7 @@ end
 
 peak = peakfitNN(...
     x, y, peakCenter,...
-    'area', obj.preferences.peakArea);
+    'area', obj.settings.peakArea);
 
 if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     
@@ -104,12 +104,12 @@ function getEGH(obj, x, y, peakCenter)
 row = obj.view.index;
 col = obj.controls.peakList.Value;
 
-baseline = getBaselineEGH(obj, row, y);
+baseline = getBaselineFit(obj, x, y);
 
 peak = peakfitEGH(...
     x, y-baseline,...
     'center', peakCenter,...
-    'area', obj.preferences.peakArea);
+    'area', obj.settings.peakArea);
 
 if ~isempty(peak) && ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     
@@ -215,13 +215,25 @@ end
 
 end
 
-function b = getBaselineEGH(obj, row, y)
+function b = getBaselineFit(obj, x, y)
 
-if isempty(obj.data(row).baseline) || size(obj.data(row).baseline,1) ~= size(y,1)
+row = obj.view.index;
+b = [];
+
+if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
+    
+    b = obj.data(row).baseline;
+    b = b(b(:,1) >= min(x) & b(:,1) <= max(x),:);
+    
+    if size(b,1) ~= size(y,1)
+        obj.getBaseline();
+        b = obj.data(row).baseline;
+    end
+        
+elseif isempty(obj.data(row).baseline)
     obj.getBaseline();
+    b = obj.data(row).baseline;
 end
-
-b = obj.data(row).baseline;
 
 if ~isempty(b) && size(b,1) == size(y,1) && size(b,2) == 2
     b = b(:,2);

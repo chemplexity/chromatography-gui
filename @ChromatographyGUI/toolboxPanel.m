@@ -29,10 +29,17 @@ selectPos(2) = tablePos(2);
 selectPos(3) = ctrlPos(3);
 selectPos(4) = tablePos(4);
 
-obj.panel.table   = newPanel(obj, obj.figure, '', 'tablepanel',   tablePos);
-obj.panel.axes    = newPanel(obj, obj.figure, '', 'axespanel',    plotPos);
-obj.panel.control = newPanel(obj, obj.figure, '', 'controlpanel', ctrlPos);
-obj.panel.select  = newPanel(obj, obj.figure, '', 'selectpanel',  selectPos);
+obj.panel.table = newPanel(...
+    obj, obj.figure, '', 'tablepanel', tablePos);
+
+obj.panel.axes = newPanel(...
+    obj, obj.figure, '', 'axespanel', plotPos);
+
+obj.panel.control = newPanel(...
+    obj, obj.figure, '', 'controlpanel', ctrlPos);
+
+obj.panel.select = newPanel(...
+    obj, obj.figure, '', 'selectpanel', selectPos);
 
 set(obj.panel.axes, 'backgroundcolor', 'white');
 
@@ -40,11 +47,16 @@ set(obj.panel.axes, 'backgroundcolor', 'white');
 % Tabs
 % ---------------------------------------
 obj.panel.controlGroup = newTabGroup(obj.panel.control);
-obj.panel.viewTab      = newTab(obj.panel.controlGroup, 'View',      'viewtab');
-obj.panel.peakTab      = newTab(obj.panel.controlGroup, 'Integrate', 'peaktab');
-
 obj.panel.selectGroup  = newTabGroup(obj.panel.select);
-obj.panel.selectTab    = newTab(obj.panel.selectGroup, 'Select', 'selecttab');
+
+obj.panel.viewTab = newTab(...
+    obj.panel.controlGroup, 'View', 'viewtab');
+
+obj.panel.peakTab = newTab(...
+    obj.panel.controlGroup, 'Integrate', 'peaktab');
+
+obj.panel.selectTab = newTab(...
+    obj.panel.selectGroup, 'Select', 'selecttab');
 
 % ---------------------------------------
 % Subpanels
@@ -61,8 +73,11 @@ yLimPos(2) = xLimPos(2) - xLimPos(4) - margin * 2;
 yLimPos(3) = xLimPos(3);
 yLimPos(4) = xLimPos(4);
 
-obj.panel.xlim = newPanel(obj, obj.panel.viewTab, 'X-Axis', 'xlimpanel', xLimPos);
-obj.panel.ylim = newPanel(obj, obj.panel.viewTab, 'Y-Axis', 'ylimpanel', yLimPos);
+obj.panel.xlim = newPanel(...
+    obj, obj.panel.viewTab, 'X-Axis', 'xlimpanel', xLimPos);
+
+obj.panel.ylim = newPanel(...
+    obj, obj.panel.viewTab, 'Y-Axis', 'ylimpanel', yLimPos);
 
 % Integrate Tab
 peakPos(1) = margin * 4;
@@ -80,9 +95,14 @@ intPos(2) = margin * 2;
 intPos(3) = peakPos(3);
 intPos(4) = basePos(2) - margin * 4;
 
-obj.panel.peakList  = newPanel(obj, obj.panel.peakTab, 'Peak List', 'peakpanel',      peakPos);
-obj.panel.baseline  = newPanel(obj, obj.panel.peakTab, 'Baseline',  'baselinepanel',  basePos);
-obj.panel.integrate = newPanel(obj, obj.panel.peakTab, 'Options',   'integratepanel', intPos);
+obj.panel.peakList = newPanel(...
+    obj, obj.panel.peakTab, 'Peak List', 'peakpanel', peakPos);
+
+obj.panel.baseline = newPanel(...
+    obj, obj.panel.peakTab, 'Baseline', 'baselinepanel', basePos);
+
+obj.panel.integrate = newPanel(...
+    obj, obj.panel.peakTab, 'Options', 'integratepanel', intPos);
 
 end
 
@@ -100,11 +120,11 @@ fontsize        = 12;
 
 panel = uipanel(...
     'parent',          parent,...
-    'title',           title,...
     'tag',             tag,...
-    'position',        position,...
-    'units',           'normalized',...
+    'title',           title,...
     'titleposition',   'lefttop',...
+    'units',           'normalized',...
+    'position',        position,...
     'backgroundcolor', backgroundColor,....
     'foregroundcolor', foregroundColor,...
     'highlightcolor',  highlightColor,...

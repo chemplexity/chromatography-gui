@@ -91,25 +91,34 @@ switch evt.Indices(2)
     
     case 4
         obj.data(evt.Indices(1)).instrument = evt.NewData;
+        
     case 5
         obj.data(evt.Indices(1)).instmodel = evt.NewData;
+        
     case 7
         obj.data(evt.Indices(1)).operator = evt.NewData;
+        
     case 8
         obj.data(evt.Indices(1)).sample_name = evt.NewData;
+        
     case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
+        
     case 13
+        
         if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
             obj.data(evt.Indices(1)).injvol = evt.NewData;
+            
         elseif isnan(evt.NewData)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
             return
+            
         else
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
             return
         end
+        
 end
 
 src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
