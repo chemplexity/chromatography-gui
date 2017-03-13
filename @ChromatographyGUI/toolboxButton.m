@@ -469,8 +469,8 @@ switch evt.Key
                 
             case 'prevsample'
                 obj.selectSample(-1);
-                
         end
+        
 end
 
 end

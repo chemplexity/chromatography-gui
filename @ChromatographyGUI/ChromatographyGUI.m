@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170311';
+        version     = 'v0.0.6.20170313';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -65,9 +65,9 @@ classdef ChromatographyGUI < handle
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
-            obj.axes.xlim  = [0.000, 1.000];
-            obj.axes.ylim  = [0.000, 1.000];
-            
+            obj.axes.xlim  = [0,1];
+            obj.axes.ylim  = [0,1];
+             
             obj.view.index = 0;
             obj.view.id    = 'N/A';
             obj.view.name  = 'N/A';
@@ -105,6 +105,7 @@ classdef ChromatographyGUI < handle
             % GUI
             % ---------------------------------------
             obj.initializeGUI();
+            
             obj.toolboxSettings('load_default');
             
         end
@@ -141,7 +142,7 @@ classdef ChromatographyGUI < handle
             x = obj.data(row).time;
             y = obj.data(row).intensity(:,1);
             
-            if ishandle(obj.view.peakLine)
+            if any(ishandle(obj.view.peakLine))
                 set(obj.view.plotLine, 'xdata', x, 'ydata', y);
             else
                 obj.view.plotLine = plot(x, y,...
@@ -324,7 +325,7 @@ classdef ChromatographyGUI < handle
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if ishandle(obj.view.baseLine)
+                if any(ishandle(obj.view.baseLine))
                     set(obj.view.baseLine, 'xdata', x, 'ydata', y);
                 else
                     obj.view.baseLine = plot(x, y,...
@@ -708,23 +709,28 @@ classdef ChromatographyGUI < handle
             headerInfo = tableHeader(1:13);
             
             if offset > 0
-                headerTime   = tableHeader(14+offset*0:14+offset*1-1);
-                headerArea   = tableHeader(14+offset*1:14+offset*2-1);
-                headerHeight = tableHeader(14+offset*2:14+offset*3-1);
+                headerArea   = tableHeader(14+offset*0:14+offset*1-1);
+                headerHeight = tableHeader(14+offset*1:14+offset*2-1);
+                headerTime   = tableHeader(14+offset*2:14+offset*3-1);
                 headerWidth  = tableHeader(14+offset*3:14+offset*4-1);
             else
-                headerTime   = {};
                 headerArea   = {};
                 headerHeight = {};
+                headerTime   = {};
                 headerWidth  = {};
             end
             
-            headerTime{end+1,1}   = ['Time (',   obj.peaks.name{end}, ')'];
             headerArea{end+1,1}   = ['Area (',   obj.peaks.name{end}, ')'];
             headerHeight{end+1,1} = ['Height (', obj.peaks.name{end}, ')'];
+            headerTime{end+1,1}   = ['Time (',   obj.peaks.name{end}, ')'];
             headerWidth{end+1,1}  = ['Width (',  obj.peaks.name{end}, ')'];
             
-            tableHeader = [headerInfo; headerTime; headerArea; headerHeight; headerWidth];
+            tableHeader = [...
+                headerInfo;...
+                headerArea;...
+                headerHeight;...
+                headerTime;...
+                headerWidth];
             
             if ~isempty(tableData)
                 
@@ -733,17 +739,22 @@ classdef ChromatographyGUI < handle
                 end
                 
                 tableInfo   = tableData(:,1:13);
-                tableTime   = tableData(:,14+offset*0:14+offset*1-1);
-                tableArea   = tableData(:,14+offset*1:14+offset*2-1);
-                tableHeight = tableData(:,14+offset*2:14+offset*3-1);
+                tableArea   = tableData(:,14+offset*0:14+offset*1-1);
+                tableHeight = tableData(:,14+offset*1:14+offset*2-1);
+                tableTime   = tableData(:,14+offset*2:14+offset*3-1);
                 tableWidth  = tableData(:,14+offset*3:14+offset*4-1);
                 
-                tableTime{end, end+1}   = [];
-                tableArea{end, end+1}   = [];
-                tableHeight{end, end+1} = [];
-                tableWidth{end, end+1}  = [];
+                tableArea{end,end+1}   = [];
+                tableHeight{end,end+1} = [];
+                tableTime{end,end+1}   = [];
+                tableWidth{end,end+1}  = [];
                 
-                tableData = [tableInfo, tableTime, tableArea, tableHeight, tableWidth];
+                tableData = [...
+                    tableInfo,...
+                    tableArea,...
+                    tableHeight,...
+                    tableTime,...
+                    tableWidth];
                 
             end
             
@@ -780,9 +791,9 @@ classdef ChromatographyGUI < handle
             end
             
             if length(obj.table.main.ColumnName) >= col
-                obj.table.main.ColumnName{col+13 + offset*0} = ['Time (', obj.peaks.name{col}, ')'];
-                obj.table.main.ColumnName{col+13 + offset*1} = ['Area (', obj.peaks.name{col}, ')'];
-                obj.table.main.ColumnName{col+13 + offset*2} = ['Height (', obj.peaks.name{col}, ')'];
+                obj.table.main.ColumnName{col+13 + offset*0} = ['Area (', obj.peaks.name{col}, ')'];
+                obj.table.main.ColumnName{col+13 + offset*1} = ['Height (', obj.peaks.name{col}, ')'];
+                obj.table.main.ColumnName{col+13 + offset*2} = ['Time (', obj.peaks.name{col}, ')'];
                 obj.table.main.ColumnName{col+13 + offset*3} = ['Width (', obj.peaks.name{col}, ')'];
             end
             
@@ -862,9 +873,7 @@ classdef ChromatographyGUI < handle
         
         function peakDeleteRow(obj, row)
             
-            if isempty(obj.peaks.time)
-                return
-            elseif length(obj.peaks.time(:,1)) >= row
+            if ~isempty(obj.peaks.time) && length(obj.peaks.time(:,1)) >= row
                 obj.peaks.time(row, :)   = [];
                 obj.peaks.width(row, :)  = [];
                 obj.peaks.height(row, :) = [];
@@ -916,7 +925,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(axesHandles)
                 
-                if ishandle(exportFigure)
+                if any(ishandle(exportFigure))
                     close(exportFigure);
                 end
                 
@@ -966,7 +975,7 @@ classdef ChromatographyGUI < handle
             
             print(exportFigure, '-clipboard', '-dbitmap');
             
-            if ishandle(exportFigure)
+            if any(ishandle(exportFigure))
                 close(exportFigure);
             end
             
@@ -1052,6 +1061,7 @@ classdef ChromatographyGUI < handle
             else
                 obj.userPeak(0);
             end
+            
         end
         
         function peakTimeSelectCallback(obj, ~, evt)
@@ -1071,9 +1081,7 @@ classdef ChromatographyGUI < handle
                     obj.userPeak(0);
                     
                 otherwise
-                    
                     obj.userPeak(0);
-                    
             end
             
         end
@@ -1210,9 +1218,9 @@ classdef ChromatographyGUI < handle
             if length(obj.peaks.name) < col
                 return
             elseif ~isempty(obj.data) && ~isempty(col) && col ~= 0 && row ~= 0
-                obj.controls.peakTimeEdit.String   = str(obj.peaks.time{row,col});
                 obj.controls.peakAreaEdit.String   = str(obj.peaks.area{row,col});
                 obj.controls.peakHeightEdit.String = str(obj.peaks.height{row,col});
+                obj.controls.peakTimeEdit.String   = str(obj.peaks.time{row,col});
                 obj.controls.peakWidthEdit.String  = str(obj.peaks.width{row,col});
             end
             
@@ -1399,7 +1407,7 @@ classdef ChromatographyGUI < handle
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if ishandle(obj.view.baseLine)
+                if any(ishandle(obj.view.baseLine))
                     set(obj.view.baseLine, 'xdata', x, 'ydata', y);
                 else
                     obj.view.baseLine = plot(x, y,...
@@ -1415,24 +1423,24 @@ classdef ChromatographyGUI < handle
         
         function appendTableData(obj, varargin)
             
-            if isempty(obj.data)
-                return
+            if ~isempty(obj.data)
+                
+                row = size(obj.table.main.Data,1) + 1;
+                
+                obj.table.main.Data{row,1}  = obj.data(end).file_path;
+                obj.table.main.Data{row,2}  = obj.data(end).file_name;
+                obj.table.main.Data{row,3}  = obj.data(end).datetime;
+                obj.table.main.Data{row,4}  = obj.data(end).instrument;
+                obj.table.main.Data{row,5}  = obj.data(end).instmodel;
+                obj.table.main.Data{row,6}  = obj.data(end).method_name;
+                obj.table.main.Data{row,7}  = obj.data(end).operator;
+                obj.table.main.Data{row,8}  = obj.data(end).sample_name;
+                obj.table.main.Data{row,9}  = obj.data(end).sample_info;
+                obj.table.main.Data{row,10} = obj.data(end).seqindex;
+                obj.table.main.Data{row,11} = obj.data(end).vial;
+                obj.table.main.Data{row,12} = obj.data(end).replicate;
+                
             end
-            
-            row = size(obj.table.main.Data,1) + 1;
-            
-            obj.table.main.Data{row,1}  = obj.data(end).file_path;
-            obj.table.main.Data{row,2}  = obj.data(end).file_name;
-            obj.table.main.Data{row,3}  = obj.data(end).datetime;
-            obj.table.main.Data{row,4}  = obj.data(end).instrument;
-            obj.table.main.Data{row,5}  = obj.data(end).instmodel;
-            obj.table.main.Data{row,6}  = obj.data(end).method_name;
-            obj.table.main.Data{row,7}  = obj.data(end).operator;
-            obj.table.main.Data{row,8}  = obj.data(end).sample_name;
-            obj.table.main.Data{row,9}  = obj.data(end).sample_info;
-            obj.table.main.Data{row,10} = obj.data(end).seqindex;
-            obj.table.main.Data{row,11} = obj.data(end).vial;
-            obj.table.main.Data{row,12} = obj.data(end).replicate;
             
         end
         
@@ -1513,9 +1521,9 @@ classdef ChromatographyGUI < handle
             
             nCol = length(obj.peaks.name);
             
-            obj.table.main.Data{row, col+13 + nCol*0} = obj.peaks.time{row,col};
-            obj.table.main.Data{row, col+13 + nCol*1} = obj.peaks.area{row,col};
-            obj.table.main.Data{row, col+13 + nCol*2} = obj.peaks.height{row,col};
+            obj.table.main.Data{row, col+13 + nCol*0} = obj.peaks.area{row,col};
+            obj.table.main.Data{row, col+13 + nCol*1} = obj.peaks.height{row,col};
+            obj.table.main.Data{row, col+13 + nCol*2} = obj.peaks.time{row,col};
             obj.table.main.Data{row, col+13 + nCol*3} = obj.peaks.width{row,col};
             
         end
@@ -1546,7 +1554,7 @@ classdef ChromatographyGUI < handle
                         
                         for i = 1:length(obj.view.peakLabel)
                             
-                            if ishandle(obj.view.peakLabel{i}) && i ~= col
+                            if any(ishandle(obj.view.peakLabel{i})) && i ~= col
                                 
                                 xy = obj.view.peakLabel{i}.Extent;
                                 
@@ -1584,7 +1592,7 @@ classdef ChromatographyGUI < handle
         
         function clearAllPlotLine(obj)
             
-            if ishandle(obj.view.plotLine)
+            if any(ishandle(obj.view.plotLine))
                 set(obj.view.plotLine, 'xdata', [], 'ydata', []);
             end
             
@@ -1592,7 +1600,7 @@ classdef ChromatographyGUI < handle
         
         function clearAllBaseLine(obj)
             
-            if ishandle(obj.view.baseLine)
+            if any(ishandle(obj.view.baseLine))
                 set(obj.view.baseLine, 'xdata', [], 'ydata', []);
             end
             
@@ -1602,7 +1610,7 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(obj.view.peakLine)
                 for i = 1:length(obj.view.peakLine)
-                    if ishandle(obj.view.peakLine{i})
+                    if any(ishandle(obj.view.peakLine{i}))
                         set(obj.view.peakLine{i}, 'xdata', [], 'ydata', []);
                     end
                 end
@@ -1614,7 +1622,7 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(obj.view.peakLabel)
                 for i = 1:length(obj.view.peakLabel)
-                    if ishandle(obj.view.peakLabel{i})
+                    if any(ishandle(obj.view.peakLabel{i}))
                         delete(obj.view.peakLabel{i});
                     end
                 end
@@ -1666,9 +1674,9 @@ classdef ChromatographyGUI < handle
                 nCol = length(obj.peaks.name);
                 
                 for i = 1:length(obj.peaks.name)
-                    obj.table.main.ColumnName(i+13 + nCol*0) = {['Time (', obj.peaks.name{i}, ')']};
-                    obj.table.main.ColumnName(i+13 + nCol*1) = {['Area (', obj.peaks.name{i}, ')']};
-                    obj.table.main.ColumnName(i+13 + nCol*2) = {['Height (', obj.peaks.name{i}, ')']};
+                    obj.table.main.ColumnName(i+13 + nCol*0) = {['Area (', obj.peaks.name{i}, ')']};
+                    obj.table.main.ColumnName(i+13 + nCol*1) = {['Height (', obj.peaks.name{i}, ')']};
+                    obj.table.main.ColumnName(i+13 + nCol*2) = {['Time (', obj.peaks.name{i}, ')']};
                     obj.table.main.ColumnName(i+13 + nCol*3) = {['Width (', obj.peaks.name{i}, ')']};
                 end
             end
@@ -1710,9 +1718,9 @@ classdef ChromatographyGUI < handle
                 
                 if nCol ~= 0
                     for j = 1:nCol
-                        obj.table.main.Data{i, j+13 + nCol*0} = obj.peaks.time{i,j};
-                        obj.table.main.Data{i, j+13 + nCol*1} = obj.peaks.area{i,j};
-                        obj.table.main.Data{i, j+13 + nCol*2} = obj.peaks.height{i,j};
+                        obj.table.main.Data{i, j+13 + nCol*0} = obj.peaks.area{i,j};
+                        obj.table.main.Data{i, j+13 + nCol*1} = obj.peaks.height{i,j};
+                        obj.table.main.Data{i, j+13 + nCol*2} = obj.peaks.time{i,j};
                         obj.table.main.Data{i, j+13 + nCol*3} = obj.peaks.width{i,j};
                     end
                 end

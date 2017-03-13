@@ -32,17 +32,17 @@ if ~isempty(obj.peaks.name)
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
             {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
             {['Height (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
+            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
     end
     
     for i = 1:length(obj.peaks.name)
@@ -72,16 +72,16 @@ obj.table.main = uitable(...
     'fontSize',              fontSize,...
     'rearrangeablecolumns',  'off',....
     'selectionhighlight',    'off',...
-    'celleditcallback',      @(src, event) tableEditCallback(obj, src, event),...
-    'cellselectioncallback', @(src, event) tableSelectCallback(obj, src, event),...
-    'keypressfcn',           @(src, event) tableKeyDownCallback(obj, src, event));
+    'celleditcallback',      {@tableEditCallback, obj},...
+    'cellselectioncallback', {@tableSelectCallback, obj},...
+    'keypressfcn',           {@tableKeyDownCallback, obj});
 
 end
 
 % ---------------------------------------
 % Table Edit Callback
 % ---------------------------------------
-function tableEditCallback(obj, src, evt)
+function tableEditCallback(src, evt, obj)
 
 if isempty(src.Data)
     return
@@ -128,7 +128,7 @@ end
 % ---------------------------------------
 % Table Selection Callback
 % ---------------------------------------
-function tableSelectCallback(obj, ~, evt)
+function tableSelectCallback(~, evt, obj)
 
 obj.table.selection = evt.Indices;
 
@@ -137,7 +137,7 @@ end
 % ---------------------------------------
 % Table Key Press Callback
 % ---------------------------------------
-function tableKeyDownCallback(obj, ~, evt)
+function tableKeyDownCallback(~, evt, obj)
 
 if isempty(obj.table.selection) || isempty(obj.data)
     return
