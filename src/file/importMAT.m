@@ -1,4 +1,4 @@
-function data = importMAT(varargin)
+function [data, file] = importMAT(varargin)
 % ------------------------------------------------------------------------
 % Method      : importMAT
 % Description : Load MATLAB data files (.MAT)

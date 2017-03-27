@@ -4,14 +4,10 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170313';
+        version     = 'v0.0.6.20170327';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
-        
-        default_path = [filesep, 'config', filesep];
-        default_settings = 'default_settings.mat';
-        default_peaklist = 'default_peaklist.mat';
         
     end
     
@@ -38,6 +34,10 @@ classdef ChromatographyGUI < handle
         
         font = ChromatographyGUI.getFont();
         
+        default_path     = [filesep, 'config', filesep];
+        default_settings = 'default_settings.mat';
+        default_peaklist = 'default_peaklist.mat';
+        
     end
     
     methods
@@ -62,6 +62,7 @@ classdef ChromatographyGUI < handle
             % Settings
             % ---------------------------------------
             obj.toolboxSettings([], [], 'initialize');
+            obj.toolboxPeakList([], [], 'initialize');
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
@@ -86,13 +87,6 @@ classdef ChromatographyGUI < handle
             obj.view.showPeakLine  = 1;
             
             obj.table.selection = [];
-            
-            obj.peaks.name = {...
-                'C36'; 'C37';...
-                'C37:3 Me'; 'C37:2 Me';...
-                'C38:3 Et'; 'C38:2 Et';...
-                'C38:3 Me'; 'C38:2 Me';...
-                'C39:3 Et'; 'C39:2 Et'};
             
             obj.peaks.time   = {};
             obj.peaks.width  = {};
@@ -420,10 +414,48 @@ classdef ChromatographyGUI < handle
                     x = obj.peaks.fit{row,col(i)}(:,1);
                     y = obj.peaks.fit{row,col(i)}(:,2);
                     
-                    % Text Label
-                    textStr = obj.peaks.name{col(i)};
-                    textStr = deblank(strtrim(textStr(textStr ~= '\')));
-                    textStr = ['\rm ', textStr];
+                    if isempty(obj.settings.labels.peak)
+                        return
+                    else
+                        labelFields = obj.settings.labels.peak;
+                    end
+                    
+                    str = '';
+                    strPrecision = obj.settings.labels.precision;
+                    
+                    for j = 1:length(labelFields)
+                        
+                        switch labelFields{j}
+                            case 'peakName'
+                                n = obj.peaks.name{col(i)};
+                            case 'peakTime'
+                                n = obj.peaks.time{row,col(i)};
+                                n = sprintf(strPrecision, n);
+                            case 'peakWidth'
+                                n = obj.peaks.width{row,col(i)};
+                                n = ['Width: ', sprintf(strPrecision, n)];
+                            case 'peakHeight'
+                                n = obj.peaks.height{row,col(i)};
+                                n = ['Height: ', sprintf(strPrecision, n)];
+                            case 'peakArea'
+                                n = obj.peaks.area{row,col(i)};
+                                n = ['Area: ', sprintf(strPrecision, n)];
+                        end
+                        
+                        n(n=='_') = ' ';
+                        
+                        if j == 1 || isempty(str)
+                            str = n;
+                        else
+                            str = [str, char(10), n];
+                        end
+                        
+                    end
+                
+                    if ~isempty(str)
+                        str = deblank(strtrim(str(str ~= '\')));
+                        str = ['\rm ', str];
+                    end
                     
                     % Text Position
                     [~, yi] = max(y);
@@ -439,14 +471,14 @@ classdef ChromatographyGUI < handle
                     textY = max([textY, dataY]);
                     
                     % Plot Text
-                    obj.view.peakLabel{col(i)} = text(textX, textY, textStr,...
+                    obj.view.peakLabel{col(i)} = text(textX, textY, str,...
                         'parent',   obj.axes.main,...
                         'clipping', 'on',...
                         'hittest',  'off',...
                         'tag',      'peaklabel',...
                         'fontsize', obj.settings.labels.fontsize,...
-                        'fontname', obj.settings.labels.font,...
-                        'margin',   3,...
+                        'fontname', obj.settings.labels.fontname,...
+                        'margin',   obj.settings.labels.margin,...
                         'units',    'data',...
                         'pickableparts',       'none',...
                         'horizontalalignment', 'center',...
@@ -531,11 +563,11 @@ classdef ChromatographyGUI < handle
                         
                         if textX <= obj.axes.xlim(2) && tR >= obj.axes.xlim(2)
                             
-                            set(obj.view.peakLabel{col(i)}, 'units', 'characters');
-                            tc = get(obj.view.peakLabel{col(i)}, 'extent');
+                            obj.view.peakLabel{col(i)}.Units = 'characters';
+                            tc = obj.view.peakLabel{col(i)}.Extent;
                             
-                            set(obj.view.peakLabel{col(i)}, 'units', 'data');
-                            td = get(obj.view.peakLabel{col(i)}, 'extent');
+                            obj.view.peakLabel{col(i)}.Units = 'data';
+                            td = obj.view.peakLabel{col(i)}.Extent;
                             
                             xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
                             obj.axes.xlim(2) = td(1) + td(3) + xmargin;
@@ -547,11 +579,11 @@ classdef ChromatographyGUI < handle
                         
                         if textX >= obj.axes.xlim(1) && tL <= obj.axes.xlim(1)
                             
-                            set(obj.view.peakLabel{col(i)}, 'units', 'characters');
-                            tc = get(obj.view.peakLabel{col(i)}, 'extent');
+                            obj.view.peakLabel{col(i)}.Units = 'characters';
+                            tc = obj.view.peakLabel{col(i)}.Extent;
                             
-                            set(obj.view.peakLabel{col(i)}, 'units', 'data');
-                            td = get(obj.view.peakLabel{col(i)}, 'extent');
+                            obj.view.peakLabel{col(i)}.Units = 'data';
+                            td = obj.view.peakLabel{col(i)}.Extent;
                             
                             xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
                             obj.axes.xlim(1) = td(1) - xmargin;
@@ -566,11 +598,11 @@ classdef ChromatographyGUI < handle
                             
                             if textX > obj.axes.xlim(1) && textX < obj.axes.xlim(2)
                                 
-                                set(obj.view.peakLabel{col(i)}, 'units', 'characters');
-                                tc = get(obj.view.peakLabel{col(i)}, 'extent');
+                                obj.view.peakLabel{col(i)}.Units = 'characters';
+                                tc = obj.view.peakLabel{col(i)}.Extent;
                                 
-                                set(obj.view.peakLabel{col(i)}, 'units', 'data');
-                                td = get(obj.view.peakLabel{col(i)}, 'extent');
+                                obj.view.peakLabel{col(i)}.Units = 'data';
+                                td = obj.view.peakLabel{col(i)}.Extent;
                                 
                                 ymargin = td(4) - (td(4) / tc(4)) * (tc(4) - 0.5);
                                 obj.axes.ylim(2) = td(2) + td(4) + ymargin;
@@ -579,6 +611,7 @@ classdef ChromatographyGUI < handle
                                 obj.axes.main.YLim = obj.axes.ylim;
                                 
                                 obj.updatePlotLabelPosition();
+                                
                             end
                         end
                     end
@@ -1240,10 +1273,10 @@ classdef ChromatographyGUI < handle
                 row = obj.view.index;
             end
             
-            if isempty(obj.settings.labels.legend)
+            if isempty(obj.settings.labels.data)
                 return
             else
-                labelFields = obj.settings.labels.legend;
+                labelFields = obj.settings.labels.data;
             end
             
             str = '';
@@ -1297,8 +1330,8 @@ classdef ChromatographyGUI < handle
                     'hittest',  'off',...
                     'tag',      'plotlabel',...
                     'fontsize', obj.settings.labels.fontsize,...
-                    'fontname', obj.settings.labels.font,...
-                    'margin',   3,...
+                    'fontname', obj.settings.labels.fontname,...
+                    'margin',   obj.settings.labels.margin,...
                     'units',    'data',...
                     'pickableparts',       'none',...
                     'horizontalalignment', 'right',...
@@ -1907,10 +1940,13 @@ classdef ChromatographyGUI < handle
         
         function x = getFont()
             
-            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue';
-                'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
-            
             sysFonts = listfonts;
+            
+            x = 'FixedWidth';
+            
+            fontPref = {...
+                'Avenir'; 'SansSerif'; 'Helvetica Neue';
+                'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
             
             for i = 1:length(fontPref)
                 if any(strcmpi(fontPref{i}, sysFonts))
@@ -1918,8 +1954,6 @@ classdef ChromatographyGUI < handle
                     return
                 end
             end
-            
-            x = 'FixedWidth';
             
         end
         

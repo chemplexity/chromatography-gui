@@ -27,19 +27,33 @@ end
 
 function initalizeSettings(obj, varargin)
 
-obj.settings.plot.color         = [0.10, 0.10, 0.10];
-obj.settings.baseline.color     = [0.95, 0.22, 0.17];
-obj.settings.peaks.color        = [0.00, 0.30, 0.53];
+% Global Settings
+obj.settings.gui.fontname       = obj.font;
+obj.settings.gui.fontsize       = 11.0;
 
+% Main Settings
+obj.settings.plot.color         = [0.10, 0.10, 0.10];
 obj.settings.plot.linewidth     = 1.25;
+
+% Baseline Settings
+obj.settings.baseline.color     = [0.95, 0.22, 0.17];
 obj.settings.baseline.linewidth = 1.50;
+
+% Peak Settings
+obj.settings.peaks.color        = [0.00, 0.30, 0.53];
 obj.settings.peaks.linewidth    = 2.00;
 
-obj.settings.gui.fontsize    = 11.0;
-obj.settings.labels.fontsize = 11.0;
-obj.settings.labels.font     = obj.font;
+% Peak Label Settings
+obj.settings.labels.fontname    = obj.font;
+obj.settings.labels.fontsize    = 11.0;
+obj.settings.labels.margin      = 3;
+obj.settings.labels.precision   = '%.2f';
 
-obj.settings.labels.legend = {...
+obj.settings.labels.peak = {...
+    'peakName',...
+    'peakTime'};
+
+obj.settings.labels.data = {...
     'instrument',...
     'datetime',...
     'sample_name',...
@@ -128,18 +142,33 @@ obj.axes.ylim          = obj.settings.ylim;
 obj.controls.asymSlider.Value   = obj.settings.baselineAsym;
 obj.controls.smoothSlider.Value = obj.settings.baselineSmooth;
 
-legendNames = obj.settings.labels.legend;
+if isfield(obj.settings.labels, 'data')
+    labelName = obj.settings.labels.data;
+elseif isfield(obj.settings.labels, 'legend')
+    labelName = obj.settings.labels.legend;
+else
+    labelName = ' ';
+end
 
 for i = 1:length(obj.menu.labelData.Children)
-    
     if any(ishandle(obj.menu.labelData.Children(i)))
-        
-        if any(strcmpi(obj.menu.labelData.Children(i).Tag, legendNames))
+        if any(strcmpi(obj.menu.labelData.Children(i).Tag, labelName))
             obj.menu.labelData.Children(i).Checked = 'on';
         else
             obj.menu.labelData.Children(i).Checked = 'off';
         end
-        
+    end
+end
+
+labelName = obj.settings.labels.peak;
+
+for i = 1:length(obj.menu.peakOptionsLabel.Children)
+    if any(ishandle(obj.menu.peakOptionsLabel.Children(i)))
+        if any(strcmpi(obj.menu.peakOptionsLabel.Children(i).Tag, labelName))
+            obj.menu.peakOptionsLabel.Children(i).Checked = 'on';
+        else
+            obj.menu.peakOptionsLabel.Children(i).Checked = 'off';
+        end
     end
 end
 

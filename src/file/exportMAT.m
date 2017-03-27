@@ -104,15 +104,11 @@ feval(@()assignin('caller', option.name, data));
 % Save file
 % ---------------------------------------
 if isempty(option.file)
-    
     [fileName, filePath] = uiputfile(default.filter{:});
     fileName = [filePath, filesep, fileName];
-    
 else
-    
     [filePath, fileName, fileExt] = fileparts(option.file);
     fileName = [filePath, filesep, fileName, fileExt];
-    
 end
 
 if ischar(fileName) && ischar(filePath)

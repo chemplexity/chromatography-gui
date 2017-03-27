@@ -19,11 +19,12 @@ obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
 obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
-obj.menu.file.save.Callback = {@saveCheckpoint, obj};
-obj.menu.file.exit.Callback = 'closereq';
-
 obj.menu.file.import.Separator = 'on';
 obj.menu.file.exit.Separator   = 'on';
+
+obj.menu.file.save.Callback    = {@saveCheckpoint, obj};
+
+obj.menu.file.exit.Callback    = 'closereq';
 
 % ---------------------------------------
 % File Menu --> Load
@@ -109,7 +110,6 @@ obj.menu.view.peakLine.Tag       = 'showPeakLine';
 obj.menu.view.plotLabel.Checked  = 'on';
 obj.menu.view.peakLabel.Checked  = 'on';
 obj.menu.view.peakLine.Checked   = 'on';
-obj.menu.view.zoom.Checked       = 'off';
 
 obj.menu.view.plotLabel.Callback = {@plotViewMenuCallback, obj};
 obj.menu.view.peakLabel.Callback = {@peakViewMenuCallback, obj};
@@ -121,13 +121,19 @@ obj.menu.view.zoom.Separator     = 'on';
 % ---------------------------------------
 % Options Menu
 % ---------------------------------------
-obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Data');
-obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
+obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Data');
+obj.menu.peakOptions = newMenu(obj.menu.options.main, 'Peak');
 
 % ---------------------------------------
 % Options --> Data
 % ---------------------------------------
-obj.menu.labelData       = newMenu(obj.menu.dataOptions, 'Label');
+obj.menu.labelData = newMenu(obj.menu.dataOptions, 'Label');
+
+obj.menu.labelData.Tag = 'data';
+
+% ---------------------------------------
+% Options --> Data --> Label
+% ---------------------------------------
 obj.menu.labelFilePath   = newMenu(obj.menu.labelData, 'File Path');
 obj.menu.labelFileName   = newMenu(obj.menu.labelData, 'File Name');
 obj.menu.labelInstrument = newMenu(obj.menu.labelData, 'Instrument');
@@ -166,7 +172,7 @@ obj.menu.labelSelectNone.Callback = {@plotLabelQuickSelectCallback, obj};
 
 obj.menu.labelSelectAll.Separator = 'on';
 
-labelName = obj.settings.labels.legend;
+labelName = obj.settings.labels.data;
 
 for i = 1:length(obj.menu.labelData.Children)
     if any(ishandle(obj.menu.labelData.Children(i)))
@@ -181,27 +187,83 @@ end
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
-obj.menu.peakOptionsModel        = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea         = newMenu(obj.menu.peakOptions, 'Area');
-obj.menu.peakNeuralNetwork       = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
-obj.menu.peakExponentialGaussian = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
-obj.menu.peakOptionsAreaActual   = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
-obj.menu.peakOptionsAreaFit      = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
+obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
+obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'Area');
 
-obj.menu.peakNeuralNetwork.Tag            = 'peakNN';
-obj.menu.peakExponentialGaussian.Tag      = 'peakEGH';
-obj.menu.peakOptionsAreaActual.Tag        = 'rawData';
-obj.menu.peakOptionsAreaFit.Tag           = 'fitData';
+obj.menu.peakOptionsLabel.Tag = 'peak';
+obj.menu.peakOptionsModel.Separator = 'on';
 
-obj.menu.peakNeuralNetwork.Checked        = 'on';
-obj.menu.peakExponentialGaussian.Checked  = 'off';
-obj.menu.peakOptionsAreaActual.Checked    = 'on';
-obj.menu.peakOptionsAreaFit.Checked       = 'off';
+% ---------------------------------------
+% Options --> Peak --> Label
+% ---------------------------------------
+obj.menu.labelPeakName   = newMenu(obj.menu.peakOptionsLabel, 'Name');
+obj.menu.labelPeakTime   = newMenu(obj.menu.peakOptionsLabel, 'Time');
+obj.menu.labelPeakWidth  = newMenu(obj.menu.peakOptionsLabel, 'Width');
+obj.menu.labelPeakHeight = newMenu(obj.menu.peakOptionsLabel, 'Height');
+obj.menu.labelPeakArea   = newMenu(obj.menu.peakOptionsLabel, 'Area');
+obj.menu.labelPeakAll    = newMenu(obj.menu.peakOptionsLabel, 'Select All');
+obj.menu.labelPeakNone   = newMenu(obj.menu.peakOptionsLabel, 'Select None');
 
-obj.menu.peakNeuralNetwork.Callback       = {@peakModelMenuCallback, obj};
-obj.menu.peakExponentialGaussian.Callback = {@peakModelMenuCallback, obj};
-obj.menu.peakOptionsAreaActual.Callback   = {@peakAreaMenuCallback, obj};
-obj.menu.peakOptionsAreaFit.Callback      = {@peakAreaMenuCallback, obj};
+obj.menu.labelPeakName.Tag        = 'peakName';
+obj.menu.labelPeakTime.Tag        = 'peakTime';
+obj.menu.labelPeakWidth.Tag       = 'peakWidth';
+obj.menu.labelPeakHeight.Tag      = 'peakHeight';
+obj.menu.labelPeakArea.Tag        = 'peakArea';
+obj.menu.labelPeakAll.Tag         = 'selectAll';
+obj.menu.labelPeakNone.Tag        = 'selectNone';
+
+obj.menu.labelPeakName.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelPeakTime.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelPeakWidth.Callback  = {@plotLabelCallback, obj};
+obj.menu.labelPeakHeight.Callback = {@plotLabelCallback, obj};
+obj.menu.labelPeakArea.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelPeakAll.Callback    = {@plotLabelQuickSelectCallback, obj};
+obj.menu.labelPeakNone.Callback   = {@plotLabelQuickSelectCallback, obj};
+
+obj.menu.labelPeakAll.Separator = 'on';
+
+labelName = obj.settings.labels.peak;
+
+for i = 1:length(obj.menu.peakOptionsLabel.Children)
+    if any(ishandle(obj.menu.peakOptionsLabel.Children(i)))
+        if any(strcmpi(obj.menu.peakOptionsLabel.Children(i).Tag, labelName))
+            obj.menu.peakOptionsLabel.Children(i).Checked = 'on';
+        else
+            obj.menu.peakOptionsLabel.Children(i).Checked = 'off';
+        end
+    end
+end
+
+% ---------------------------------------
+% Options --> Peak --> Model
+% ---------------------------------------
+obj.menu.peakNeuralNetwork = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
+obj.menu.peakExpGaussian   = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
+
+obj.menu.peakNeuralNetwork.Tag      = 'peakNN';
+obj.menu.peakExpGaussian.Tag        = 'peakEGH';
+
+obj.menu.peakNeuralNetwork.Checked  = 'on';
+obj.menu.peakExpGaussian.Checked    = 'off';
+
+obj.menu.peakNeuralNetwork.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
+
+% ---------------------------------------
+% Options --> Peak --> Area
+% ---------------------------------------
+obj.menu.peakOptionsAreaActual = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
+obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
+
+obj.menu.peakOptionsAreaActual.Tag      = 'rawData';
+obj.menu.peakOptionsAreaFit.Tag         = 'fitData';
+
+obj.menu.peakOptionsAreaActual.Checked  = 'on';
+obj.menu.peakOptionsAreaFit.Checked     = 'off';
+
+obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
+obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 
 % ---------------------------------------
 % Help Menu
@@ -328,7 +390,7 @@ end
 % ---------------------------------------
 function loadMatlabCallback(~, ~, obj)
 
-data = importMAT();
+[data, file] = importMAT();
 
 if ~isempty(data) && isstruct(data) && isfield(data, 'data')
     data = data.data;
@@ -343,7 +405,7 @@ if ~isempty(data) && isstruct(data) && isfield(data, 'data')
             obj.validatePeakData(nRow, nCol);
         end
         
-        obj.checkpoint = [filePath, fileName];
+        obj.checkpoint = file;
         
         obj.clearTableData();
         obj.resetTableHeader();
@@ -371,15 +433,15 @@ else
 end
 
 if ~isempty(obj.checkpoint) && fileattrib(obj.checkpoint)
-    fileName = obj.checkpoint;
+    file = obj.checkpoint;
 else
-    fileName = [];
+    file = [];
 end
 
-fileName = exportMAT(obj.data, 'file', fileName, 'name', 'data');
+file = exportMAT(obj.data, 'file', file, 'name', 'data');
 
-if ischar(fileName)
-    obj.checkpoint = fileName;
+if ischar(file)
+    obj.checkpoint = file;
 end
 
 end
@@ -395,10 +457,10 @@ else
     return
 end
 
-fileName = exportMAT(obj.data, 'name', 'data');
+file = exportMAT(obj.data, 'name', 'data');
 
-if ischar(fileName)
-    obj.checkpoint = fileName;
+if ischar(file)
+    obj.checkpoint = file;
 end
 
 end
@@ -900,6 +962,7 @@ for i = 1:length(src.Parent.Children)
     if strcmpi(src.Parent.Children(i).Checked, 'on')
         
         switch src.Parent.Children(i).Tag
+            
             case 'file_path'
                 plotLabel{1} = src.Parent.Children(i).Tag;
             case 'file_name'
@@ -918,6 +981,18 @@ for i = 1:length(src.Parent.Children)
                 plotLabel{8} = src.Parent.Children(i).Tag;
             case 'vial'
                 plotLabel{9} = src.Parent.Children(i).Tag;
+                
+            case 'peakName'
+                plotLabel{1} = src.Parent.Children(i).Tag;
+            case 'peakTime'
+                plotLabel{2} = src.Parent.Children(i).Tag;
+            case 'peakWidth'
+                plotLabel{3} = src.Parent.Children(i).Tag;
+            case 'peakHeight'
+                plotLabel{4} = src.Parent.Children(i).Tag;
+            case 'peakArea'
+                plotLabel{5} = src.Parent.Children(i).Tag;
+                
         end
         
     end
@@ -925,11 +1000,26 @@ for i = 1:length(src.Parent.Children)
 end
 
 plotLabel(cellfun(@isempty, plotLabel)) = [];
-obj.settings.labels.legend = plotLabel;
 
-if obj.view.showPlotLabel
-    obj.updatePlotLabel();
-end
+switch src.Parent.Tag
+    
+    case 'data'
+        
+        obj.settings.labels.data = plotLabel;
+
+        if obj.view.showPlotLabel
+            obj.updatePlotLabel();
+        end
+
+    case 'peak'
+        
+        obj.settings.labels.peak = plotLabel;
+
+        if obj.view.showPeakLabel
+            obj.plotPeakLabels();
+        end
+        
+end  
 
 end
 
