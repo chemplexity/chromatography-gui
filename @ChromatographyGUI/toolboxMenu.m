@@ -393,9 +393,11 @@ function loadMatlabCallback(~, ~, obj)
 [data, file] = importMAT();
 
 if ~isempty(data) && isstruct(data) && isfield(data, 'data')
+    
     data = data.data;
     
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
+        
         obj.data = data;
         obj.peaks = obj.data(1).peaks;
         
@@ -413,7 +415,6 @@ if ~isempty(data) && isstruct(data) && isfield(data, 'data')
         
         listboxRefreshCallback(obj);
         
-        obj.updatePeakText();
         obj.updateFigure();
         
     end

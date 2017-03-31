@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170327';
+        version     = 'v0.0.6.20170331';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -118,6 +118,8 @@ classdef ChromatographyGUI < handle
             end
             
             obj.updateSampleText();
+            obj.updateAllPeakListText();
+            obj.updatePeakText();
             obj.updatePlot();
             
         end
@@ -679,7 +681,6 @@ classdef ChromatographyGUI < handle
                 obj.peakDeleteRow(row);
                 obj.table.main.Data(row, :) = [];
                 
-                
                 if isempty(obj.data)
                     obj.view.index = 0;
                     obj.view.id    = 'N/A';
@@ -694,6 +695,7 @@ classdef ChromatographyGUI < handle
                 end
                 
                 obj.updateSampleText();
+                obj.updateAllPeakListText();
                 obj.updatePeakText();
                 obj.updatePlot();
                 
@@ -797,13 +799,13 @@ classdef ChromatographyGUI < handle
                 end
             end
             
-            obj.controls.peakList.String = obj.peaks.name;
+            obj.controls.peakList.String{end+1} = obj.peaks.name{end};
             
             obj.table.main.ColumnName = tableHeader;
             obj.table.main.Data = tableData;
             
             obj.validatePeakData(length(obj.data), length(obj.peaks.name));
-            
+                        
             if length(obj.peaks.name) == 1
                 obj.updatePeakText()
             end
@@ -830,8 +832,7 @@ classdef ChromatographyGUI < handle
                 obj.table.main.ColumnName{col+13 + offset*3} = ['Width (', obj.peaks.name{col}, ')'];
             end
             
-            obj.controls.peakList.String = obj.peaks.name;
-            
+            obj.updatePeakListText();
             obj.plotPeakLabels(col);
             
         end
@@ -889,7 +890,10 @@ classdef ChromatographyGUI < handle
                 obj.controls.peakList.Value = length(obj.peaks.name);
             end
             
-            obj.controls.peakList.String = obj.peaks.name;
+            if length(obj.controls.peakList.String) >= col
+                obj.controls.peakList.String(col) = [];
+            end
+            
             obj.clearPeakLine(col);
             
             if length(obj.view.peakLine) >= col && any(ishandle(obj.view.peakLine{col}))
@@ -906,13 +910,17 @@ classdef ChromatographyGUI < handle
         
         function peakDeleteRow(obj, row)
             
-            if ~isempty(obj.peaks.time) && length(obj.peaks.time(:,1)) >= row
-                obj.peaks.time(row, :)   = [];
-                obj.peaks.width(row, :)  = [];
-                obj.peaks.height(row, :) = [];
-                obj.peaks.area(row, :)   = [];
-                obj.peaks.error(row, :)  = [];
-                obj.peaks.fit(row, :)    = [];
+            for i = 1:length(row)
+                
+                if ~isempty(obj.peaks.time) && size(obj.peaks.time,1) >= row(i)
+                    obj.peaks.time(row(i),:)   = [];
+                    obj.peaks.width(row(i),:)  = [];
+                    obj.peaks.height(row(i),:) = [];
+                    obj.peaks.area(row(i),:)   = [];
+                    obj.peaks.error(row(i),:)  = [];
+                    obj.peaks.fit(row(i),:)    = [];
+                end
+                
             end
             
         end
@@ -1109,12 +1117,14 @@ classdef ChromatographyGUI < handle
                         obj.clearPeak();
                     elseif x > obj.axes.xlim(1) && x < obj.axes.xlim(2)
                         obj.toolboxPeakFit(x);
+                        obj.updatePeakListText();
                     end
                     
                     obj.userPeak(0);
                     
                 otherwise
                     obj.userPeak(0);
+                    
             end
             
         end
@@ -1159,6 +1169,37 @@ classdef ChromatographyGUI < handle
             
         end
         
+        
+        function selectTab(obj, varargin)
+            
+            if isprop(obj.figure, 'CurrentObject')
+                currentObject = obj.figure.CurrentObject;
+            else
+                currentObject = [];
+            end
+            
+            if isprop(obj.panel.controlGroup, 'SelectedTab')
+                
+                tabGroup = obj.panel.controlGroup;
+                tabChildren = tabGroup.Children; 
+                tabSelected = tabGroup.SelectedTab.Tag;
+                
+                tabIndex = find(~strcmpi({tabChildren.Tag},tabSelected),1);
+                
+                if isempty(tabIndex)
+                    return
+                end
+                
+                obj.panel.controlGroup.SelectedTab = tabChildren(tabIndex);
+                
+                if ~isempty(currentObject)
+                    obj.figure.CurrentObject = currentObject;
+                end
+                
+            end
+            
+        end
+        
         function selectSample(obj, varargin)
             
             currentIndex = obj.view.index;
@@ -1193,6 +1234,7 @@ classdef ChromatographyGUI < handle
                 obj.figure.CurrentObject = obj.controls.peakList;
                 
                 obj.updateSampleText();
+                obj.updateAllPeakListText();
                 obj.updatePeakText();
                 obj.updatePlot();
                 obj.userPeak(1);
@@ -1235,6 +1277,64 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function updatePeakListText(obj, varargin)
+            
+            if isempty(obj.data) || obj.view.index == 0
+                return
+            elseif isempty(obj.controls.peakList.String)
+                return
+            elseif ~obj.controls.peakList.Value
+                return
+            elseif size(obj.peaks.time, 1) < obj.view.index
+                return
+            elseif size(obj.peaks.time, 2) < obj.controls.peakList.Value
+                return
+            end
+            
+            row = obj.view.index;
+            col = obj.controls.peakList.Value;
+            str = obj.peaks.name{col};
+
+            if ~isempty(obj.peaks.time{row,col})
+                str = ['<html>', '&#10004 ', str];
+            end
+            
+            if ~strcmp(str, obj.controls.peakList.String{col})
+                obj.controls.peakList.String{col} = str;
+            end
+            
+        end
+        
+        function updateAllPeakListText(obj, varargin)
+            
+            if isempty(obj.data) || obj.view.index == 0
+                return
+            elseif isempty(obj.controls.peakList.String)
+                return
+            elseif ~obj.controls.peakList.Value
+                return
+            elseif size(obj.peaks.time, 1) < length(obj.data)
+                return
+            elseif size(obj.peaks.time, 2) < length(obj.controls.peakList.String)
+                return
+            end
+            
+            for i = 1:length(obj.controls.peakList.String)
+                
+                if ~isempty(obj.peaks.time{obj.view.index,i})
+                    str = ['<html>', '&#10004 ', obj.peaks.name{i}];
+                else
+                    str = obj.peaks.name{i};
+                end
+                
+                if ~strcmp(str, obj.controls.peakList.String{i})
+                    obj.controls.peakList.String{i} = str;
+                end
+                
+            end
+            
+        end
+        
         function updatePeakText(obj, varargin)
             
             str = @(x) sprintf('%.3f', x);
@@ -1255,6 +1355,11 @@ classdef ChromatographyGUI < handle
                 obj.controls.peakHeightEdit.String = str(obj.peaks.height{row,col});
                 obj.controls.peakTimeEdit.String   = str(obj.peaks.time{row,col});
                 obj.controls.peakWidthEdit.String  = str(obj.peaks.width{row,col});
+            else
+                obj.controls.peakAreaEdit.String   = '';
+                obj.controls.peakHeightEdit.String = '';
+                obj.controls.peakTimeEdit.String   = '';
+                obj.controls.peakWidthEdit.String  = '';
             end
             
         end
@@ -1498,6 +1603,7 @@ classdef ChromatographyGUI < handle
                 obj.clearPeakLabel(col);
                 obj.clearPeakData(row, col);
                 obj.clearPeakTable(row, col);
+                obj.updatePeakListText();
             end
             
         end
@@ -1901,6 +2007,12 @@ classdef ChromatographyGUI < handle
                     
                     if isempty(evt.Modifier)
                         obj.clearPeak();
+                    end
+                    
+                case 'tab'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectTab();
                     end
                     
             end
