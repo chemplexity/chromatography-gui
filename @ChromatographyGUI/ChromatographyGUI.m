@@ -1049,7 +1049,14 @@ classdef ChromatographyGUI < handle
             print(exportFigure, '-clipboard', '-dbitmap');
             
             if any(ishandle(exportFigure))
+                
                 close(exportFigure);
+                
+                try
+                    delete(exportFigure);
+                catch
+                end
+                
             end
             
         end
