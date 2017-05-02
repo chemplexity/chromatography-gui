@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170331';
+        version     = 'v0.0.6.20170502';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -34,6 +34,9 @@ classdef ChromatographyGUI < handle
         
         font = ChromatographyGUI.getFont();
         
+        toolbox_path = fileparts(fileparts(mfilename('fullpath')));
+        toolbox_file = fileparts(mfilename('fullpath'));
+        
         default_path     = [filesep, 'config', filesep];
         default_settings = 'default_settings.mat';
         default_peaklist = 'default_peaklist.mat';
@@ -62,7 +65,7 @@ classdef ChromatographyGUI < handle
             % Settings
             % ---------------------------------------
             obj.toolboxSettings([], [], 'initialize');
-            obj.toolboxPeakList([], [], 'initialize');
+            obj.toolboxPeakList([], [], 'load_default');
             
             obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
@@ -100,7 +103,7 @@ classdef ChromatographyGUI < handle
             % ---------------------------------------
             obj.initializeGUI();
             
-            obj.toolboxSettings('load_default');
+            obj.toolboxSettings([], [], 'load_default');
             
         end
         
@@ -1014,6 +1017,35 @@ classdef ChromatographyGUI < handle
                 end
             end
             
+            if ~isempty(axesHandles(axesPlot))
+                
+                axesPlot = axesHandles(axesPlot);
+                axesChildren = axesPlot.Children;
+                axesTag = get(axesChildren(isprop(axesChildren, 'tag')), 'tag');
+                axesLabel = axesChildren(strcmp(axesTag, 'plotlabel'));
+                
+                if ~isempty(axesLabel)
+                    
+                    axesLabel = axesLabel(1);
+                    
+                    m = 0.01;
+                    
+                    a = axesLabel.Extent;
+                    xlimit = axesPlot.XLim;
+                    ylimit = axesPlot.YLim;
+                    
+                    b = axesLabel.Position(1);
+                    b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*m));
+                    axesLabel.Position(1) = b;
+                    
+                    b = axesLabel.Position(2);
+                    b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*m));
+                    axesLabel.Position(2) = b;
+                    
+                end
+                
+            end
+            
             print(exportFigure, '-clipboard', '-dbitmap');
             
             if any(ishandle(exportFigure))
@@ -1279,15 +1311,11 @@ classdef ChromatographyGUI < handle
         
         function updatePeakListText(obj, varargin)
             
-            if isempty(obj.data) || obj.view.index == 0
-                return
-            elseif isempty(obj.controls.peakList.String)
+            if isempty(obj.controls.peakList.String)
                 return
             elseif ~obj.controls.peakList.Value
                 return
             elseif size(obj.peaks.time, 1) < obj.view.index
-                return
-            elseif size(obj.peaks.time, 2) < obj.controls.peakList.Value
                 return
             end
             
@@ -1295,8 +1323,10 @@ classdef ChromatographyGUI < handle
             col = obj.controls.peakList.Value;
             str = obj.peaks.name{col};
 
-            if ~isempty(obj.peaks.time{row,col})
-                str = ['<html>', '&#10004 ', str];
+            if size(obj.peaks.time, 2) >= col
+                if row ~= 0 && ~isempty(obj.peaks.time{row,col})
+                    str = ['<html>', '&#10004 ', str];
+                end
             end
             
             if ~strcmp(str, obj.controls.peakList.String{col})

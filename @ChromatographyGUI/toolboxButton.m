@@ -415,8 +415,10 @@ switch src.String
         
         if ~isempty(x) && ~isempty(x{1,1})
             if ~strcmp(obj.peaks.name(col,1), x{1,1})
+                
                 x = {strtrim(deblank(x{1,1}))};
                 obj.peakEditColumn(col,x);
+                
             end
         end
         

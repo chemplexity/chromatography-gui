@@ -575,6 +575,35 @@ if ischar(fileName) && ischar(filePath)
             end
         end
         
+        if ~isempty(axesHandles(axesPlot))
+            
+            axesPlot = axesHandles(axesPlot);
+            axesChildren = axesPlot.Children;
+            axesTag = get(axesChildren(isprop(axesChildren, 'tag')), 'tag');
+            axesLabel = axesChildren(strcmp(axesTag, 'plotlabel'));
+            
+            if ~isempty(axesLabel)
+                
+                axesLabel = axesLabel(1);
+                
+                m = 0.01;
+                
+                a = axesLabel.Extent;
+                xlimit = axesPlot.XLim;
+                ylimit = axesPlot.YLim;
+                
+                b = axesLabel.Position(1);
+                b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*m));
+                axesLabel.Position(1) = b;
+                
+                b = axesLabel.Position(2);
+                b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*m));
+                axesLabel.Position(2) = b;
+                
+            end
+            
+        end
+        
         msg = ['Saving image... (', fileName, ')'];
         h = waitbar(0, msg);
         

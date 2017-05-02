@@ -1,5 +1,11 @@
 function toolboxPeakList(obj, ~, ~, varargin)
 
+% Peak List (struct) v0.0.5, v0.0.6
+%
+% version (char)    : 'v0.0.x.y'
+% name (char)       : 'peaklist'
+% data (cell) (nx1) : peak name (char) 
+
 if isempty(varargin) || ~ischar(varargin{1})
     return
 end
@@ -43,7 +49,13 @@ switch mode
     case 'load_default'
         file = fileparts(fileparts(mfilename('fullpath')));
         file = [file, obj.default_path, obj.default_peaklist];
-        data = importMAT('file', file);
+        
+        if exist(file, 'file')
+            data = importMAT('file', file);
+        else
+            initalizePeakList(obj);
+            return
+        end
         
     case 'load_custom'
         data = importMAT();
@@ -71,7 +83,7 @@ switch mode
     
     case 'load_default'
         
-        
+        obj.peaks.name = data;
         
     case 'load_custom'
 

@@ -76,7 +76,12 @@ switch mode
     case 'load_default'
         file = fileparts(fileparts(mfilename('fullpath')));
         file = [file, obj.default_path, obj.default_settings];
-        data = importMAT('file', file);
+        
+        if exist(file, 'file')
+            data = importMAT('file', file);
+        else
+            return
+        end
         
     case 'load_custom'
         data = importMAT();
@@ -85,7 +90,6 @@ switch mode
         return
         
 end
-
 if isempty(data) || ~isstruct(data) || ~isfield(data, 'user_settings')
     return
 else

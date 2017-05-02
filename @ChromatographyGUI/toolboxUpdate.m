@@ -22,7 +22,7 @@ updateWaitbar(w, 0.1, ['Current toolbox version: ', toolboxVersion]);
 returnPath = pwd;
 sourcePath = fileparts(fileparts(mfilename('fullpath')));
 
-if ~isdir([sourcePath, filesep, '@Chromatography'])
+if ~isdir([sourcePath, filesep, '@ChromatographyGUI'])
     updateWaitbar(w, 1, 'Unable to locate project directory...');
     closeWaitbar(w, returnPath);
     return
@@ -145,20 +145,25 @@ end
 
 function updateCleanup()
 
-% Version < v0.0.5
-if isdir([pwd, filesep, 'examples'])
-    if length(dir([pwd, filesep, 'examples'])) <= 3
-        rmdir([pwd, filesep, 'examples'], 's');
+% Toolbox Path
+toolboxPath = fileparts(fileparts(mfilename('fullpath')));
+
+% Version < v0.0.5 
+examplePath   = [toolboxPath, filesep, 'examples'];
+integratePath = [toolboxPath, filesep, 'src', filesep, 'integration'];
+integrateFile = {'findpeaks.p', 'exponentialgaussian.m', 'peakdetection.m'};
+
+% chromatography-gui/examples
+if isdir(examplePath)
+    if length(dir(examplePath)) <= 3
+        rmdir(examplePath, 's');
     end
 end
 
-srcPath = [pwd, filesep, 'src', filesep,];
-delPath = ['integration', filesep];
-delFile = {'findpeaks.p', 'exponentialgaussian.m', 'peakdetection.m'};
-
-for i = 1:length(delFile)
-    if exist([srcPath, delPath, delFile{i}], 'file')
-        delete([srcPath, delPath, delFile{i}]);
+% chromatography-gui/src/integration
+for i = 1:length(integrateFile)
+    if exist([integratePath, filesep, integrateFile{i}], 'file')
+        delete([integratePath, filesep, integrateFile{i}]);
     end
 end
 

@@ -100,6 +100,10 @@ if isprop(obj.axes.main, 'OuterPosition')
     
 end
 
+if isfield(obj.view, 'plotLabel')
+    obj.updatePlotLabelPosition();
+end
+
 end
 
 % ---------------------------------------

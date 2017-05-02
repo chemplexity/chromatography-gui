@@ -43,7 +43,7 @@ if ischar(file)
     
     [isFile, fileInfo] = fileattrib(file);
     
-    if ~isFile
+    if isFile && isstruct(fileInfo) && isfield(fileInfo, 'Name')
         file = fileInfo.Name;
     else
         file = [];
