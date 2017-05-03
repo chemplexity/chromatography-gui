@@ -71,7 +71,7 @@ classdef ChromatographyGUI < handle
             obj.axes.ymode = 'auto';
             obj.axes.xlim  = [0,1];
             obj.axes.ylim  = [0,1];
-             
+            
             obj.view.index = 0;
             obj.view.id    = 'N/A';
             obj.view.name  = 'N/A';
@@ -456,7 +456,7 @@ classdef ChromatographyGUI < handle
                         end
                         
                     end
-                
+                    
                     if ~isempty(str)
                         str = deblank(strtrim(str(str ~= '\')));
                         str = ['\rm ', str];
@@ -666,6 +666,7 @@ classdef ChromatographyGUI < handle
             a = 10 ^ obj.controls.asymSlider.Value;
             s = 10 ^ obj.controls.smoothSlider.Value;
             
+            y = movingAverage(y);
             b = baseline(y, 'asymmetry', a, 'smoothness', s);
             
             if length(x) == length(b)
@@ -808,7 +809,7 @@ classdef ChromatographyGUI < handle
             obj.table.main.Data = tableData;
             
             obj.validatePeakData(length(obj.data), length(obj.peaks.name));
-                        
+            
             if length(obj.peaks.name) == 1
                 obj.updatePeakText()
             end
@@ -1221,7 +1222,7 @@ classdef ChromatographyGUI < handle
             if isprop(obj.panel.controlGroup, 'SelectedTab')
                 
                 tabGroup = obj.panel.controlGroup;
-                tabChildren = tabGroup.Children; 
+                tabChildren = tabGroup.Children;
                 tabSelected = tabGroup.SelectedTab.Tag;
                 
                 tabIndex = find(~strcmpi({tabChildren.Tag},tabSelected),1);
@@ -1330,7 +1331,7 @@ classdef ChromatographyGUI < handle
             row = obj.view.index;
             col = obj.controls.peakList.Value;
             str = obj.peaks.name{col};
-
+            
             if size(obj.peaks.time, 2) >= col
                 if row ~= 0 && ~isempty(obj.peaks.time{row,col})
                     str = ['<html>', '&#10004 ', str];
