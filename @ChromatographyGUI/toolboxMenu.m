@@ -365,7 +365,14 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-data = importAgilent('verbose', 'off', 'depth', 3);
+try
+    data = importAgilent('verbose', 'off', 'depth', 3);
+catch
+    try
+        data = importagilent('verbose', 'off', 'depth', 3);
+    catch
+    end
+end
 
 if ~isempty(data) && isstruct(data)
     

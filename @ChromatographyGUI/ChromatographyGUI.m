@@ -1192,6 +1192,7 @@ classdef ChromatographyGUI < handle
         
         function initializeGUI(obj, varargin)
             
+            obj.toolboxVerify();
             obj.toolboxFigure();
             obj.toolboxMenu();
             obj.toolboxPanel();
@@ -2123,4 +2124,5 @@ classdef ChromatographyGUI < handle
         end
         
     end
+    
 end
