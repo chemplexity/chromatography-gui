@@ -29,7 +29,7 @@ default.fontname    = obj.font;
 default.fontsize    = 11;
 default.fontweight  = 'normal';
 default.xlabel      = 'Time (min)';
-default.ylabel      = 'Intensity (pA)';
+default.ylabel      = 'Intensity';
             
 % ---------------------------------------
 % Primary Axes

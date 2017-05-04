@@ -548,9 +548,9 @@ switch data.file_version
     case {'30'}
         
         data.glp_flag     = fnumeric(f, 318,  'int32');
-        data.data_source  = fpascal(f,  322,  'uint16');
-        data.firmware_rev = fpascal(f,  355,  'uint16');
-        data.software_rev = fpascal(f,  405,  'uint16');
+        data.data_source  = fpascal(f,  322,  'uint8');
+        data.firmware_rev = fpascal(f,  355,  'uint8');
+        data.software_rev = fpascal(f,  405,  'uint8');
     
     case {'130', '179'}
         

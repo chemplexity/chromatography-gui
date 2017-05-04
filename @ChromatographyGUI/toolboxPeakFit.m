@@ -48,8 +48,13 @@ function [x,y] = getXY(obj)
 
 row = obj.view.index;
 
-x = obj.data(row).time;
-y = obj.data(row).intensity(:,1);
+if isempty(obj.data(row).intensity)
+    x = [];
+    y = [];
+else
+    x = obj.data(row).time;
+    y = obj.data(row).intensity(:,1);
+end
 
 if isempty(x) || isempty(y)
     return

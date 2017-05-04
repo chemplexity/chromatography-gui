@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170502';
+        version     = 'v0.0.6.20170504';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -138,33 +138,38 @@ classdef ChromatographyGUI < handle
                 row = obj.view.index;
             end
             
-            x = obj.data(row).time;
-            y = obj.data(row).intensity(:,1);
+            if ~isempty(obj.data(row).intensity)
+                
+                x = obj.data(row).time;
+                y = obj.data(row).intensity(:,1);
             
-            if any(ishandle(obj.view.peakLine))
-                set(obj.view.plotLine, 'xdata', x, 'ydata', y);
-            else
-                obj.view.plotLine = plot(x, y,...
-                    'parent',    obj.axes.main,...
-                    'color',     obj.settings.plot.color,...
-                    'linewidth', obj.settings.plot.linewidth,...
-                    'visible',   'on',...
-                    'hittest',   'off',...
-                    'tag',       'main');
+                if any(ishandle(obj.view.peakLine))
+                    set(obj.view.plotLine, 'xdata', x, 'ydata', y);
+                else
+                    obj.view.plotLine = plot(x, y,...
+                        'parent',    obj.axes.main,...
+                        'color',     obj.settings.plot.color,...
+                        'linewidth', obj.settings.plot.linewidth,...
+                        'visible',   'on',...
+                        'hittest',   'off',...
+                        'tag',       'main');
+                end
+            
+                zoom reset
+            
+                obj.updateAxesLimits();
+            
+                if obj.controls.showBaseline.Value
+                    obj.plotBaseline();
+                end
+            
+                if obj.controls.showPeak.Value
+                    obj.plotPeaks();
+                end
+                
             end
             
-            zoom reset
-            
-            obj.updateAxesLimits();
-            
-            if obj.controls.showBaseline.Value
-                obj.plotBaseline();
-            end
-            
-            if obj.controls.showPeak.Value
-                obj.plotPeaks();
-            end
-            
+            obj.updateAxesLabel();
             obj.updatePlotLabel();
             
         end
@@ -175,9 +180,11 @@ classdef ChromatographyGUI < handle
                 
                 case 'auto'
                     
-                    if obj.view.index ~= 0
-                        xmin = min(obj.data(obj.view.index).time);
-                        xmax = max(obj.data(obj.view.index).time);
+                    row = obj.view.index;
+                    
+                    if row ~= 0 && ~isempty(obj.data(row).time)
+                        xmin = min(obj.data(row).time);
+                        xmax = max(obj.data(row).time);
                         xmargin = (xmax - xmin) * 0.02;
                         obj.axes.xlim = [xmin - xmargin, xmax + xmargin];
                     end
@@ -213,9 +220,11 @@ classdef ChromatographyGUI < handle
         
         function updateAxesYLim(obj, varargin)
             
-            if obj.view.index ~= 0
-                x = obj.data(obj.view.index).time;
-                y = obj.data(obj.view.index).intensity(:,1);
+            row = obj.view.index;
+                    
+            if row ~= 0 && ~isempty(obj.data(row).time)
+                x = obj.data(row).time;
+                y = obj.data(row).intensity(:,1);
             else
                 x = [];
                 y = [];
@@ -248,7 +257,6 @@ classdef ChromatographyGUI < handle
                     
                     obj.axes.ylim = [str2double(ymin), str2double(ymax)];
             end
-            
             
             obj.axes.main.YLim = obj.axes.ylim;
             obj.updateAxesLimitEditText();
@@ -1462,7 +1470,9 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(str)
                 
-                str = deblank(strtrim(str(str ~= '\')));
+                %str = deblank(strtrim(str(str ~= '\')));
+                str = regexprep(str, '[\\]', '/');
+                str = deblank(strtrim(str));
                 str = ['\rm ', str];
                 
                 x = obj.axes.main.XLim(2);
@@ -1482,22 +1492,8 @@ classdef ChromatographyGUI < handle
                     'verticalalignment',   'bottom',...
                     'selectionhighlight',  'off');
                 
-                a = obj.view.plotLabel.Extent;
+                obj.updatePlotLabelPosition();
                 
-                xlimit = obj.axes.main.XLim;
-                ylimit = obj.axes.main.YLim;
-                
-                if a(1)+a(3) >= xlimit(2) - diff(xlimit)*0.01
-                    b = obj.view.plotLabel.Position(1);
-                    b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*0.01));
-                    obj.view.plotLabel.Position(1) = b;
-                end
-                
-                if a(2)+a(4) >= ylimit(2) - diff(ylimit)*0.01
-                    b = obj.view.plotLabel.Position(2);
-                    b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*0.01));
-                    obj.view.plotLabel.Position(2) = b;
-                end
             end
             
         end
@@ -1517,6 +1513,63 @@ classdef ChromatographyGUI < handle
                 b = obj.view.plotLabel.Position(2);
                 b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*0.01));
                 obj.view.plotLabel.Position(2) = b;
+                
+            end
+            
+        end
+        
+        function updateAxesLabel(obj, varargin)
+            
+            if isempty(obj.data) || obj.view.index == 0
+                return
+            else
+                row = obj.view.index;
+            end
+            
+            if isfield(obj.data, 'intensity_units')
+                str = obj.data(row).intensity_units;
+            end
+            
+            if isprop(obj.axes.main, 'YLabel')
+                
+                if ~isempty(str)
+                    str = ['Intensity (', str, ')'];
+                else
+                    str = 'Intensity';
+                end
+            
+                obj.axes.main.YLabel.String = str;
+                
+                if isprop(obj.axes.main.YLabel, 'Extent')
+                    
+                    unitsA = obj.axes.main.Parent.Units;
+                    unitsB = obj.axes.main.Units;
+                    unitsC = obj.axes.main.YLabel.Units;
+                    
+                    obj.axes.main.Parent.Units = 'pixels';
+                    obj.axes.main.Units        = 'pixels';
+                    obj.axes.secondary.Units   = 'pixels';
+                    obj.axes.main.YLabel.Units = 'pixels';
+                    
+                    panelWidth = obj.axes.main.Parent.Position(3);
+                    axesWidth  = obj.axes.main.Position(3);
+                    axesLeft   = obj.axes.main.Position(1);
+                    axesMargin = panelWidth - (axesLeft + axesWidth);
+                    
+                    target = axesLeft - axesMargin / 3;
+                    offset = abs(obj.axes.main.YLabel.Extent(1)) - target;
+                    
+                    obj.axes.secondary.Position(1) = axesLeft + offset;
+                    obj.axes.secondary.Position(3) = axesWidth - offset;
+                    obj.axes.main.Position(1)      = axesLeft + offset;
+                    obj.axes.main.Position(3)      = axesWidth - offset;
+                    
+                    obj.axes.main.Parent.Units = unitsA;
+                    obj.axes.main.Units        = unitsB;
+                    obj.axes.secondary.Units   = unitsB;
+                    obj.axes.main.YLabel.Units = unitsC;
+                    
+                end
                 
             end
             

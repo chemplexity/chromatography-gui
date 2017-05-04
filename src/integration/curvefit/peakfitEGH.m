@@ -14,10 +14,10 @@ function peak = peakfitEGH(varargin)
 % Input (Required)
 % ------------------------------------------------------------------------
 %   x -- time values
-%       array (size = m x 1)
+%       array (size = n x 1)
 %
 %   y -- intensity values
-%       array (size = m x 1)
+%       array (size = n x 1)
 %       
 % ------------------------------------------------------------------------
 % Input (Name, Value)

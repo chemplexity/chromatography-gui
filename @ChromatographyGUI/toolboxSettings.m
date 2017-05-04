@@ -180,11 +180,11 @@ switch obj.settings.peakModel
     
     case 'nn'
         obj.menu.peakNeuralNetwork.Checked = 'on';
-        obj.menu.peakExponentialGaussian.Checked = 'off';
+        obj.menu.peakExpGaussian.Checked = 'off';
         
     case 'egh'
         obj.menu.peakNeuralNetwork.Checked = 'off';
-        obj.menu.peakExponentialGaussian.Checked = 'on';
+        obj.menu.peakExpGaussian.Checked = 'on';
         
 end
 
