@@ -365,24 +365,57 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
+% Import options
+isVerbose = 'off';
+searchDepth = 3;
+
 try
-    data = importAgilent('verbose', 'off', 'depth', 3);
+    data = importAgilent('verbose', isVerbose, 'depth', searchDepth);
 catch
+    
     try
-        data = importagilent('verbose', 'off', 'depth', 3);
+        data = importagilent('verbose', isVerbose, 'depth', searchDepth);
     catch
+        return
     end
+    
 end
 
 if ~isempty(data) && isstruct(data)
     
+    % Check file path
+    data(cellfun(@isempty, {data.file_path})) = [];
+    data(cellfun(@isempty, {data.file_name})) = [];
+    
+    if isempty(data)
+        return
+    end
+    
+    % Check sequence index
+    idx = find(cellfun(@isempty, {data.seqindex}));
+    
+    for i = 1:length(idx)
+        data(idx(i)).seqindex = 99;
+    end
+    
+    % Sort by sequence index
+    [~, idx] = sort([data.seqindex]);
+    
+    if length(idx) == length(data)
+        data(idx) = data;
+    end
+    
+    % Sort by file path
+    [~, idx] = sort({data.file_path});
+    
+    if length(idx) == length(data)
+        data(idx) = data;
+    end
+    
+    % Update GUI
     for i = 1:length(data)
-        
-        if ~isempty(data(i).file_path) && ~isempty(data(i).file_name)
-            obj.data = [obj.data; data(i)];
-            obj.appendTableData();
-        end
-        
+        obj.data = [obj.data; data(i)];
+        obj.appendTableData();
     end
     
     obj.validatePeakData(length(obj.data), length(obj.peaks.name));
