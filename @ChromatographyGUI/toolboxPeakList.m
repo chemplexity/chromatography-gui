@@ -40,6 +40,8 @@ obj.peaks.name = {...
     'C38:3 Me'; 'C38:2 Me';...
     'C39:3 Et'; 'C39:2 Et'};
 
+% obj.peaks.name = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
+
 end
 
 function loadPeakList(obj, mode, varargin)
@@ -47,8 +49,11 @@ function loadPeakList(obj, mode, varargin)
 switch mode
     
     case 'load_default'
-        file = fileparts(fileparts(mfilename('fullpath')));
-        file = [file, obj.default_path, obj.default_peaklist];
+        
+        file = [...
+            obj.toolbox_path, filesep,...
+            obj.toolbox_config, filesep,....
+            obj.default_peaklist];
         
         if exist(file, 'file')
             data = importMAT('file', file);
@@ -58,7 +63,8 @@ switch mode
         end
         
     case 'load_custom'
-        data = importMAT();
+        
+        data = importMAT('path', obj.toolbox_path);
         
     otherwise
         return
@@ -113,6 +119,9 @@ user_peaks.version = obj.version;
 user_peaks.name    = 'peaklist';
 user_peaks.data    = obj.peaks.name;
 
-exportMAT(user_peaks, 'name', 'user_peaks');
+exportMAT(user_peaks,...
+    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
+    'name', 'user_peaks',...
+    'suggest', 'default_peaklist');
 
 end

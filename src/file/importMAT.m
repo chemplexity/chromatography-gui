@@ -1,4 +1,4 @@
-function [data, file] = importMAT(varargin)
+function [data, fileName] = importMAT(varargin)
 % ------------------------------------------------------------------------
 % Method      : importMAT
 % Description : Load MATLAB data files (.MAT)
@@ -19,34 +19,47 @@ function [data, file] = importMAT(varargin)
 % ---------------------------------------
 % Defaults
 % ---------------------------------------
-file = [];
+fileName = [];
 data = [];
+
+default.path = [];
 
 % ---------------------------------------
 % Input
 % ---------------------------------------
 p = inputParser;
 
-addParameter(p, 'file', file);
+addParameter(p, 'file', fileName);
+addParameter(p, 'path', default.path);
 
 parse(p, varargin{:});
 
 % ---------------------------------------
 % Options
 % ---------------------------------------
-file = p.Results.file;
+fileName = p.Results.file;
+filePath = p.Results.path;
+
+userPath = pwd;
 
 % ---------------------------------------
 % Validate
 % ---------------------------------------
-if ischar(file)
+if ~isempty(filePath) && ischar(filePath)
+    try
+        cd(filePath)
+    catch
+    end
+end
+
+if ischar(fileName)
     
-    [isFile, fileInfo] = fileattrib(file);
+    [isFile, fileInfo] = fileattrib(fileName);
     
     if isFile && isstruct(fileInfo) && isfield(fileInfo, 'Name')
-        file = fileInfo.Name;
+        fileName = fileInfo.Name;
     else
-        file = [];
+        fileName = [];
     end
 
 else
@@ -54,9 +67,9 @@ else
     [fileName, filePath] = uigetfile('*.mat', 'Open');
     
     if ischar(fileName) && ischar(filePath)
-        file = [filePath, fileName];
+        fileName = [filePath, fileName];
     else
-        file = [];
+        fileName = [];
     end
         
 end
@@ -64,8 +77,10 @@ end
 % ---------------------------------------
 % Load
 % ---------------------------------------
-if ~isempty(file)
-    data = load(file);
+if ~isempty(fileName)
+    data = load(fileName);
 end
+
+cd(userPath);
 
 end

@@ -23,9 +23,9 @@ function fileName = exportMAT(varargin)
 % Defaults
 % ---------------------------------------
 default.file    = [];
+default.path    = [];
 default.varname = 'data';
-default.name    = [datestr(date, 'yyyymmdd'), '_data'];
-default.filter  = {{'*.mat', 'MAT (*.mat)'}, 'Save As...', default.name};
+default.suggest = [datestr(date, 'yyyymmdd'), '_data'];
 
 % ---------------------------------------
 % Input
@@ -35,7 +35,9 @@ p = inputParser;
 addRequired(p, 'data');
 
 addParameter(p, 'file', default.file);
+addParameter(p, 'path', default.path);
 addParameter(p, 'name', default.varname);
+addParameter(p, 'suggest', default.suggest);
 
 parse(p, varargin{:});
 
@@ -44,10 +46,15 @@ parse(p, varargin{:});
 % ---------------------------------------
 data = p.Results.data;
 
-option.file = p.Results.file;
-option.name = p.Results.name;
+option.file    = p.Results.file;
+option.path    = p.Results.path;
+option.name    = p.Results.name;
+option.suggest = p.Results.suggest;
+
+default.filter  = {{'*.mat', 'MAT (*.mat)'}, 'Save As...', option.suggest};
 
 fileName = [];
+userPath = pwd;
 
 % ---------------------------------------
 % Validate
@@ -63,6 +70,13 @@ if ~isempty(option.file)
         option.file = [];
     elseif ~ischar(option.file)
         option.file = [];
+    end
+end
+
+if ~isempty(option.path) && ischar(option.path)
+    try
+        cd(option.path)
+    catch
     end
 end
 
@@ -115,4 +129,8 @@ if ischar(fileName) && ischar(filePath)
     save(fileName, option.name, '-mat');
 else
     fileName = [];
+end
+
+cd(userPath);
+
 end

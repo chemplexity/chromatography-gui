@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170518';
+        version     = 'v0.0.6.20170524';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -34,10 +34,18 @@ classdef ChromatographyGUI < handle
         
         font = ChromatographyGUI.getFont();
         
+        % /path/to/chromatography-gui
         toolbox_path = fileparts(fileparts(mfilename('fullpath')));
+        
+        % /path/to/chromatography-gui/@ChromatographyGUI
         toolbox_file = fileparts(mfilename('fullpath'));
         
-        default_path     = [filesep, 'config', filesep];
+        % Toolbox Paths
+        toolbox_config = 'config';
+        toolbox_data   = 'data';
+        toolbox_src    = 'src';
+        
+        % Toolbox Defaults
         default_settings = 'default_settings.mat';
         default_peaklist = 'default_peaklist.mat';
         
@@ -58,8 +66,8 @@ classdef ChromatographyGUI < handle
             end
             
             addpath(sourcePath);
-            addpath(genpath([sourcePath, filesep, 'src']));
-            addpath(genpath([sourcePath, filesep, 'config']));
+            addpath(genpath([sourcePath, filesep, obj.toolbox_src]));
+            addpath(genpath([sourcePath, filesep, obj.toolbox_config]));
             
             % ---------------------------------------
             % Settings
@@ -142,7 +150,7 @@ classdef ChromatographyGUI < handle
                 
                 x = obj.data(row).time;
                 y = obj.data(row).intensity(:,1);
-            
+                
                 if any(ishandle(obj.view.peakLine))
                     set(obj.view.plotLine, 'xdata', x, 'ydata', y);
                 else
@@ -154,15 +162,15 @@ classdef ChromatographyGUI < handle
                         'hittest',   'off',...
                         'tag',       'main');
                 end
-            
+                
                 zoom reset
-            
+                
                 obj.updateAxesLimits();
-            
+                
                 if obj.controls.showBaseline.Value
                     obj.plotBaseline();
                 end
-            
+                
                 if obj.controls.showPeak.Value
                     obj.plotPeaks();
                 end
@@ -221,7 +229,7 @@ classdef ChromatographyGUI < handle
         function updateAxesYLim(obj, varargin)
             
             row = obj.view.index;
-                    
+            
             if row ~= 0 && ~isempty(obj.data(row).time)
                 x = obj.data(row).time;
                 y = obj.data(row).intensity(:,1);
@@ -824,6 +832,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        %function peakInsertColumn(obj, str)
+        %end
+        
         function peakEditColumn(obj, col, str)
             
             if col == 0
@@ -1216,6 +1227,8 @@ classdef ChromatographyGUI < handle
             
             obj.figure.Visible = 'on';
             
+            obj.toolboxAlign();
+            
         end
         
         
@@ -1464,8 +1477,11 @@ classdef ChromatographyGUI < handle
                     else
                         str = [str, char(10), n];
                     end
-                    
+                   
+                elseif strcmp('row_num', labelFields{i})
+                    str = [str, '#', num2str(row)];
                 end
+                
             end
             
             if ~isempty(str)
@@ -1537,7 +1553,7 @@ classdef ChromatographyGUI < handle
                 else
                     str = 'Intensity';
                 end
-            
+                
                 obj.axes.main.YLabel.String = str;
                 
                 if isprop(obj.axes.main.YLabel, 'Extent')

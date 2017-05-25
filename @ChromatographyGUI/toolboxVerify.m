@@ -3,39 +3,39 @@ function toolboxVerify(obj, varargin)
 filePath = fileparts(fileparts(mfilename('fullpath')));
 
 % importagilent.m --> importAgilent.m
-x = 'importAgilent.m';
-xPath = [filePath, filesep, 'src', filesep, 'file', filesep, x];
+x1 = 'importagilent';
+x2 = 'importAgilent';
 
-renameFile(x, xPath);
+xPath = [filePath, filesep, 'src', filesep, 'file'];
+
+renameFile(x1, x2, xPath);
 
 end
 
-function renameFile(x, xPath)
+function status = renameFile(x1, x2, xPath)
 
-if exist(xPath, 'file')
+if exist(xPath, 'dir')
     
-    [~, xName] = fileattrib(xPath);
+    xDir = dir(xPath);
     
-    if isstruct(xName)
-    
-        [xPath, xName] = fileparts(xName.Name);
+    if any(strcmp([x1, '.m'], {xDir.name}))
         
-        if ~strcmp([xName, '.m'], x)
-            
-            x1 = [xPath, filesep, xName, '.m'];
-            x2 = [xPath, filesep, '_', x];
-            
-            movefile(x1, x2, 'f');
-            
-            x1 = x2;
-            x2 = [xPath, filesep, x];
-            
-            movefile(x1, x2, 'f');
-            
-        end 
+        y1 = [xPath, filesep, x1, '.m'];
+        y2 = [xPath, filesep, '_', x1, '.m'];
+        
+        status = movefile(y1, y2, 'f');
+        
+        if status
+            return
+        end
+        
+        y1 = y2;
+        y2 = [xPath, filesep, x2, '.m'];
+        
+    	status = movefile(y1, y2, 'f');
         
     end
     
 end
-
+    
 end

@@ -1,2 +1,2 @@
-% Run this script to open Chromatography GUI
-ChromatographyGUI;
+% Run this script to start Chromatography GUI
+obj = ChromatographyGUI;

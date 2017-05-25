@@ -65,9 +65,9 @@ obj.menu.file.importSettings = newMenu(obj.menu.file.import, 'Settings');
 obj.menu.file.exportPeakList = newMenu(obj.menu.file.export, 'Peak List');
 obj.menu.file.exportSettings = newMenu(obj.menu.file.export, 'Settings');
 
-obj.menu.file.importPeakList.Callback = {@importPeakList, obj};
+obj.menu.file.importPeakList.Callback = {@obj.toolboxPeakList, 'load_custom'};
 obj.menu.file.importSettings.Callback = {@obj.toolboxSettings, 'load_custom'};
-obj.menu.file.exportPeakList.Callback = {@exportPeakList, obj};
+obj.menu.file.exportPeakList.Callback = {@obj.toolboxPeakList, 'save_custom'};
 obj.menu.file.exportSettings.Callback = {@obj.toolboxSettings, 'save_custom'};
 
 % ---------------------------------------
@@ -134,6 +134,7 @@ obj.menu.labelData.Tag = 'data';
 % ---------------------------------------
 % Options --> Data --> Label
 % ---------------------------------------
+obj.menu.labelRowNum     = newMenu(obj.menu.labelData, 'ID');
 obj.menu.labelFilePath   = newMenu(obj.menu.labelData, 'File Path');
 obj.menu.labelFileName   = newMenu(obj.menu.labelData, 'File Name');
 obj.menu.labelInstrument = newMenu(obj.menu.labelData, 'Instrument');
@@ -146,6 +147,7 @@ obj.menu.labelVialNum    = newMenu(obj.menu.labelData, 'Vial #');
 obj.menu.labelSelectAll  = newMenu(obj.menu.labelData, 'Select All');
 obj.menu.labelSelectNone = newMenu(obj.menu.labelData, 'Select None');
 
+obj.menu.labelRowNum.Tag          = 'row_num';
 obj.menu.labelFilePath.Tag        = 'file_path';
 obj.menu.labelFileName.Tag        = 'file_name';
 obj.menu.labelInstrument.Tag      = 'instrument';
@@ -158,6 +160,7 @@ obj.menu.labelVialNum.Tag         = 'vial';
 obj.menu.labelSelectAll.Tag       = 'selectAll';
 obj.menu.labelSelectNone.Tag      = 'selectNone';
 
+obj.menu.labelRowNum.Callback     = {@plotLabelCallback, obj};
 obj.menu.labelFilePath.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelFileName.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelInstrument.Callback = {@plotLabelCallback, obj};
@@ -244,8 +247,8 @@ obj.menu.peakExpGaussian   = newMenu(obj.menu.peakOptionsModel, 'Exponential Gau
 obj.menu.peakNeuralNetwork.Tag      = 'peakNN';
 obj.menu.peakExpGaussian.Tag        = 'peakEGH';
 
-obj.menu.peakNeuralNetwork.Checked  = 'on';
-obj.menu.peakExpGaussian.Checked    = 'off';
+obj.menu.peakNeuralNetwork.Checked  = 'off';
+obj.menu.peakExpGaussian.Checked    = 'on';
 
 obj.menu.peakNeuralNetwork.Callback = {@peakModelMenuCallback, obj};
 obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
@@ -301,62 +304,6 @@ if any(strcmpi('.git', {sourcePath.name}))
         end
     end
 end
-
-end
-
-% ---------------------------------------
-% Import Peak List
-% ---------------------------------------
-function importPeakList(~, ~, obj)
-
-data = importMAT();
-
-if isempty(data)
-    return
-elseif ~isstruct(data) || ~isfield(data, 'user_peaks')
-    return
-else
-    data = data.user_peaks;
-end
-
-if ~isfield(data, 'name') || ~strcmpi(data.name, 'peaklist')
-    return
-elseif ~isfield(data, 'data') || isempty(data.data)
-    return
-elseif ~iscell(data.data)
-    return
-else
-    data = data.data;
-end
-
-for i = 1:length(data)
-    
-    if ~ischar(data{i})
-        continue
-    end
-    
-    if ~any(strcmpi(data{i}, obj.peaks.name))
-        obj.peakAddColumn(data{i})
-    end
-    
-end
-
-end
-
-% ---------------------------------------
-% Export Peak List
-% ---------------------------------------
-function exportPeakList(~, ~, obj)
-
-if isempty(obj.peaks.name)
-    return
-end
-
-user_peaks.version = obj.version;
-user_peaks.name    = 'peaklist';
-user_peaks.data    = obj.peaks.name;
-
-exportMAT(user_peaks, 'name', 'user_peaks');
 
 end
 
@@ -909,10 +856,13 @@ function peakViewMenuCallback(src, evt, obj)
 if strcmpi(evt.EventName, 'Action')
     
     switch src.Checked
+        
         case 'on'
             src.Checked = 'off';
+            
         case 'off'
             src.Checked = 'on';
+            
     end
     
     switch src.Tag
@@ -950,10 +900,13 @@ function plotViewMenuCallback(src, evt, obj)
 if strcmpi(evt.EventName, 'Action')
     
     switch src.Checked
+        
         case 'on'
             src.Checked = 'off';
+            
         case 'off'
             src.Checked = 'on';
+            
     end
     
     switch src.Tag
@@ -1033,24 +986,26 @@ for i = 1:length(src.Parent.Children)
         
         switch src.Parent.Children(i).Tag
             
-            case 'file_path'
+            case 'row_num'
                 plotLabel{1} = src.Parent.Children(i).Tag;
-            case 'file_name'
+            case 'file_path'
                 plotLabel{2} = src.Parent.Children(i).Tag;
-            case 'instrument'
+            case 'file_name'
                 plotLabel{3} = src.Parent.Children(i).Tag;
-            case 'datetime'
+            case 'instrument'
                 plotLabel{4} = src.Parent.Children(i).Tag;
-            case 'method_name'
+            case 'datetime'
                 plotLabel{5} = src.Parent.Children(i).Tag;
-            case 'sample_name'
+            case 'method_name'
                 plotLabel{6} = src.Parent.Children(i).Tag;
-            case 'operator'
+            case 'sample_name'
                 plotLabel{7} = src.Parent.Children(i).Tag;
-            case 'seqindex'
+            case 'operator'
                 plotLabel{8} = src.Parent.Children(i).Tag;
-            case 'vial'
+            case 'seqindex'
                 plotLabel{9} = src.Parent.Children(i).Tag;
+            case 'vial'
+                plotLabel{10} = src.Parent.Children(i).Tag;
                 
             case 'peakName'
                 plotLabel{1} = src.Parent.Children(i).Tag;
@@ -1105,10 +1060,13 @@ end
 src.Checked = 'on';
 
 switch src.Tag
+    
     case 'peakNN'
         obj.settings.peakModel = 'nn';
+        
     case 'peakEGH'
         obj.settings.peakModel = 'egh';
+        
 end
 
 end
