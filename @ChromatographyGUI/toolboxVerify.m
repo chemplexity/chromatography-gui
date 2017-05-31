@@ -12,7 +12,7 @@ renameFile(x1, x2, xPath);
 
 end
 
-function status = renameFile(x1, x2, xPath)
+function renameFile(x1, x2, xPath)
 
 if exist(xPath, 'dir')
     
@@ -23,16 +23,12 @@ if exist(xPath, 'dir')
         y1 = [xPath, filesep, x1, '.m'];
         y2 = [xPath, filesep, '_', x1, '.m'];
         
-        status = movefile(y1, y2, 'f');
-        
-        if status
-            return
-        end
+        movefile(y1, y2, 'f');
         
         y1 = y2;
         y2 = [xPath, filesep, x2, '.m'];
         
-    	status = movefile(y1, y2, 'f');
+    	movefile(y1, y2, 'f');
         
     end
     

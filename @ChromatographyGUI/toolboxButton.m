@@ -98,22 +98,22 @@ obj.controls.ySeparator = newStaticText(...
 
 % Integrate Tab --> Options
 i1(1) = 0.075;
-i1(2) = 0.02 * 5 + 0.15 * 4 + 0.075; 
+i1(2) = 0.02 * 5 + 0.15 * 4 + 0.075;
 i1(3) = 0.25;
 i1(4) = 0.15;
 
 i2(1) = i1(1);
-i2(2) = 0.02 * 4 + 0.15 * 3 + 0.075; 
+i2(2) = 0.02 * 4 + 0.15 * 3 + 0.075;
 i2(3) = i1(3);
 i2(4) = i1(4);
 
 i3(1) = i1(1);
-i3(2) = 0.02 * 3 + 0.15 * 2 + 0.075; 
+i3(2) = 0.02 * 3 + 0.15 * 2 + 0.075;
 i3(3) = i1(3);
 i3(4) = i1(4);
 
 i4(1) = i1(1);
-i4(2) = 0.02 * 2 + 0.15 * 1 + 0.075; 
+i4(2) = 0.02 * 2 + 0.15 * 1 + 0.075;
 i4(3) = i1(3);
 i4(4) = i1(4);
 
@@ -183,27 +183,27 @@ obj.controls.yMax = newEditText(...
 
 % Integrate Tab --> Options
 ie1(1) = 0.075 + 0.05 + 0.25;
-ie1(2) = 0.02 * 5 + 0.15 * 4 + 0.075; 
+ie1(2) = 0.02 * 5 + 0.15 * 4 + 0.075;
 ie1(3) = 0.28;
 ie1(4) = 0.15;
 
 ie2(1) = ie1(1);
-ie2(2) = 0.02 * 4 + 0.15 * 3 + 0.075; 
+ie2(2) = 0.02 * 4 + 0.15 * 3 + 0.075;
 ie2(3) = ie1(3);
 ie2(4) = ie1(4);
 
 ie3(1) = ie1(1);
-ie3(2) = 0.02 * 3 + 0.15 * 2 + 0.075; 
+ie3(2) = 0.02 * 3 + 0.15 * 2 + 0.075;
 ie3(3) = ie1(3);
 ie3(4) = ie1(4);
 
 ie4(1) = ie1(1);
-ie4(2) = 0.02 * 2 + 0.15 * 1 + 0.075; 
+ie4(2) = 0.02 * 2 + 0.15 * 1 + 0.075;
 ie4(3) = ie1(3);
 ie4(4) = ie1(4);
 
 ie5(1) = ie1(1);
-ie5(2) = 0.02 * 1 + 0.15 * 0 + 0.075; 
+ie5(2) = 0.02 * 1 + 0.15 * 0 + 0.075;
 ie5(3) = ie1(3);
 ie5(4) = ie1(4);
 
@@ -329,11 +329,11 @@ set(obj.controls.asymSlider,   'min', -10, 'max', -1, 'value', a);
 % Selection Callback
 % ---------------------------------------
 set(obj.controls.next,...
-    'callback', {@obj.selectSample, 1},... 
+    'callback', {@obj.selectSample, 1},...
     'keypressfcn', {@browseKeyCallback, obj});
 
 set(obj.controls.prev,...
-    'callback', {@obj.selectSample, -1},... 
+    'callback', {@obj.selectSample, -1},...
     'keypressfcn', {@browseKeyCallback, obj});
 
 set(obj.controls.editID,   'callback', {@editIDCallback, obj});
@@ -435,11 +435,11 @@ switch src.String
         if strcmpi(x, 'Yes')
             
             obj.peakDeleteColumn(col);
-        
+            
             if col > length(obj.peaks.name)
                 obj.controls.peakList.Value = length(obj.peaks.name);
             end
-           
+            
             obj.updatePeakText();
             
         end
@@ -471,6 +471,7 @@ switch evt.Key
                 
             case 'prevsample'
                 obj.selectSample(-1);
+                
         end
         
 end
@@ -483,31 +484,26 @@ end
 function editIDCallback(~, ~, obj)
 
 str = obj.controls.editID.String;
-val = str2double(str);
 
-if isempty(obj.data) || isempty(str) || isnan(val) || isinf(val) || ~isreal(val)
+if isempty(obj.data) || isempty(str)
     obj.updateSampleText();
     return
-    
-elseif val > length(obj.data)
-    obj.view.index = length(obj.data);
-    obj.view.id    = num2str(length(obj.data));
-    obj.view.name  = obj.data(end).sample_name;
-    
-elseif val < 1
-    obj.view.index = 1;
-    obj.view.id    = '1';
-    obj.view.name  = obj.data(1).sample_name;
-    
 else
-    obj.view.index = floor(val);
-    obj.view.id    = num2str(floor(val));
-    obj.view.name  = obj.data(obj.view.index).sample_name;
+    val = str2double(str);
 end
 
-obj.updateSampleText();
-obj.updatePeakText();
-obj.updatePlot();
+if isnan(val) || isinf(val) || ~isreal(val)
+    obj.updateSampleText();
+    return
+elseif val > length(obj.data)
+    val = length(obj.data);
+elseif val < 1
+    val = 1;
+else
+    val = floor(val);
+end
+
+obj.selectSample(val - obj.view.index);
 
 end
 
@@ -559,7 +555,7 @@ switch src.Tag
             else
                 obj.axes.xlim(1) = 0;
             end
-
+            
             src.String = str(obj.axes.xlim(1));
             obj.axes.xmode = 'manual';
             obj.updateAxesXLim();
@@ -580,7 +576,7 @@ switch src.Tag
         
     case 'xmaxedit'
         
-        if isempty(n) 
+        if isempty(n)
             
             if row ~= 0
                 xmin = min(obj.data(row).time(:,1));
@@ -589,7 +585,7 @@ switch src.Tag
             else
                 obj.axes.xlim(2) = 1;
             end
-
+            
             src.String = str(obj.axes.xlim(2));
             obj.axes.xmode = 'manual';
             obj.updateAxesXLim();
@@ -610,7 +606,7 @@ switch src.Tag
         
     case 'yminedit'
         
-        if isempty(n) 
+        if isempty(n)
             
             if row ~= 0
                 x = obj.data(row).time(:,1);
@@ -620,7 +616,7 @@ switch src.Tag
             else
                 obj.axes.ylim(1) = 0;
             end
-
+            
             src.String = str(obj.axes.ylim(1));
             obj.axes.ymode = 'manual';
             obj.updateAxesYLim();
@@ -651,7 +647,7 @@ switch src.Tag
             else
                 obj.axes.ylim(2) = 1;
             end
-
+            
             src.String = str(obj.axes.ylim(2));
             obj.axes.ymode = 'manual';
             obj.updateAxesYLim();
@@ -748,10 +744,10 @@ switch src.Tag
         
     case 'peaktimeedit'
         obj.controls.peakTimeEdit.String = checkPeakEditText(obj, 'time');
-              
+        
     case 'peakwidthedit'
         obj.controls.peakWidthEdit.String = checkPeakEditText(obj, 'width');
-
+        
     case 'peakheightedit'
         obj.controls.peakHeightEdit.String = checkPeakEditText(obj, 'height');
         
@@ -759,7 +755,7 @@ switch src.Tag
         obj.controls.peakAreaEdit.String = checkPeakEditText(obj, 'area');
         
 end
-        
+
 end
 
 % ---------------------------------------

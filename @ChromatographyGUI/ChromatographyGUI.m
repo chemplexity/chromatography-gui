@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.6.20170524';
+        version     = 'v0.0.6.20170531';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1477,7 +1477,7 @@ classdef ChromatographyGUI < handle
                     else
                         str = [str, char(10), n];
                     end
-                   
+                    
                 elseif strcmp('row_num', labelFields{i})
                     str = [str, '#', num2str(row)];
                 end
@@ -1486,7 +1486,6 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(str)
                 
-                %str = deblank(strtrim(str(str ~= '\')));
                 str = regexprep(str, '[\\]', '/');
                 str = deblank(strtrim(str));
                 str = ['\rm ', str];

@@ -287,6 +287,7 @@ if any(strcmpi('.git', {sourcePath.name}))
         [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
         
         if ~gitStatus
+            
             gitBranch = deblank(strtrim(gitBranch));
             
             if strcmpi(gitBranch, 'develop')
@@ -317,12 +318,14 @@ isVerbose = 'off';
 searchDepth = 3;
 
 try
-    data = importAgilent('verbose', isVerbose, 'depth', searchDepth);
+    data = importAgilent('verbose', isVerbose, 'depth', searchDepth); 
 catch
     
     try
         data = importagilent('verbose', isVerbose, 'depth', searchDepth);
-    catch
+    catch    
+        disp(['Unable to locate file: ', obj.toolbox_path, filesep,...
+            obj.toolbox_src, filesep, 'file', filesep, 'importAgilent.m']);
         return
     end
     

@@ -49,7 +49,7 @@ if ~isempty(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
             {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
     end
-
+    
 end
 
 % ---------------------------------------
@@ -148,23 +148,11 @@ if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-       case 'return'
+        case 'return'
             
-            obj.table.selection = obj.table.selection(1,:);
-            
-            row = obj.table.selection(1,1);
-            
-            if row <= length(obj.data) && row > 0
-                obj.view.index = row;
-                obj.view.id    = num2str(row);
-                obj.view.name  = obj.data(row).sample_name;
-            else
-                return
+            if ~any(obj.table.selection(1,2) == [4,5,7,8,9,13])
+                obj.selectSample(obj.table.selection(1,1) - obj.view.index);
             end
-            
-            obj.updateSampleText();
-            obj.updatePeakText();
-            obj.updatePlot();
             
         case 'delete'
             
@@ -233,7 +221,7 @@ for i = 1:nRows
     elseif i > 1
         
         if n - obj.table.selection(i-1,1) == 1
-
+            
             if ~strcmpi(row(end), ':')
                 
                 if i == nRows
@@ -246,12 +234,12 @@ for i = 1:nRows
                     end
                 end
                 
-            elseif strcmpi(row(end), ':')                
+            elseif strcmpi(row(end), ':')
                 
                 if i == nRows
                     row = [row, num2str(n)];
                 elseif obj.table.selection(i+1,1) - n ~= 1
-                        row = [row, num2str(n)];
+                    row = [row, num2str(n)];
                 end
             end
             
