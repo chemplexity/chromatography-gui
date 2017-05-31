@@ -32,11 +32,6 @@ if ~isempty(obj.peaks.name)
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
             {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
     end
     
@@ -47,9 +42,14 @@ if ~isempty(obj.peaks.name)
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
+            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+    end
+    
+    for i = 1:length(obj.peaks.name)
+        columnParameters(end+1, 1:4) = ...
             {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
     end
-
+    
 end
 
 % ---------------------------------------
@@ -69,19 +69,19 @@ obj.table.main = uitable(...
     'backgroundcolor',       backgroundColor,....
     'foregroundcolor',       foregroundColor,...
     'fontname',              obj.font,...
-    'fontSize',              fontSize,...
+    'fontsize',              fontSize,...
     'rearrangeablecolumns',  'off',....
     'selectionhighlight',    'off',...
-    'celleditcallback',      @(src, event) tableEditCallback(obj, src, event),...
-    'cellselectioncallback', @(src, event) tableSelectCallback(obj, src, event),...
-    'keypressfcn',           @(src, event) tableKeyDownCallback(obj, src, event));
+    'celleditcallback',      {@tableEditCallback, obj},...
+    'cellselectioncallback', {@tableSelectCallback, obj},...
+    'keypressfcn',           {@tableKeyDownCallback, obj});
 
 end
 
 % ---------------------------------------
 % Table Edit Callback
 % ---------------------------------------
-function tableEditCallback(obj, src, evt)
+function tableEditCallback(src, evt, obj)
 
 if isempty(src.Data)
     return
@@ -91,25 +91,35 @@ switch evt.Indices(2)
     
     case 4
         obj.data(evt.Indices(1)).instrument = evt.NewData;
+        
     case 5
         obj.data(evt.Indices(1)).instmodel = evt.NewData;
+        
     case 7
         obj.data(evt.Indices(1)).operator = evt.NewData;
+        
     case 8
         obj.data(evt.Indices(1)).sample_name = evt.NewData;
+        
     case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
+        
     case 13
+        
         if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
             obj.data(evt.Indices(1)).injvol = evt.NewData;
+            %src.Data{evt.Indices(1), evt.Indices(2)} = evt.NewData;
+            
         elseif isnan(evt.NewData)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
             return
+            
         else
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
             return
         end
+        
 end
 
 src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
@@ -119,7 +129,7 @@ end
 % ---------------------------------------
 % Table Selection Callback
 % ---------------------------------------
-function tableSelectCallback(obj, ~, evt)
+function tableSelectCallback(~, evt, obj)
 
 obj.table.selection = evt.Indices;
 
@@ -128,7 +138,7 @@ end
 % ---------------------------------------
 % Table Key Press Callback
 % ---------------------------------------
-function tableKeyDownCallback(obj, ~, evt)
+function tableKeyDownCallback(~, evt, obj)
 
 if isempty(obj.table.selection) || isempty(obj.data)
     return
@@ -138,23 +148,11 @@ if strcmpi(evt.EventName, 'KeyPress')
     
     switch evt.Key
         
-       case 'return'
+        case 'return'
             
-            obj.table.selection = obj.table.selection(1,:);
-            
-            row = obj.table.selection(1,1);
-            
-            if row <= length(obj.data) && row > 0
-                obj.view.index = row;
-                obj.view.id    = num2str(row);
-                obj.view.name  = obj.data(row).sample_name;
-            else
-                return
+            if ~any(obj.table.selection(1,2) == [4,5,7,8,9,13])
+                obj.selectSample(obj.table.selection(1,1) - obj.view.index);
             end
-            
-            obj.updateSampleText();
-            obj.updatePeakText();
-            obj.updatePlot();
             
         case 'delete'
             
@@ -223,7 +221,7 @@ for i = 1:nRows
     elseif i > 1
         
         if n - obj.table.selection(i-1,1) == 1
-
+            
             if ~strcmpi(row(end), ':')
                 
                 if i == nRows
@@ -236,12 +234,12 @@ for i = 1:nRows
                     end
                 end
                 
-            elseif strcmpi(row(end), ':')                
+            elseif strcmpi(row(end), ':')
                 
                 if i == nRows
                     row = [row, num2str(n)];
                 elseif obj.table.selection(i+1,1) - n ~= 1
-                        row = [row, num2str(n)];
+                    row = [row, num2str(n)];
                 end
             end
             

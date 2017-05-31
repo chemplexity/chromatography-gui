@@ -14,10 +14,10 @@ function peak = peakfitEGH(varargin)
 % Input (Required)
 % ------------------------------------------------------------------------
 %   x -- time values
-%       array (size = m x 1)
+%       array (size = n x 1)
 %
 %   y -- intensity values
-%       array (size = m x 1)
+%       array (size = n x 1)
 %       
 % ------------------------------------------------------------------------
 % Input (Name, Value)
@@ -347,8 +347,22 @@ end
 function area = peakArea(x0, y0, y1, targetArea)
 
 area = 0;
+pad = 3;
 
 yFilter = y1 >= min(y1) + 0.001 * (max(y1)-min(y1));
+yIndex = find(yFilter);
+
+for i = 1:pad
+    
+    if max(yIndex) + i <= length(yFilter)
+        yFilter(max(yIndex)+1) = 1;
+    end
+
+    if min(yIndex) - i >= 1
+        yFilter(min(yIndex)-1) = 1;
+    end
+    
+end
 
 x0 = x0(yFilter);
 y0 = y0(yFilter);
@@ -393,6 +407,7 @@ if ~isempty(yTailFilter)
         x0(yTailFilter:end) = [];
         yt(yTailFilter:end) = [];
     end
+    
 end
 
 % Filter peak front
@@ -403,7 +418,15 @@ yFrontFilter = find(dyt(1:dyi) < 0);
 if ~isempty(yFrontFilter)
     
     if length(yFrontFilter) > 1
-        yFrontFilter = yFrontFilter(end-1);
+        yFilterMean = mean(x0(yFrontFilter));
+        yFilterIndex = find(x0 >= yFilterMean, 1);
+        
+        if ~isempty(yFilterIndex)
+            yFrontFilter = yFilterIndex;
+        else
+            yFrontFilter = yFrontFilter(end-1);
+        end
+        
     else
         yFrontFilter = yFrontFilter(end);
     end
@@ -435,18 +458,7 @@ else
 end
 
 if length(xi) == length(yi)
-    
-    try
-        area = trapz(xi,yi);
-    catch
-        dx = diff(xi);
-        dy = (yi(1:end-1) + yi(2:end));
-
-        if length(dx) == length(dy)
-            area = sum(dx.*dy) / 2;
-        end
-    end
-    
+    area = trapz(xi, yi);
 else
     area = 0;
 end
