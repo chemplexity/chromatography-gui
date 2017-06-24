@@ -14,11 +14,11 @@ columnParameters = {...
     'Filepath',   125,   false,   'char';...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
-    'Instrument', 100,   true,    'char';...
-    'Detector',   100,   true,    'char';...
+    'Instrument', 100,   false,   'char';...
+    'Detector',   100,   false,   'char';...
     'Method',     125,   false,   'char';...
-    'Operator',   75,    true,    'char';...
-    'SampleName', 100,   true,    'char';
+    'Operator',   75,    false,   'char';...
+    'SampleName', 100,   false,   'char';
     'SampleInfo', 100,   true,    'char';...
     'SeqLine',    75,    false,   'numeric';...
     'VialNum',    75,    false,   'numeric';...
@@ -88,41 +88,30 @@ if isempty(src.Data)
 end
 
 switch evt.Indices(2)
-    
-    case 4
-        obj.data(evt.Indices(1)).instrument = evt.NewData;
-        
-    case 5
-        obj.data(evt.Indices(1)).instmodel = evt.NewData;
-        
-    case 7
-        obj.data(evt.Indices(1)).operator = evt.NewData;
-        
-    case 8
-        obj.data(evt.Indices(1)).sample_name = evt.NewData;
-        
+
     case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
+        src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
         
     case 13
         
-        if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
-            obj.data(evt.Indices(1)).injvol = evt.NewData;
-            %src.Data{evt.Indices(1), evt.Indices(2)} = evt.NewData;
-            
-        elseif isnan(evt.NewData)
+        x = src.Data{evt.Indices(1), evt.Indices(2)};
+        
+        if isempty(x) || ~isnumeric(x) || isnan(x)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
             return
             
+        elseif ~isinf(x) && isreal(x) && ~isnan(x)
+            obj.data(evt.Indices(1)).injvol = x;
+
         else
+            obj.data(evt.Indices(1)).injvol = evt.PreviousData;
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
             return
         end
         
 end
-
-src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
 
 end
 
@@ -150,8 +139,8 @@ if strcmpi(evt.EventName, 'KeyPress')
         
         case 'return'
             
-            if ~any(obj.table.selection(1,2) == [4,5,7,8,9,13])
-                obj.selectSample(obj.table.selection(1,1) - obj.view.index);
+            if ~any(obj.table.selection(1,2) == [9,13])
+                obj.selectSample(obj.table.selection(1,1)-obj.view.index);
             end
             
         case 'delete'
@@ -180,23 +169,40 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
-            if obj.table.selection(1,2) == 1
+            if any(obj.table.selection(:,2) == 1)
+                    
+                    msg = questdlg(...
+                        tableDeleteMessage(obj),...
+                        'Delete',...
+                        'Yes', 'No', 'Yes');
+                    
+                    switch msg
+                        case 'Yes'
+                            obj.tableDeleteRow();
+                        case 'No'
+                            return
+                    end     
+            
+            elseif any(any(obj.table.selection(:,2) == [9,13]))
                 
-                msgPrompt = tableDeleteMessage(obj);
-                
-                msg = questdlg(...
-                    msgPrompt,...
-                    'Delete',...
-                    'Yes', 'No', 'Yes');
-                
-                switch msg
-                    case 'Yes'
-                        obj.tableDeleteRow();
-                    case 'No'
-                        return
+                for i = 1:length(obj.table.selection(:,2))
+                    
+                    if obj.table.selection(i,2) == 9
+                        row = obj.table.selection(i,1);
+                        obj.data(row).sample_info = [];
+                        obj.table.main.Data{row,9} = []; 
+                    elseif obj.table.selection(i,2) == 13
+                        row = obj.table.selection(i,1);
+                        obj.data(row).injvol = [];
+                        obj.table.main.Data{row,13} = []; 
+                    end
+                    
                 end
+                
             end
+            
     end
+    
 end
 
 end
