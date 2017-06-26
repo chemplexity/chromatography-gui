@@ -271,9 +271,11 @@ obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
-obj.menu.help.update = newMenu(obj.menu.help.main, 'Check for updates...');
+obj.menu.help.website = newMenu(obj.menu.help.main, 'Project Website');
+obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
 
-obj.menu.help.update.Callback = @obj.toolboxUpdate;
+obj.menu.help.website.Callback = @obj.toolboxWebsite;
+obj.menu.help.update.Callback  = @obj.toolboxUpdate;
 
 % ---------------------------------------
 % Developer Mode
