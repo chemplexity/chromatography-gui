@@ -83,6 +83,19 @@ obj.settings.baselineAsymmetry  = -5.5;
 obj.settings.peakModel = 'egh';     % 'nn' or 'egh'
 obj.settings.peakArea  = 'rawData'; % 'rawData' or 'fitData'
 
+% ---------------------------------------
+% Keyboard Shortcuts
+% ---------------------------------------
+
+obj.settings.keyboard.selectPeak     = 'space';
+obj.settings.keyboard.clearPeak      = 'backspace';
+
+obj.settings.keyboard.previousPeak   = 'uparrow';
+obj.settings.keyboard.nextPeak       = 'downarrow';
+
+obj.settings.keyboard.previousSample = 'leftarrow';
+obj.settings.keyboard.nextSample     = 'rightarrow';
+
 end
 
 function loadSettings(obj, mode, varargin)
@@ -121,7 +134,7 @@ if ~isfield(data, 'name') || ~strcmpi(data.name, 'global_settings')
 elseif ~isfield(data, 'data') || isempty(data.data)
     return
 else
-    obj.settings = data.data;
+    verifySettings(obj, data.data);
     applySettings(obj);
 end
 
@@ -282,5 +295,32 @@ end
 
 obj.updateAxesLimitEditText();
 obj.updatePlot();
+
+end
+
+function verifySettings(obj, varargin)
+
+if isempty(varargin)
+    return
+else
+    x = varargin{1};
+end
+
+str = fields(x);
+
+for i = 1:length(str)
+    
+    if isstruct(x.(str{i}))
+        substr = fields(x.(str{i}));
+        
+        for j = 1:length(substr)
+            obj.settings.(str{i}).(substr{j}) = x.(str{i}).(substr{j});
+        end
+        
+    else
+        obj.settings.(str{i}) = x.(str{i});
+    end
+    
+end
 
 end

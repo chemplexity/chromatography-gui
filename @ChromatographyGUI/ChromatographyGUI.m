@@ -436,7 +436,7 @@ classdef ChromatographyGUI < handle
                     y = obj.peaks.fit{row,col(i)}(:,2);
                     
                     if isempty(obj.settings.labels.peak)
-                        return
+                        continue
                     else
                         labelFields = obj.settings.labels.peak;
                     end
@@ -2072,7 +2072,7 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
-                case 'space'
+                case obj.settings.keyboard.selectPeak %'space'
                     
                     if isempty(evt.Modifier)
                         
@@ -2086,34 +2086,34 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
-                case 'uparrow'
+                case obj.settings.keyboard.clearPeak %'backspace'
+                    
+                    if isempty(evt.Modifier)
+                        obj.clearPeak();
+                    end
+                    
+                case obj.settings.keyboard.previousPeak %'uparrow'
                     
                     if isempty(evt.Modifier)
                         obj.selectPeak(-1);
                     end
                     
-                case 'downarrow'
+                case obj.settings.keyboard.nextPeak %'downarrow'
                     
                     if isempty(evt.Modifier)
                         obj.selectPeak(1);
                     end
                     
-                case 'leftarrow'
+                case obj.settings.keyboard.previousSample %'leftarrow'
                     
                     if isempty(evt.Modifier)
                         obj.selectSample(-1);
                     end
                     
-                case 'rightarrow'
+                case obj.settings.keyboard.nextSample %'rightarrow'
                     
                     if isempty(evt.Modifier)
                         obj.selectSample(1);
-                    end
-                    
-                case 'backspace'
-                    
-                    if isempty(evt.Modifier)
-                        obj.clearPeak();
                     end
                     
                 case 'tab'

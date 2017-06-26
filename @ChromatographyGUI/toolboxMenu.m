@@ -22,9 +22,9 @@ obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 obj.menu.file.import.Separator = 'on';
 obj.menu.file.exit.Separator   = 'on';
 
-obj.menu.file.save.Callback    = {@saveCheckpoint, obj};
+obj.menu.file.save.Callback = {@saveCheckpoint, obj};
 
-obj.menu.file.exit.Callback    = 'closereq';
+obj.menu.file.exit.Callback = 'closereq';
 
 % ---------------------------------------
 % File Menu --> Load
@@ -88,40 +88,39 @@ obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.deleteSample   = newMenu(obj.menu.edit.delete, 'Data');
-obj.menu.edit.deleteSelected = newMenu(obj.menu.edit.deleteSample, 'Selected rows...');
+obj.menu.edit.deleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
 
 obj.menu.edit.deleteSelected.Callback = {@tableDeleteRowMenu, obj};
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.data      = newMenu(obj.menu.view.main, 'Data');
+obj.menu.view.data      = newMenu(obj.menu.view.main, 'Sample');
 obj.menu.view.peak      = newMenu(obj.menu.view.main, 'Peak');
 obj.menu.view.zoom      = newMenu(obj.menu.view.main, 'Zoom');
 obj.menu.view.plotLabel = newMenu(obj.menu.view.data, 'Show Label');
 obj.menu.view.peakLabel = newMenu(obj.menu.view.peak, 'Show Label');
 obj.menu.view.peakLine  = newMenu(obj.menu.view.peak, 'Show Line');
 
-obj.menu.view.plotLabel.Tag      = 'showPlotLabel';
-obj.menu.view.peakLabel.Tag      = 'showPeakLabel';
-obj.menu.view.peakLine.Tag       = 'showPeakLine';
+obj.menu.view.plotLabel.Tag = 'showPlotLabel';
+obj.menu.view.peakLabel.Tag = 'showPeakLabel';
+obj.menu.view.peakLine.Tag  = 'showPeakLine';
 
-obj.menu.view.plotLabel.Checked  = 'on';
-obj.menu.view.peakLabel.Checked  = 'on';
-obj.menu.view.peakLine.Checked   = 'on';
+obj.menu.view.plotLabel.Checked = 'on';
+obj.menu.view.peakLabel.Checked = 'on';
+obj.menu.view.peakLine.Checked  = 'on';
 
 obj.menu.view.plotLabel.Callback = {@plotViewMenuCallback, obj};
 obj.menu.view.peakLabel.Callback = {@peakViewMenuCallback, obj};
 obj.menu.view.peakLine.Callback  = {@peakViewMenuCallback, obj};
 obj.menu.view.zoom.Callback      = {@zoomMenuCallback, obj};
 
-obj.menu.view.zoom.Separator     = 'on';
+obj.menu.view.zoom.Separator = 'on';
 
 % ---------------------------------------
 % Options Menu
 % ---------------------------------------
-obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Data');
+obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Sample');
 obj.menu.peakOptions = newMenu(obj.menu.options.main, 'Peak');
 
 % ---------------------------------------
@@ -147,18 +146,18 @@ obj.menu.labelVialNum    = newMenu(obj.menu.labelData, 'Vial #');
 obj.menu.labelSelectAll  = newMenu(obj.menu.labelData, 'Select All');
 obj.menu.labelSelectNone = newMenu(obj.menu.labelData, 'Select None');
 
-obj.menu.labelRowNum.Tag          = 'row_num';
-obj.menu.labelFilePath.Tag        = 'file_path';
-obj.menu.labelFileName.Tag        = 'file_name';
-obj.menu.labelInstrument.Tag      = 'instrument';
-obj.menu.labelDatetime.Tag        = 'datetime';
-obj.menu.labelMethodName.Tag      = 'method_name';
-obj.menu.labelSampleName.Tag      = 'sample_name';
-obj.menu.labelOperator.Tag        = 'operator';
-obj.menu.labelSeqIndex.Tag        = 'seqindex';
-obj.menu.labelVialNum.Tag         = 'vial';
-obj.menu.labelSelectAll.Tag       = 'selectAll';
-obj.menu.labelSelectNone.Tag      = 'selectNone';
+obj.menu.labelRowNum.Tag     = 'row_num';
+obj.menu.labelFilePath.Tag   = 'file_path';
+obj.menu.labelFileName.Tag   = 'file_name';
+obj.menu.labelInstrument.Tag = 'instrument';
+obj.menu.labelDatetime.Tag   = 'datetime';
+obj.menu.labelMethodName.Tag = 'method_name';
+obj.menu.labelSampleName.Tag = 'sample_name';
+obj.menu.labelOperator.Tag   = 'operator';
+obj.menu.labelSeqIndex.Tag   = 'seqindex';
+obj.menu.labelVialNum.Tag    = 'vial';
+obj.menu.labelSelectAll.Tag  = 'selectAll';
+obj.menu.labelSelectNone.Tag = 'selectNone';
 
 obj.menu.labelRowNum.Callback     = {@plotLabelCallback, obj};
 obj.menu.labelFilePath.Callback   = {@plotLabelCallback, obj};
@@ -208,13 +207,13 @@ obj.menu.labelPeakArea   = newMenu(obj.menu.peakOptionsLabel, 'Area');
 obj.menu.labelPeakAll    = newMenu(obj.menu.peakOptionsLabel, 'Select All');
 obj.menu.labelPeakNone   = newMenu(obj.menu.peakOptionsLabel, 'Select None');
 
-obj.menu.labelPeakName.Tag        = 'peakName';
-obj.menu.labelPeakTime.Tag        = 'peakTime';
-obj.menu.labelPeakWidth.Tag       = 'peakWidth';
-obj.menu.labelPeakHeight.Tag      = 'peakHeight';
-obj.menu.labelPeakArea.Tag        = 'peakArea';
-obj.menu.labelPeakAll.Tag         = 'selectAll';
-obj.menu.labelPeakNone.Tag        = 'selectNone';
+obj.menu.labelPeakName.Tag   = 'peakName';
+obj.menu.labelPeakTime.Tag   = 'peakTime';
+obj.menu.labelPeakWidth.Tag  = 'peakWidth';
+obj.menu.labelPeakHeight.Tag = 'peakHeight';
+obj.menu.labelPeakArea.Tag   = 'peakArea';
+obj.menu.labelPeakAll.Tag    = 'selectAll';
+obj.menu.labelPeakNone.Tag   = 'selectNone';
 
 obj.menu.labelPeakName.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelPeakTime.Callback   = {@plotLabelCallback, obj};
@@ -244,11 +243,11 @@ end
 obj.menu.peakNeuralNetwork = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
 obj.menu.peakExpGaussian   = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
 
-obj.menu.peakNeuralNetwork.Tag      = 'peakNN';
-obj.menu.peakExpGaussian.Tag        = 'peakEGH';
+obj.menu.peakNeuralNetwork.Tag = 'peakNN';
+obj.menu.peakExpGaussian.Tag   = 'peakEGH';
 
-obj.menu.peakNeuralNetwork.Checked  = 'off';
-obj.menu.peakExpGaussian.Checked    = 'on';
+obj.menu.peakNeuralNetwork.Checked = 'off';
+obj.menu.peakExpGaussian.Checked   = 'on';
 
 obj.menu.peakNeuralNetwork.Callback = {@peakModelMenuCallback, obj};
 obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
@@ -259,11 +258,11 @@ obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
 obj.menu.peakOptionsAreaActual = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
 obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
 
-obj.menu.peakOptionsAreaActual.Tag      = 'rawData';
-obj.menu.peakOptionsAreaFit.Tag         = 'fitData';
+obj.menu.peakOptionsAreaActual.Tag = 'rawData';
+obj.menu.peakOptionsAreaFit.Tag    = 'fitData';
 
-obj.menu.peakOptionsAreaActual.Checked  = 'on';
-obj.menu.peakOptionsAreaFit.Checked     = 'off';
+obj.menu.peakOptionsAreaActual.Checked = 'on';
+obj.menu.peakOptionsAreaFit.Checked    = 'off';
 
 obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
 obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
@@ -286,6 +285,10 @@ if any(strcmpi('.git', {sourcePath.name}))
     [gitStatus, ~] = system('git --version');
     
     if ~gitStatus
+        
+        userPath = pwd;
+        cd(obj.toolbox_path);
+        
         [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
         
         if ~gitStatus
@@ -305,6 +308,9 @@ if any(strcmpi('.git', {sourcePath.name}))
             obj.menu.help.update.Separator = 'on';
             
         end
+        
+        cd(userPath);
+        
     end
 end
 
@@ -351,17 +357,17 @@ if ~isempty(data) && isstruct(data)
     end
     
     % Sort by sequence index
-    [~, idx] = sort([data.seqindex]);
+    [~, idx] = sort([data.seqindex], 'ascend');
     
     if length(idx) == length(data)
-        data(idx) = data;
+        data = data(idx);
     end
     
     % Sort by file path
     [~, idx] = sort({data.file_path});
     
     if length(idx) == length(data)
-        data(idx) = data;
+        data = data(idx);
     end
     
     % Update GUI
@@ -810,9 +816,9 @@ for i = 1:nRows
 end
 
 if isempty(row)
-    message = 'Delete selected rows?';
+    message = 'Delete selected samples?';
 else
-    message = ['Delete selected rows (', row, ')?'];
+    message = ['Delete selected samples (', row, ')?'];
 end
 
 msg = questdlg(...

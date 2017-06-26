@@ -221,7 +221,7 @@ for i = 1:length(file)
     
     if strcmpi(parentExt, '.D')
         data(i,1).file_path = parentPath;
-        data(i,1).file_name = [parentName, parentExt, '/', fileName, fileExt];
+        data(i,1).file_name = [parentName, parentExt, filesep, fileName, fileExt];
     else
         data(i,1).file_path = filePath;
         data(i,1).file_name = [fileName, fileExt];
@@ -243,8 +243,14 @@ for i = 1:length(file)
     % Read
     % ---------------------------------------
     if ~ishandle(h)
-        data = [];
+        %data = [];
         break
+    else
+        updateWaitbar(h, i, length(file), data(i,1).file_name);
+        %m = num2str(i);
+        %n = num2str();
+        %msg = [' (', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
+        %waitbar(i/length(file), h, ['Loading ' , msg]);    
     end
     
     if data(i,1).file_size ~= 0
@@ -268,12 +274,6 @@ for i = 1:length(file)
         
     end
     
-    m = num2str(i);
-    n = num2str(length(file));
-    msg = ['(', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
-    
-    waitbar(i/length(file), h, ['Loading... ', msg]);
-    
 end
 
 % ---------------------------------------
@@ -284,6 +284,25 @@ if ishandle(h)
     status(option.verbose, 'summary_stats', length(data), toc, sum([data.file_size]));
     status(option.verbose, 'exit');
 end
+
+end
+
+% ---------------------------------------
+% Waitbar
+% ---------------------------------------
+function updateWaitbar(h, i, j, filename)
+
+m = num2str(i);
+n = num2str(j);
+msg = [' (', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
+
+x = fileparts(filename);
+
+if isempty(x)
+    x = filename;
+end
+
+waitbar(i/j, h, ['Loading... ' x, msg]);
 
 end
 

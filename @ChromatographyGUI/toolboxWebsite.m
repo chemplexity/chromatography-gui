@@ -1,5 +1,5 @@
 function toolboxWebsite(obj, varargin)
 
-web(ChromatographyGUI.url);
+web(ChromatographyGUI.url, '-browser');
 
 end

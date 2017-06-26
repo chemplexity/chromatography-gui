@@ -169,21 +169,7 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
-            if any(obj.table.selection(:,2) == 1)
-                    
-                    msg = questdlg(...
-                        tableDeleteMessage(obj),...
-                        'Delete',...
-                        'Yes', 'No', 'Yes');
-                    
-                    switch msg
-                        case 'Yes'
-                            obj.tableDeleteRow();
-                        case 'No'
-                            return
-                    end     
-            
-            elseif any(any(obj.table.selection(:,2) == [9,13]))
+            if any(any(obj.table.selection(:,2) == [9,13]))
                 
                 for i = 1:length(obj.table.selection(:,2))
                     
@@ -257,9 +243,9 @@ for i = 1:nRows
 end
 
 if isempty(row)
-    message = 'Delete selected rows?';
+    message = 'Delete selected samples?';
 else
-    message = ['Delete selected rows (', row, ')?'];
+    message = ['Delete selected samples (', row, ')?'];
 end
 
 end
