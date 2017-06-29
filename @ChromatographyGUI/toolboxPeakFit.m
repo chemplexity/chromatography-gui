@@ -14,28 +14,28 @@ if length(obj.data) < row || length(obj.peaks.name) < col
 end
 
 if isempty(varargin)
-    userTime = str2double(obj.controls.peakTimeEdit.String);
+    userX = str2double(obj.controls.peakTimeEdit.String);
 else
-    userTime = varargin{1};
+    userX = varargin{1};
 end
 
-if isnan(userTime) || isinf(userTime)
+if isnan(userX) || isinf(userX)
     return
 else
     [x,y] = getXY(obj);
 end
 
-if isempty(x) || isempty(y) || userTime > max(x) || userTime < min(x)
+if isempty(x) || isempty(y) || userX > max(x) || userX < min(x)
     return
 end
 
 switch obj.settings.peakModel
     
-    case 'nn'
-        getNN(obj, x, y, userTime)
+    case {'nn', 'nn1', 'nn2'}
+        getNN(obj, x, y, userX)
         
-    case 'egh'
-        getEGH(obj, x, y, userTime);
+    case {'egh'}
+        getEGH(obj, x, y, userX);
         
 end
 
@@ -70,36 +70,62 @@ function getNN(obj, x, y, peakCenter)
 row = obj.view.index;
 col = obj.controls.peakList.Value;
 
-px = findpeaks(x, y,...
+% Select Peak
+px = peakfindNN(x, y,...
     'xmin', peakCenter - 0.5,...
     'xmax', peakCenter + 0.5,...
     'sensitivity', 250);
 
 if ~isempty(px)
+    
     [~, ii] = min(abs(peakCenter - px(:,1)));
-    peakCenter = px(ii,1);
+    xc = px(ii,1);
+    
+    xtol = 0.04;
+    xf = x(x >= xc-xtol & x <= xc+xtol);
+    yf = y(x >= xc-xtol & x <= xc+xtol);
+    
+    if ~isempty(yf)
+        [~,xi] = max(yf);
+        peakCenter = xf(xi);
+    else
+        peakCenter = px(ii,1);
+    end
+    
 else
     peakCenter = findPeakCenter(x, y, peakCenter);
 end
 
-peak = peakfitNN(...
-    x, y, peakCenter,...
-    'area', obj.settings.peakArea);
-
-if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
+% Select Model
+switch obj.settings.peakModel
     
+    case {'nn1'}
+        nnVersion = 'v1';
+        
+    case {'nn2', 'nn'}
+        nnVersion = 'v2';
+        
+    otherwise
+        nnVersion = 'latest';  
+        
+end
+
+% Peak Fit
+peak = peakfitNN(x, y, peakCenter,...
+    'area', obj.settings.peakArea,...
+    'version', nnVersion);
+
+% Update
+if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.updatePeakData(row, col, peak);
     obj.updatePeakTable(row, col);
     obj.updatePeakLine(col);
     obj.plotPeakLabels(col);
-    
 else
-    
     obj.clearPeakData(row, col);
     obj.clearPeakTable(row, col);
     obj.clearPeakLine(col);
     obj.clearPeakLabel(col);
-    
 end
 
 end
@@ -248,7 +274,7 @@ end
 
 end
 
-function peakCenter = findPeakCenter(x,y,peakCenter)
+function peakCenter = findPeakCenter(x, y, peakCenter)
 
 pIndex = find(x >= peakCenter, 1);
 

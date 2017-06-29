@@ -158,7 +158,7 @@ end
 % ---------------------------------------
 % Peak detection
 % ---------------------------------------
-peakParameter = peakdetection(x, y, 'center', center, 'width', width);
+peakParameter = peakfindEGH(x, y, 'center', center, 'width', width);
 
 if ~isempty(peakParameter)
     peakParameter = addParameters(x, y, peakParameter);
@@ -173,9 +173,14 @@ EGH.e = @(a, b, alpha) (-1 ./ log(alpha)) .* (b - a);
 EGH.a = @(h, w, e, e0) h .* (w .* sqrt(pi/8) + abs(e)) .* e0;
 EGH.t = @(w, e) atan(abs(e) ./ w);
 
-EGH.c = @(t) 4.000000 * t^0 + -6.293724 * t^1 + 9.2328340 * t^2 + ...
-            -11.34291 * t^3 + 9.1239780 * t^4 + -4.173753 * t^5 + ...
-            0.8277970 * t^6;
+EGH.c = @(t) ...
+     4.000000 * t^0 + ...
+    -6.293724 * t^1 + ...
+     9.232834 * t^2 + ...
+    -11.34291 * t^3 + ...
+     9.123978 * t^4 + ...
+    -4.173753 * t^5 + ...
+     0.827797 * t^6;
 
 % ---------------------------------------
 % Curve fitting
@@ -377,13 +382,13 @@ end
 dy0 = [0; diff(y0)];
 dy1 = [0; diff(y1)];
 
-switch targetArea
+switch lower(targetArea)
     
-    case {'rawdata', 'rawData'}
+    case {'rawdata', 'raw'}
         dyt = dy0;
         yt = y0;
         
-    case {'fitdata', 'fitData'}
+    case {'fitdata', 'fit'}
         dyt = dy1;
         yt = y1;   
         
@@ -458,6 +463,7 @@ else
 end
 
 if length(xi) == length(yi)
+    xi = xi .* 60;
     area = trapz(xi, yi);
 else
     area = 0;

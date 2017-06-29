@@ -4,10 +4,11 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.7.20170626';
+        version     = 'v0.0.7.20170629';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
+        screensize  = ChromatographyGUI.getScreenSize();
         
     end
     
@@ -2144,6 +2145,10 @@ classdef ChromatographyGUI < handle
             x = computer;
         end
         
+        function x = getScreenSize()
+            x = get(0, 'screensize');
+        end
+        
         function x = getEnvironment()
             
             if ~isempty(ver('MATLAB'))
@@ -2160,7 +2165,6 @@ classdef ChromatographyGUI < handle
         function x = getFont()
             
             sysFonts = listfonts;
-            
             x = 'FixedWidth';
             
             fontPref = {...

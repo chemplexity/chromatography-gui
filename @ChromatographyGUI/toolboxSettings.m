@@ -80,8 +80,8 @@ obj.settings.baselineSmoothness = 5.5;
 obj.settings.baselineAsymmetry  = -5.5;
 
 % Default Peak Area Settings
-obj.settings.peakModel = 'egh';     % 'nn' or 'egh'
-obj.settings.peakArea  = 'rawData'; % 'rawData' or 'fitData'
+obj.settings.peakModel = 'egh';     % 'egh', 'nn', 'nn1', 'nn2'
+obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
 
 % ---------------------------------------
 % Keyboard Shortcuts
@@ -180,7 +180,7 @@ obj.axes.xlim          = obj.settings.xlim;
 obj.axes.ylim          = obj.settings.ylim;
 
 if isfield(obj.settings, 'baselineAsymmetry')
-    obj.controls.asymSlider.Value   = obj.settings.baselineAsymmetry;
+    obj.controls.asymSlider.Value = obj.settings.baselineAsymmetry;
 end
 
 if isfield(obj.settings, 'baselineSmoothness')
@@ -219,26 +219,33 @@ end
 
 switch obj.settings.peakModel
     
-    case 'nn'
-        obj.menu.peakNeuralNetwork.Checked = 'on';
-        obj.menu.peakExpGaussian.Checked = 'off';
+    case {'nn1'}
+        obj.menu.peakNN1.Checked = 'on';
+        obj.menu.peakNN2.Checked = 'off';
+        obj.menu.peakEGH.Checked = 'off';
         
-    case 'egh'
-        obj.menu.peakNeuralNetwork.Checked = 'off';
-        obj.menu.peakExpGaussian.Checked = 'on';
+    case {'nn', 'nn2'}
+        obj.menu.peakNN1.Checked = 'off';
+        obj.menu.peakNN2.Checked = 'on';
+        obj.menu.peakEGH.Checked = 'off';
+        
+    case {'egh'}
+        obj.menu.peakNN1.Checked = 'off';
+        obj.menu.peakNN2.Checked = 'off';
+        obj.menu.peakEGH.Checked = 'on';
         
 end
 
-switch obj.settings.peakArea
+switch lower(obj.settings.peakArea)
     
-    case 'rawData'
+    case {'rawdata'}
         obj.menu.peakOptionsAreaActual.Checked = 'on';
         obj.menu.peakOptionsAreaFit.Checked = 'off';
         
-    case 'fitData'
+    case {'fitdata'}
         obj.menu.peakOptionsAreaActual.Checked = 'off';
         obj.menu.peakOptionsAreaFit.Checked = 'on';
-        
+
 end
 
 if obj.settings.showPlotLabel

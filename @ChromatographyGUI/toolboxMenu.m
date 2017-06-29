@@ -240,17 +240,21 @@ end
 % ---------------------------------------
 % Options --> Peak --> Model
 % ---------------------------------------
-obj.menu.peakNeuralNetwork = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
-obj.menu.peakExpGaussian   = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
+obj.menu.peakNN1 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v1.0');
+obj.menu.peakNN2 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v2.0');
+obj.menu.peakEGH = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
 
-obj.menu.peakNeuralNetwork.Tag = 'peakNN';
-obj.menu.peakExpGaussian.Tag   = 'peakEGH';
+obj.menu.peakNN1.Tag = 'peaknn1';
+obj.menu.peakNN2.Tag = 'peaknn2';
+obj.menu.peakEGH.Tag = 'peakegh';
 
-obj.menu.peakNeuralNetwork.Checked = 'off';
-obj.menu.peakExpGaussian.Checked   = 'on';
+obj.menu.peakNN1.Checked = 'off';
+obj.menu.peakNN2.Checked = 'off';
+obj.menu.peakEGH.Checked = 'on';
 
-obj.menu.peakNeuralNetwork.Callback = {@peakModelMenuCallback, obj};
-obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
+obj.menu.peakNN1.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakNN2.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakEGH.Callback = {@peakModelMenuCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Area
@@ -258,8 +262,8 @@ obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
 obj.menu.peakOptionsAreaActual = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
 obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
 
-obj.menu.peakOptionsAreaActual.Tag = 'rawData';
-obj.menu.peakOptionsAreaFit.Tag    = 'fitData';
+obj.menu.peakOptionsAreaActual.Tag = 'rawdata';
+obj.menu.peakOptionsAreaFit.Tag    = 'fitdata';
 
 obj.menu.peakOptionsAreaActual.Checked = 'on';
 obj.menu.peakOptionsAreaFit.Checked    = 'off';
@@ -312,6 +316,7 @@ if any(strcmpi('.git', {sourcePath.name}))
         cd(userPath);
         
     end
+    
 end
 
 end
@@ -1071,11 +1076,14 @@ end
 src.Checked = 'on';
 
 switch src.Tag
-    
-    case 'peakNN'
-        obj.settings.peakModel = 'nn';
-        
-    case 'peakEGH'
+
+    case 'peaknn1'
+        obj.settings.peakModel = 'nn1';
+
+    case 'peaknn2'
+        obj.settings.peakModel = 'nn2';
+
+    case 'peakegh'
         obj.settings.peakModel = 'egh';
         
 end
