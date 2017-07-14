@@ -143,32 +143,6 @@ updateFinish(git, w, returnPath);
 
 end
 
-function updateCleanup()
-
-% Toolbox Path
-toolboxPath = fileparts(fileparts(mfilename('fullpath')));
-
-% Version < v0.0.5 
-examplePath   = [toolboxPath, filesep, 'examples'];
-integratePath = [toolboxPath, filesep, 'src', filesep, 'integration'];
-integrateFile = {'findpeaks.p', 'exponentialgaussian.m', 'peakdetection.m'};
-
-% chromatography-gui/examples
-if isdir(examplePath)
-    if length(dir(examplePath)) <= 3
-        rmdir(examplePath, 's');
-    end
-end
-
-% chromatography-gui/src/integration
-for i = 1:length(integrateFile)
-    if exist([integratePath, filesep, integrateFile{i}], 'file')
-        delete([integratePath, filesep, integrateFile{i}]);
-    end
-end
-
-end
-
 function updateWaitbar(h, x, msg)
 
 if any(ishandle(h))
@@ -197,7 +171,6 @@ end
 status = hashGit(git);
 
 if status == -1
-    updateCleanup();
     msg = 'Please exit and restart ChromatographyGUI to complete update...';
     questdlg(msg, 'Update', 'OK', 'OK');
 end

@@ -29,10 +29,8 @@ obj.menu.file.exit.Callback = 'closereq';
 % ---------------------------------------
 % File Menu --> Load
 % ---------------------------------------
-obj.menu.loadRaw     = newMenu(obj.menu.file.load, 'Data');
-obj.menu.loadData    = newMenu(obj.menu.file.load, 'Workspace');
-obj.menu.loadAgilent = newMenu(obj.menu.loadRaw, 'Agilent (*.D)');
-obj.menu.loadMat     = newMenu(obj.menu.loadData, 'MAT (*.MAT)');
+obj.menu.loadAgilent = newMenu(obj.menu.file.load, 'Agilent (*.D)');
+obj.menu.loadMat     = newMenu(obj.menu.file.load, 'Workspace (*.MAT)');
 
 obj.menu.loadAgilent.Callback = {@loadAgilentCallback, obj};
 obj.menu.loadMat.Callback     = {@loadMatlabCallback, obj};
@@ -42,10 +40,9 @@ obj.menu.loadMat.Callback     = {@loadMatlabCallback, obj};
 % ---------------------------------------
 obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
 obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
-obj.menu.saveData  = newMenu(obj.menu.file.saveAs, 'Workspace');
 obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
 obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
-obj.menu.saveMat   = newMenu(obj.menu.saveData, 'MAT (*.MAT)');
+obj.menu.saveMat   = newMenu(obj.menu.file.saveAs, 'Workspace (*.MAT)');
 
 obj.menu.saveImg.Callback = {@saveImageCallback, obj};
 obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};

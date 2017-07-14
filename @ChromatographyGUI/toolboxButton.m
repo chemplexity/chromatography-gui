@@ -58,7 +58,7 @@ b3(3) = b2(3);
 b3(4) = b2(4);
 
 obj.controls.applyBaseline = newPushButton(...
-    obj, obj.panel.baseline, 'Apply', 'applybaseline', b2);
+    obj, obj.panel.baseline, 'Refresh', 'applybaseline', b2);
 
 obj.controls.clearBaseline = newPushButton(...
     obj, obj.panel.baseline, 'Clear', 'clearbaseline', b3);
@@ -262,7 +262,7 @@ b1(3) = b2(3);
 b1(4) = b2(4);
 
 obj.controls.showBaseline = newToggleButton(...
-    obj, obj.panel.baseline, 'Show', 'showbaseline', 0, b1);
+    obj, obj.panel.baseline, 'Show', 'showbaseline', 1, b1);
 
 % Integrate Tab --> Show Peaks
 it1(1) = 0.725;

@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.7.20170629';
+        version     = 'v0.0.7.20170713';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1213,7 +1213,6 @@ classdef ChromatographyGUI < handle
         
         function initializeGUI(obj, varargin)
             
-            obj.toolboxVerify();
             obj.toolboxFigure();
             obj.toolboxMenu();
             obj.toolboxPanel();
