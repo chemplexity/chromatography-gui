@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = 'v0.0.7.20170713';
+        version     = 'v0.0.7.20170717';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1367,9 +1367,7 @@ classdef ChromatographyGUI < handle
         
         function updateAllPeakListText(obj, varargin)
             
-            if isempty(obj.data) || obj.view.index == 0
-                return
-            elseif isempty(obj.controls.peakList.String)
+            if isempty(obj.controls.peakList.String)
                 return
             elseif ~obj.controls.peakList.Value
                 return
@@ -1381,7 +1379,9 @@ classdef ChromatographyGUI < handle
             
             for i = 1:length(obj.controls.peakList.String)
                 
-                if ~isempty(obj.peaks.time{obj.view.index,i})
+                if obj.view.index == 0
+                    str = obj.peaks.name{i};
+                elseif ~isempty(obj.peaks.time{obj.view.index,i})
                     str = ['<html>', '&#10004 ', obj.peaks.name{i}];
                 else
                     str = obj.peaks.name{i};
