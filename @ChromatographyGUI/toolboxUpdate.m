@@ -29,7 +29,7 @@ end
 % ---------------------------------------
 % Check Online Version
 % ---------------------------------------
-updateWaitbar(w, 0.0, 'Checking online for available updates...');
+updateWaitbar(w, 0.0, 'Checking online for new updates...');
 
 [latestVersion, updateStatus] = checkUpdate();
 
@@ -49,7 +49,7 @@ switch updateStatus
         return
         
     case {'y'}
-        updateWaitbar(w, 0.15, 'New updates available!' );
+        updateWaitbar(w, 0.15, 'New updates are available!' );
         
     otherwise
         updateWaitbar(w, 1, 'Error retrieving latest online version...');
@@ -370,7 +370,7 @@ function status = remoteGit(git, url, w, n)
 
 if status || isempty(remote)
     
-    updateWaitbar(w, n, 'Linking repository to online remote...');
+    updateWaitbar(w, n, 'Linking ''git'' repository to online remote...');
     
     [status, remote] = system([git, ' remote add origin ', url, '.git']);
     
@@ -419,7 +419,7 @@ if ~status && isempty(msg)
     end
     
     if status
-        updateWaitbar(w, 1, 'Error executing ''git branch''');
+        updateWaitbar(w, 1, 'Error executing ''git branch''...');
     end
     
 end
@@ -674,7 +674,7 @@ updateStatus     = 'unknown';
 urlHome = 'https://raw.githubusercontent.com/chemplexity/chromatography-gui/';
 urlFile = '/%40ChromatographyGUI/ChromatographyGUI.m';
 
-if ~isempty(contains(installedVersion, 'dev'))
+if ~isempty(regexp(installedVersion, 'dev', 'once'))
     urlBranch = 'develop';
 else
     urlBranch = 'master';
@@ -687,7 +687,7 @@ if s ~= 1
     updateStatus = 'error';
     return
 else
-    [txt, ~] = regexpi(txt, '(\d+[.]\d+[.]\d+[.]\d+[.a-zA-Z]*)', 'tokens', 'once');
+    [txt, ~] = regexpi(txt, '(\d+[.]\d+[.]\d+[.]\d+[-]*\w*)', 'tokens', 'once');
 end
 
 % Parse version number
