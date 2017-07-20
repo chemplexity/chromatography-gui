@@ -277,45 +277,6 @@ obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
 obj.menu.help.website.Callback = @obj.toolboxWebsite;
 obj.menu.help.update.Callback  = @obj.toolboxUpdate;
 
-% ---------------------------------------
-% Developer Mode
-% ---------------------------------------
-sourcePath = dir(fileparts(fileparts(mfilename('fullpath'))));
-
-if any(strcmpi('.git', {sourcePath.name}))
-    [gitStatus, ~] = system('git --version');
-    
-    if ~gitStatus
-        
-        userPath = pwd;
-        cd(obj.toolbox_path);
-        
-        [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
-        
-        if ~gitStatus
-            
-            gitBranch = deblank(strtrim(gitBranch));
-            
-            if strcmpi(gitBranch, 'develop')
-                developerMode = 'on';
-            else
-                developerMode = 'off';
-            end
-            
-            obj.menu.help.update = newMenu(obj.menu.help.main, 'Developer Mode');
-            
-            obj.menu.help.update.Checked   = developerMode;
-            obj.menu.help.update.Callback  = @developerModeCallback;
-            obj.menu.help.update.Separator = 'on';
-            
-        end
-        
-        cd(userPath);
-        
-    end
-    
-end
-
 end
 
 % ---------------------------------------
@@ -1099,67 +1060,6 @@ end
 src.Checked = 'on';
 
 obj.settings.peakArea = src.Tag;
-
-end
-
-% ---------------------------------------
-% Enable/Disable Developer Mode
-% ---------------------------------------
-function developerModeCallback(src, ~)
-
-[gitStatus, ~] = system('git --version');
-
-if gitStatus
-    return
-end
-
-if strcmpi(src.Checked, 'on')
-    src.Checked = 'off';
-else
-    src.Checked = 'on';
-end
-
-currentPath = pwd;
-sourcePath = fileparts(fileparts(mfilename('fullpath')));
-cd(sourcePath);
-
-[gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
-
-if gitStatus
-    return
-else
-    gitBranch = deblank(strtrim(gitBranch));
-end
-
-if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
-    
-    [gitStatus,~] = system('git checkout develop');
-    
-    if gitStatus
-        msg = 'Error switching to developer mode...';
-    else
-        msg = 'Please restart ChromatographyGUI to enter developer mode...';
-    end
-    
-elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')
-    
-    [gitStatus,~] = system('git checkout master');
-    
-    if gitStatus
-        msg = 'Error switching from developer mode...';
-    else
-        msg = 'Please restart ChromatographyGUI to exit developer mode...';
-    end
-    
-else
-    msg = '';
-end
-
-if ~isempty(msg)
-    questdlg(msg, 'Developer Mode', 'OK', 'OK');
-end
-
-cd(currentPath);
 
 end
 
