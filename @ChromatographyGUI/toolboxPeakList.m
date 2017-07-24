@@ -1,8 +1,8 @@
 function toolboxPeakList(obj, ~, ~, varargin)
 
-% Peak List (struct) v0.0.5, v0.0.6
+% Peak List (struct) > v0.0.5
 %
-% version (char)    : 'v0.0.x.y'
+% version (char)    : 'x.y.z.date'
 % name (char)       : 'peaklist'
 % data (cell) (nx1) : peak name (char) 
 
@@ -121,7 +121,7 @@ user_peaks.data    = obj.peaks.name;
 
 exportMAT(user_peaks,...
     'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
-    'name', 'user_peaks',...
+    'varname', 'user_peaks',...
     'suggest', 'default_peaklist');
 
 end

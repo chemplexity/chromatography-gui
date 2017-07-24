@@ -15,8 +15,8 @@ obj.menu.help.main    = newMenu(obj.figure, 'Help');
 obj.menu.file.load   = newMenu(obj.menu.file.main, 'Load');
 obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
-obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
-obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
+%obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
+%obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
 obj.menu.file.import.Separator = 'on';
@@ -24,48 +24,60 @@ obj.menu.file.exit.Separator   = 'on';
 
 obj.menu.file.save.Callback = {@saveCheckpoint, obj};
 
-obj.menu.file.exit.Callback = 'closereq';
+obj.menu.file.exit.Callback = @obj.closeRequest; %'closereq';
 
 % ---------------------------------------
 % File Menu --> Load
 % ---------------------------------------
-obj.menu.loadAgilent = newMenu(obj.menu.file.load, 'Agilent (*.D)');
-obj.menu.loadMat     = newMenu(obj.menu.file.load, 'Workspace (*.MAT)');
+obj.menu.loadAgilent   = newMenu(obj.menu.file.load, 'Agilent data (*.D)');
+obj.menu.loadWorkspace = newMenu(obj.menu.file.load, 'Workspace data (*.MAT)');
+obj.menu.loadPeaklist  = newMenu(obj.menu.file.load, 'Peak list (*.MAT)');
 
-obj.menu.loadAgilent.Callback = {@loadAgilentCallback, obj};
-obj.menu.loadMat.Callback     = {@loadMatlabCallback, obj};
+obj.menu.loadAgilent.Callback   = {@loadAgilentCallback, obj};
+obj.menu.loadWorkspace.Callback = {@loadMatlabCallback, obj};
+obj.menu.loadPeaklist.Callback  = {@obj.toolboxPeakList, 'load_custom'};
 
 % ---------------------------------------
 % File Menu --> Save As
 % ---------------------------------------
-obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
-obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
-obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
-obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
-obj.menu.saveMat   = newMenu(obj.menu.file.saveAs, 'Workspace (*.MAT)');
+%obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
+%obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
+%obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
+%obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
+%obj.menu.saveMat   = newMenu(obj.menu.file.saveAs, 'Workspace (*.MAT)');
 
-obj.menu.saveImg.Callback = {@saveImageCallback, obj};
-obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};
-obj.menu.saveMat.Callback = {@saveMatlabCallback, obj};
+obj.menu.saveWorkspace = newMenu(obj.menu.file.saveAs, 'Workspace data (*.MAT)');
+obj.menu.savePeaklist  = newMenu(obj.menu.file.saveAs, 'Peak list (*.MAT)');
+obj.menu.saveImg       = newMenu(obj.menu.file.saveAs, 'Figure image (*.JPG, *.PNG, *.TIFF)');
+obj.menu.saveTable     = newMenu(obj.menu.file.saveAs, 'Table data (*.CSV)');
+
+%obj.menu.saveImg.Callback = {@saveImageCallback, obj};
+%obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};
+%obj.menu.saveMat.Callback = {@saveMatlabCallback, obj};
+obj.menu.saveWorkspace.Callback = {@saveMatlabCallback, obj};
+obj.menu.savePeaklist.Callback  = {@obj.toolboxPeakList, 'save_custom'};
+obj.menu.saveImg.Callback       = {@saveImageCallback, obj};
+obj.menu.saveCsv.Callback       = {@saveCsvCallback, obj};
 
 if ispc
-    obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
+    %obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
+    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table data (*.XLS, *.XLSX)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
 
 % ---------------------------------------
 % File Menu --> Import/Export
 % ---------------------------------------
-obj.menu.file.importPeakList = newMenu(obj.menu.file.import, 'Peak List');
-obj.menu.file.importSettings = newMenu(obj.menu.file.import, 'Settings');
+%obj.menu.file.importPeakList = newMenu(obj.menu.file.import, 'Peak List');
+%obj.menu.file.importSettings = newMenu(obj.menu.file.import, 'Settings');
 
-obj.menu.file.exportPeakList = newMenu(obj.menu.file.export, 'Peak List');
-obj.menu.file.exportSettings = newMenu(obj.menu.file.export, 'Settings');
+%obj.menu.file.exportPeakList = newMenu(obj.menu.file.export, 'Peak List');
+%obj.menu.file.exportSettings = newMenu(obj.menu.file.export, 'Settings');
 
-obj.menu.file.importPeakList.Callback = {@obj.toolboxPeakList, 'load_custom'};
-obj.menu.file.importSettings.Callback = {@obj.toolboxSettings, 'load_custom'};
-obj.menu.file.exportPeakList.Callback = {@obj.toolboxPeakList, 'save_custom'};
-obj.menu.file.exportSettings.Callback = {@obj.toolboxSettings, 'save_custom'};
+%obj.menu.file.importPeakList.Callback = {@obj.toolboxPeakList, 'load_custom'};
+%obj.menu.file.importSettings.Callback = {@obj.toolboxSettings, 'load_custom'};
+%obj.menu.file.exportPeakList.Callback = {@obj.toolboxPeakList, 'save_custom'};
+%obj.menu.file.exportSettings.Callback = {@obj.toolboxSettings, 'save_custom'};
 
 % ---------------------------------------
 % Edit Menu
@@ -353,11 +365,29 @@ function loadMatlabCallback(~, ~, obj)
 
 [data, file] = importMAT();
 
-if ~isempty(data) && isstruct(data) && isfield(data, 'data')
+if ~isempty(data) && isstruct(data) %&& isfield(data, 'data')
     
-    data = data.data;
+    %data = data.data;
     
+    if isstruct(data) && length(fields(data)) == 1
+        x = fields(data);
+        data = data.(x{1});
+    end
+        
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
+        
+        if ~isfield(data, 'time') && ~isfield(data, 'intensity')
+            return
+        end
+        
+        if ~isfield(data, 'baseline')
+            data(1).baseline = [];
+        end
+        
+        if ~isfield(data, 'peaks')
+            data(1).peaks = [];
+            data(1).peaks.name = obj.peaks.name;
+        end
         
         obj.data = data;
         obj.peaks = obj.data(1).peaks;
@@ -379,6 +409,7 @@ if ~isempty(data) && isstruct(data) && isfield(data, 'data')
         obj.updateFigure();
         
     end
+    
 end
 
 end
@@ -400,7 +431,7 @@ else
     file = [];
 end
 
-file = exportMAT(obj.data, 'file', file, 'name', 'data');
+file = exportMAT(obj.data, 'file', file, 'varname', 'data');
 
 if ischar(file)
     obj.checkpoint = file;
@@ -419,7 +450,7 @@ else
     return
 end
 
-file = exportMAT(obj.data, 'name', 'data');
+file = exportMAT(obj.data, 'varname', 'data');
 
 if ischar(file)
     obj.checkpoint = file;

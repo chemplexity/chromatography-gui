@@ -58,7 +58,7 @@ b3(3) = b2(3);
 b3(4) = b2(4);
 
 obj.controls.applyBaseline = newPushButton(...
-    obj, obj.panel.baseline, 'Refresh', 'applybaseline', b2);
+    obj, obj.panel.baseline, 'Apply', 'applybaseline', b2);
 
 obj.controls.clearBaseline = newPushButton(...
     obj, obj.panel.baseline, 'Clear', 'clearbaseline', b3);
@@ -557,7 +557,7 @@ switch src.Tag
             end
             
             src.String = str(obj.axes.xlim(1));
-            obj.axes.xmode = 'manual';
+            obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
@@ -565,7 +565,7 @@ switch src.Tag
             return
             
         elseif x < obj.axes.xlim(2)
-            obj.axes.xmode = 'manual';
+            obj.settings.xmode = 'manual';
             obj.axes.xlim(1) = x;
             obj.updateAxesXLim();
             
@@ -587,7 +587,7 @@ switch src.Tag
             end
             
             src.String = str(obj.axes.xlim(2));
-            obj.axes.xmode = 'manual';
+            obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
@@ -596,7 +596,7 @@ switch src.Tag
             
         elseif x > obj.axes.xlim(1)
             obj.axes.xlim(2) = x;
-            obj.axes.xmode = 'manual';
+            obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         else

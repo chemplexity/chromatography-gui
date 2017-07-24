@@ -16,7 +16,7 @@ function fileName = exportMAT(varargin)
 %   'file' -- name of file
 %       empty (default) | char | cell array of strings
 %
-%   'name' -- variable name
+%   'varname' -- variable name
 %       'data' | char
 
 % ---------------------------------------
@@ -36,7 +36,7 @@ addRequired(p, 'data');
 
 addParameter(p, 'file', default.file);
 addParameter(p, 'path', default.path);
-addParameter(p, 'name', default.varname);
+addParameter(p, 'varname', default.varname);
 addParameter(p, 'suggest', default.suggest);
 
 parse(p, varargin{:});
@@ -48,7 +48,7 @@ data = p.Results.data;
 
 option.file    = p.Results.file;
 option.path    = p.Results.path;
-option.name    = p.Results.name;
+option.name    = p.Results.varname;
 option.suggest = p.Results.suggest;
 
 default.filter  = {{'*.mat', 'MAT (*.mat)'}, 'Save As...', option.suggest};

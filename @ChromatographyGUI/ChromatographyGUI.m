@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170720-dev';
+        version     = '0.0.7.20170724-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -76,7 +76,7 @@ classdef ChromatographyGUI < handle
             obj.toolboxSettings([], [], 'initialize');
             obj.toolboxPeakList([], [], 'load_default');
             
-            obj.axes.xmode = 'auto';
+            %obj.axes.xmode = 'auto';
             obj.axes.ymode = 'auto';
             obj.axes.xlim  = [0,1];
             obj.axes.ylim  = [0,1];
@@ -185,17 +185,28 @@ classdef ChromatographyGUI < handle
         
         function updateAxesXLim(obj, varargin)
             
-            switch obj.axes.xmode
+            switch obj.settings.xmode
                 
                 case 'auto'
                     
                     row = obj.view.index;
                     
                     if row ~= 0 && ~isempty(obj.data(row).time)
+                        
                         xmin = min(obj.data(row).time);
                         xmax = max(obj.data(row).time);
-                        xmargin = (xmax - xmin) * 0.02;
-                        obj.axes.xlim = [xmin - xmargin, xmax + xmargin];
+                        xpad = (xmax - xmin) * obj.settings.xpad;
+                        
+                        if xmin >= 0 && xmin - xpad < 0
+                            xmin = 0;
+                        else
+                            xmin = xmin - xpad;
+                        end
+                        
+                        xmax = xmax + xpad;
+                        
+                        obj.axes.xlim = [xmin, xmax];
+                        
                     end
                     
                     obj.axes.main.XLim = obj.axes.xlim;
@@ -239,32 +250,37 @@ classdef ChromatographyGUI < handle
                 y = [];
             end
             
-            if isempty(y)
-                x = [0, 1];
-                y = [0, 1];
-            end
+            %if isempty(y)
+            %    x = [0,1];
+            %    y = [0,1];
+            %end
             
             switch obj.axes.ymode
                 
                 case 'auto'
                     
-                    if ~isempty(y)
+                    if ~isempty(y) && ~isempty(x)
                         
                         y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
                         
                         if any(y)
-                            ymargin = (max(y) - min(y)) * 0.02;
-                            obj.axes.ylim = [min(y) - ymargin, max(y) + ymargin];
+                            ymin = min(y);
+                            ymax = max(y);
+                            ypad = (ymax - ymin) * obj.settings.ypad;
+                            obj.axes.ylim = [ymin-ypad, ymax+ypad];
                         end
                         
+                    else
+                        obj.axes.ylim = [0,1];
                     end
                     
                 case 'manual'
                     
-                    ymin = obj.controls.yMin.String;
-                    ymax = obj.controls.yMax.String;
+                    ymin = str2double(obj.controls.yMin.String);
+                    ymax = str2double(obj.controls.yMax.String);
                     
-                    obj.axes.ylim = [str2double(ymin), str2double(ymax)];
+                    obj.axes.ylim = [ymin, ymax];
+                    
             end
             
             obj.axes.main.YLim = obj.axes.ylim;
@@ -276,9 +292,9 @@ classdef ChromatographyGUI < handle
         function updateAxesLimitMode(obj, varargin)
             
             if obj.controls.xUser.Value
-                obj.axes.xmode = 'manual';
+                obj.settings.xmode = 'manual';
             else
-                obj.axes.xmode = 'auto';
+                obj.settings.xmode = 'auto';
             end
             
             if obj.controls.yUser.Value
@@ -291,7 +307,7 @@ classdef ChromatographyGUI < handle
         
         function updateAxesLimitToggle(obj, varargin)
             
-            switch obj.axes.xmode
+            switch obj.settings.xmode
                 case 'manual'
                     obj.controls.xUser.Value = 1;
                     obj.controls.xAuto.Value = 0;
@@ -315,9 +331,10 @@ classdef ChromatographyGUI < handle
             
             str = @(x) sprintf('%.3f', x);
             
-            obj.controls.xMin.String = str(obj.axes.xlim(1));
+            % Fixed '-0.000' w/ addition of 0
+            obj.controls.xMin.String = str(obj.axes.xlim(1) + 0);
             obj.controls.xMax.String = str(obj.axes.xlim(2));
-            obj.controls.yMin.String = str(obj.axes.ylim(1));
+            obj.controls.yMin.String = str(obj.axes.ylim(1) + 0);
             obj.controls.yMax.String = str(obj.axes.ylim(2));
             
         end
@@ -1192,7 +1209,7 @@ classdef ChromatographyGUI < handle
         function zoomCallback(obj, varargin)
             
             if obj.view.index ~= 0
-                obj.axes.xmode = 'manual';
+                obj.settings.xmode = 'manual';
                 obj.axes.ymode = 'manual';
                 obj.axes.xlim = varargin{1,2}.Axes.XLim;
                 obj.axes.ylim = varargin{1,2}.Axes.YLim;
@@ -1899,7 +1916,7 @@ classdef ChromatographyGUI < handle
             obj.axes.xlim  = [0.000, 1.000];
             obj.axes.ylim  = [0.000, 1.000];
             
-            obj.axes.xmode = 'auto';
+            obj.settings.xmode = 'auto';
             obj.axes.ymode = 'auto';
             
             obj.updateAxesLimitToggle();
@@ -2128,14 +2145,51 @@ classdef ChromatographyGUI < handle
         
         function validatePeakData(obj, rows, cols)
             
-            obj.peaks.time   = obj.validateData(obj.peaks.time, rows, cols);
-            obj.peaks.area   = obj.validateData(obj.peaks.area, rows, cols);
-            obj.peaks.height = obj.validateData(obj.peaks.height, rows, cols);
-            obj.peaks.width  = obj.validateData(obj.peaks.width, rows, cols);
-            obj.peaks.error  = obj.validateData(obj.peaks.error, rows, cols);
-            obj.peaks.fit    = obj.validateData(obj.peaks.fit, rows, cols);
+            x = {'time', 'width', 'height', 'area', 'error', 'fit'};
+            
+            for i = 1:length(x)
+                
+                if ~isfield(obj.peaks, x{i})
+                    obj.peaks.(x{i}) = {};
+                end
+                
+                obj.peaks.(x{i}) = obj.validateData(...
+                    obj.peaks.(x{i}),...
+                    rows,...
+                    cols);
+                
+            end
+            
+            %peaks = obj.peaks;
+             
+            %peaks.time   = obj.validateData(peaks.time, rows, cols);
+            %peaks.area   = obj.validateData(peaks.area, rows, cols);
+            %peaks.height = obj.validateData(peaks.height, rows, cols);
+            %peaks.width  = obj.validateData(peaks.width, rows, cols);
+            %peaks.error  = obj.validateData(peaks.error, rows, cols);
+            %peaks.fit    = obj.validateData(peaks.fit, rows, cols);
+            
+            %obj.peaks = p;
             
         end
+        
+        function closeRequest(obj, varargin)
+            
+            if obj.settings.autosave
+                
+                try
+                    obj.toolboxSettings([], [], 'save_default');
+                catch
+                end
+                
+            end
+            
+            if ishandle(obj.figure)
+                delete(obj.figure);
+            end
+            
+        end
+        
     end
     
     methods (Static = true)
