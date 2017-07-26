@@ -47,6 +47,7 @@ end
 function [x,y] = getXY(obj)
 
 row = obj.view.index;
+pad = 3;
 
 if isempty(obj.data(row).intensity)
     x = [];
@@ -56,11 +57,15 @@ else
     y = obj.data(row).intensity(:,1);
 end
 
+if diff(obj.settings.xlim) < 6
+    pad = (6 - diff(obj.settings.xlim)) / 2;
+end
+
 if isempty(x) || isempty(y)
     return
 else
-    y(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
-    x(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
+    y(x < obj.settings.xlim(1)-pad | x > obj.settings.xlim(2)+pad) = [];
+    x(x < obj.settings.xlim(1)-pad | x > obj.settings.xlim(2)+pad) = [];
 end
 
 end
@@ -72,8 +77,8 @@ col = obj.controls.peakList.Value;
 
 % Select Peak
 px = peakfindNN(x, y,...
-    'xmin', peakCenter - 0.5,...
-    'xmax', peakCenter + 0.5,...
+    'xmin', peakCenter - 2.5,...
+    'xmax', peakCenter + 2.5,...
     'sensitivity', 250);
 
 if ~isempty(px)
@@ -81,7 +86,7 @@ if ~isempty(px)
     [~, ii] = min(abs(peakCenter - px(:,1)));
     xc = px(ii,1);
     
-    xtol = 0.04;
+    xtol = 0.05;
     xf = x(x >= xc-xtol & x <= xc+xtol);
     yf = y(x >= xc-xtol & x <= xc+xtol);
     
@@ -96,24 +101,54 @@ else
     peakCenter = findPeakCenter(x, y, peakCenter);
 end
 
+xi = find(x >= peakCenter, 1);
+
+if ~isempty(xi)
+    peakCenter = x(xi);    
+end
+
+% Crop XY
+xpad = 3;
+xf = x >= peakCenter - xpad & x <= peakCenter + xpad;
+x = x(xf);
+y = y(xf);
+
 % Select Model
 switch obj.settings.peakModel
-    
     case {'nn1'}
-        nnVersion = 'v1';
-        
+        nnVersion = 'nn_v1';
     case {'nn2', 'nn'}
-        nnVersion = 'v2';
-        
+        nnVersion = 'nn_v2';
     otherwise
         nnVersion = 'latest';  
-        
 end
+
+% Sampling Rate
+xi = find(x >= peakCenter, 1);
+
+if ~isempty(xi)
+    
+    if y(xi) > 50
+        f = 300;
+    elseif y(xi) > 25
+        f = 400;
+    else
+        f = 500;
+    end
+    
+else
+    f = 500;
+end
+    
+% Baseline
+b = getBaselineFit(obj,x,y,0);
 
 % Peak Fit
 peak = peakfitNN(x, y, peakCenter,...
     'area', obj.settings.peakArea,...
-    'version', nnVersion);
+    'model', nnVersion,...
+    'baseline', b,...
+    'frequency', f);
 
 % Update
 if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
@@ -135,7 +170,13 @@ function getEGH(obj, x, y, peakCenter)
 row = obj.view.index;
 col = obj.controls.peakList.Value;
 
-baseline = getBaselineFit(obj, x, y);
+% Crop XY
+xpad = 3;
+xf = x >= peakCenter - xpad & x <= peakCenter + xpad;
+x = x(xf);
+y = y(xf);
+
+baseline = getBaselineFit(obj,x,y,0);
 
 peak = peakfitEGH(...
     x, y-baseline,...
@@ -246,7 +287,7 @@ end
 
 end
 
-function b = getBaselineFit(obj, x, y)
+function b = getBaselineFit(obj,x,y,varargin)
 
 row = obj.view.index;
 b = [];
@@ -254,22 +295,23 @@ b = [];
 if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
     
     b = obj.data(row).baseline;
-    b = b(b(:,1) >= min(x) & b(:,1) <= max(x),:);
+    b = b(b(:,1) >= min(x) & b(:,1) <= max(x), :);
     
     if size(b,1) ~= size(y,1)
-        obj.getBaseline();
+        obj.getBaseline(varargin{:});
         b = obj.data(row).baseline;
     end
         
 elseif isempty(obj.data(row).baseline)
     obj.getBaseline();
     b = obj.data(row).baseline;
+    b = b(b(:,1) >= min(x) & b(:,1) <= max(x), :);
 end
 
 if ~isempty(b) && size(b,1) == size(y,1) && size(b,2) == 2
     b = b(:,2);
-else 
-    b = 0;
+else
+    b = zeros(size(y,1),1) + min(y);
 end
 
 end

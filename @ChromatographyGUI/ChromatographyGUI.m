@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170724-dev';
+        version     = '0.0.7.20170725-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -76,10 +76,9 @@ classdef ChromatographyGUI < handle
             obj.toolboxSettings([], [], 'initialize');
             obj.toolboxPeakList([], [], 'load_default');
             
-            %obj.axes.xmode = 'auto';
-            obj.axes.ymode = 'auto';
-            obj.axes.xlim  = [0,1];
-            obj.axes.ylim  = [0,1];
+            %obj.axes.ymode = 'auto';
+            %obj.axes.xlim  = [0,1];
+            %obj.axes.ylim  = [0,1];
             
             obj.view.index = 0;
             obj.view.id    = 'N/A';
@@ -205,11 +204,11 @@ classdef ChromatographyGUI < handle
                         
                         xmax = xmax + xpad;
                         
-                        obj.axes.xlim = [xmin, xmax];
+                        obj.settings.xlim = [xmin, xmax];
                         
                     end
                     
-                    obj.axes.main.XLim = obj.axes.xlim;
+                    obj.axes.main.XLim = obj.settings.xlim;
                     
                 case 'manual'
                     
@@ -218,18 +217,18 @@ classdef ChromatographyGUI < handle
                         xmin = str2double(obj.controls.xMin.String);
                         xmax = str2double(obj.controls.xMax.String);
                         
-                        if xmin ~= round(obj.axes.xlim(2), 3)
-                            obj.axes.xlim(1) = xmin;
-                            obj.axes.main.XLim = obj.axes.xlim;
+                        if xmin ~= round(obj.settings.xlim(2), 3)
+                            obj.settings.xlim(1) = xmin;
+                            obj.axes.main.XLim = obj.settings.xlim;
                         end
                         
-                        if xmax ~= round(obj.axes.xlim(2), 3)
-                            obj.axes.xlim(2) = xmax;
-                            obj.axes.main.XLim = obj.axes.xlim;
+                        if xmax ~= round(obj.settings.xlim(2), 3)
+                            obj.settings.xlim(2) = xmax;
+                            obj.axes.main.XLim = obj.settings.xlim;
                         end
                         
                     else
-                        obj.axes.main.XLim = obj.axes.xlim;
+                        obj.axes.main.XLim = obj.settings.xlim;
                     end
                     
             end
@@ -250,28 +249,23 @@ classdef ChromatographyGUI < handle
                 y = [];
             end
             
-            %if isempty(y)
-            %    x = [0,1];
-            %    y = [0,1];
-            %end
-            
-            switch obj.axes.ymode
+            switch obj.settings.ymode
                 
                 case 'auto'
                     
                     if ~isempty(y) && ~isempty(x)
                         
-                        y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
+                        y = y(x >= obj.settings.xlim(1) & x <= obj.settings.xlim(2));
                         
                         if any(y)
                             ymin = min(y);
                             ymax = max(y);
                             ypad = (ymax - ymin) * obj.settings.ypad;
-                            obj.axes.ylim = [ymin-ypad, ymax+ypad];
+                            obj.settings.ylim = [ymin-ypad, ymax+ypad];
                         end
                         
                     else
-                        obj.axes.ylim = [0,1];
+                        obj.settings.ylim = [0,1];
                     end
                     
                 case 'manual'
@@ -279,11 +273,11 @@ classdef ChromatographyGUI < handle
                     ymin = str2double(obj.controls.yMin.String);
                     ymax = str2double(obj.controls.yMax.String);
                     
-                    obj.axes.ylim = [ymin, ymax];
+                    obj.settings.ylim = [ymin, ymax];
                     
             end
             
-            obj.axes.main.YLim = obj.axes.ylim;
+            obj.axes.main.YLim = obj.settings.ylim;
             obj.updateAxesLimitEditText();
             obj.updatePlotLabelPosition();
             
@@ -298,9 +292,9 @@ classdef ChromatographyGUI < handle
             end
             
             if obj.controls.yUser.Value
-                obj.axes.ymode = 'manual';
+                obj.settings.ymode = 'manual';
             else
-                obj.axes.ymode = 'auto';
+                obj.settings.ymode = 'auto';
             end
             
         end
@@ -316,7 +310,7 @@ classdef ChromatographyGUI < handle
                     obj.controls.xAuto.Value = 1;
             end
             
-            switch obj.axes.ymode
+            switch obj.settings.ymode
                 case 'manual'
                     obj.controls.yUser.Value = 1;
                     obj.controls.yAuto.Value = 0;
@@ -332,10 +326,10 @@ classdef ChromatographyGUI < handle
             str = @(x) sprintf('%.3f', x);
             
             % Fixed '-0.000' w/ addition of 0
-            obj.controls.xMin.String = str(obj.axes.xlim(1) + 0);
-            obj.controls.xMax.String = str(obj.axes.xlim(2));
-            obj.controls.yMin.String = str(obj.axes.ylim(1) + 0);
-            obj.controls.yMax.String = str(obj.axes.ylim(2));
+            obj.controls.xMin.String = str(obj.settings.xlim(1) + 0);
+            obj.controls.xMax.String = str(obj.settings.xlim(2));
+            obj.controls.yMin.String = str(obj.settings.ylim(1) + 0);
+            obj.controls.yMax.String = str(obj.settings.ylim(2));
             
         end
         
@@ -600,7 +594,7 @@ classdef ChromatographyGUI < handle
                         tR = textPos(1) + textPos(3);
                         tT = textPos(2) + textPos(4);
                         
-                        if textX <= obj.axes.xlim(2) && tR >= obj.axes.xlim(2)
+                        if textX <= obj.settings.xlim(2) && tR >= obj.settings.xlim(2)
                             
                             obj.view.peakLabel{col(i)}.Units = 'characters';
                             tc = obj.view.peakLabel{col(i)}.Extent;
@@ -609,14 +603,14 @@ classdef ChromatographyGUI < handle
                             td = obj.view.peakLabel{col(i)}.Extent;
                             
                             xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
-                            obj.axes.xlim(2) = td(1) + td(3) + xmargin;
+                            obj.settings.xlim(2) = td(1) + td(3) + xmargin;
                             
-                            obj.controls.xMax.String = sprintf('%.3f', obj.axes.xlim(2));
-                            obj.axes.main.XLim = obj.axes.xlim;
+                            obj.controls.xMax.String = sprintf('%.3f', obj.settings.xlim(2));
+                            obj.axes.main.XLim = obj.settings.xlim;
                             
                         end
                         
-                        if textX >= obj.axes.xlim(1) && tL <= obj.axes.xlim(1)
+                        if textX >= obj.settings.xlim(1) && tL <= obj.settings.xlim(1)
                             
                             obj.view.peakLabel{col(i)}.Units = 'characters';
                             tc = obj.view.peakLabel{col(i)}.Extent;
@@ -625,17 +619,17 @@ classdef ChromatographyGUI < handle
                             td = obj.view.peakLabel{col(i)}.Extent;
                             
                             xmargin = td(3) - (td(3) / tc(3)) * (tc(3) - 0.5);
-                            obj.axes.xlim(1) = td(1) - xmargin;
+                            obj.settings.xlim(1) = td(1) - xmargin;
                             
-                            obj.controls.xMin.String = sprintf('%.3f', obj.axes.xlim(1));
-                            obj.axes.main.XLim = obj.axes.xlim;
+                            obj.controls.xMin.String = sprintf('%.3f', obj.settings.xlim(1));
+                            obj.axes.main.XLim = obj.settings.xlim;
                             
                         end
                         
-                        if (tT >= obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'auto')) || ...
-                                (tT >= obj.axes.ylim(2) && textPos(2) < obj.axes.ylim(2) && strcmpi(obj.axes.ymode, 'manual'))
+                        if (tT >= obj.settings.ylim(2) && strcmpi(obj.settings.ymode, 'auto')) || ...
+                                (tT >= obj.settings.ylim(2) && textPos(2) < obj.settings.ylim(2) && strcmpi(obj.settings.ymode, 'manual'))
                             
-                            if textX > obj.axes.xlim(1) && textX < obj.axes.xlim(2)
+                            if textX > obj.settings.xlim(1) && textX < obj.settings.xlim(2)
                                 
                                 obj.view.peakLabel{col(i)}.Units = 'characters';
                                 tc = obj.view.peakLabel{col(i)}.Extent;
@@ -644,10 +638,10 @@ classdef ChromatographyGUI < handle
                                 td = obj.view.peakLabel{col(i)}.Extent;
                                 
                                 ymargin = td(4) - (td(4) / tc(4)) * (tc(4) - 0.5);
-                                obj.axes.ylim(2) = td(2) + td(4) + ymargin;
+                                obj.settings.ylim(2) = td(2) + td(4) + ymargin;
                                 
-                                obj.controls.yMax.String = sprintf('%.3f', obj.axes.ylim(2));
-                                obj.axes.main.YLim = obj.axes.ylim;
+                                obj.controls.yMax.String = sprintf('%.3f', obj.settings.ylim(2));
+                                obj.axes.main.YLim = obj.settings.ylim;
                                 
                                 obj.updatePlotLabelPosition();
                                 
@@ -679,7 +673,7 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function getBaseline(obj, varargin)
+        function b = getBaseline(obj, varargin)
             
             row = obj.view.index;
             
@@ -689,12 +683,25 @@ classdef ChromatographyGUI < handle
                 return
             end
             
+            if ~isempty(varargin) && isnumeric(varargin{1})
+                
+                if varargin{1} == 0
+                    setBaseline = 0;
+                else
+                    setBaseline = 1;
+                end
+                
+            else
+                setBaseline = 1;
+            end
+                    
+            
             x = obj.data(row).time;
             y = obj.data(row).intensity;
             
             if ~isempty(x)
-                y(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
-                x(x < obj.axes.xlim(1) | x > obj.axes.xlim(2)) = [];
+                y(x < obj.settings.xlim(1) | x > obj.settings.xlim(2)) = [];
+                x(x < obj.settings.xlim(1) | x > obj.settings.xlim(2)) = [];
             end
             
             a = 10 ^ obj.controls.asymSlider.Value;
@@ -703,7 +710,7 @@ classdef ChromatographyGUI < handle
             y = movingAverage(y);
             b = baseline(y, 'asymmetry', a, 'smoothness', s);
             
-            if length(x) == length(b)
+            if length(x) == length(b) && setBaseline
                 obj.data(row).baseline = [x, b];
             end
             
@@ -1192,7 +1199,7 @@ classdef ChromatographyGUI < handle
                     
                     if obj.view.index == 0 || isempty(obj.peaks.name)
                         obj.clearPeak();
-                    elseif x > obj.axes.xlim(1) && x < obj.axes.xlim(2)
+                    elseif x > obj.settings.xlim(1) && x < obj.settings.xlim(2)
                         obj.toolboxPeakFit(x);
                         obj.updatePeakListText();
                     end
@@ -1210,16 +1217,16 @@ classdef ChromatographyGUI < handle
             
             if obj.view.index ~= 0
                 obj.settings.xmode = 'manual';
-                obj.axes.ymode = 'manual';
-                obj.axes.xlim = varargin{1,2}.Axes.XLim;
-                obj.axes.ylim = varargin{1,2}.Axes.YLim;
+                obj.settings.ymode = 'manual';
+                obj.settings.xlim = varargin{1,2}.Axes.XLim;
+                obj.settings.ylim = varargin{1,2}.Axes.YLim;
                 obj.updateAxesLimitToggle();
                 obj.updateAxesLimitEditText();
                 obj.updateAxesLimits();
                 obj.updatePlotLabelPosition();
             else
-                obj.axes.main.XLim = obj.axes.xlim;
-                obj.axes.main.YLim = obj.axes.ylim;
+                obj.axes.main.XLim = obj.settings.xlim;
+                obj.axes.main.YLim = obj.settings.ylim;
             end
             
         end
@@ -1913,11 +1920,11 @@ classdef ChromatographyGUI < handle
         
         function resetAxes(obj)
             
-            obj.axes.xlim  = [0.000, 1.000];
-            obj.axes.ylim  = [0.000, 1.000];
+            obj.settings.xlim  = [0.000, 1.000];
+            obj.settings.ylim  = [0.000, 1.000];
             
             obj.settings.xmode = 'auto';
-            obj.axes.ymode = 'auto';
+            obj.settings.ymode = 'auto';
             
             obj.updateAxesLimitToggle();
             obj.updateAxesLimitEditText();

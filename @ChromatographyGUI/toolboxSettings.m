@@ -101,7 +101,7 @@ obj.settings.baselineSmoothness = 5.5;   % 0 to 10
 obj.settings.baselineAsymmetry  = -5.5;  % -10 to 0
 
 % Default Peak Area Settings
-obj.settings.peakModel = 'egh';          % 'egh', 'nn', 'nn1', 'nn2'
+obj.settings.peakModel = 'nn2';          % 'egh', 'nn', 'nn1', 'nn2'
 obj.settings.peakArea  = 'rawdata';      % 'rawdata', 'fitdata'
 
 % ---------------------------------------
@@ -170,10 +170,6 @@ obj.settings.showPeakLabel      = obj.view.showPeakLabel;
 obj.settings.showPeakLine       = obj.view.showPeakLine;
 obj.settings.showZoom           = obj.menu.view.zoom.Checked;
 obj.settings.selectZoom         = obj.view.selectZoom;
-%obj.settings.xmode              = obj.axes.xmode;
-obj.settings.ymode              = obj.axes.ymode;
-obj.settings.xlim               = obj.axes.xlim;
-obj.settings.ylim               = obj.axes.ylim;
 obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
 obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
 
@@ -197,10 +193,6 @@ obj.settings.showPeakLabel      = obj.view.showPeakLabel;
 obj.settings.showPeakLine       = obj.view.showPeakLine;
 obj.settings.showZoom           = obj.menu.view.zoom.Checked;
 obj.settings.selectZoom         = obj.view.selectZoom;
-%obj.settings.xmode              = obj.axes.xmode;
-obj.settings.ymode              = obj.axes.ymode;
-obj.settings.xlim               = obj.axes.xlim;
-obj.settings.ylim               = obj.axes.ylim;
 obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
 obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
 
@@ -222,10 +214,6 @@ obj.view.showBaseLine  = obj.settings.showBaseLine;
 obj.view.showPeakLabel = obj.settings.showPeakLabel;
 obj.view.showPeakLine  = obj.settings.showPeakLine;
 obj.view.selectZoom    = obj.settings.selectZoom;
-%obj.axes.xmode         = obj.settings.xmode;
-obj.axes.ymode         = obj.settings.ymode;
-obj.axes.xlim          = obj.settings.xlim;
-obj.axes.ylim          = obj.settings.ylim;
 
 if isfield(obj.settings, 'baselineAsymmetry')
     obj.controls.asymSlider.Value = obj.settings.baselineAsymmetry;
@@ -340,13 +328,12 @@ end
 obj.updateAxesLimitToggle();
 obj.updateAxesLimitMode();
 
-%if strcmpi(obj.axes.xmode, 'manual')
 if strcmpi(obj.settings.xmode, 'manual')
-    obj.axes.main.XLim = obj.axes.xlim;
+    obj.axes.main.XLim = obj.settings.xlim;
 end
 
-if strcmpi(obj.axes.ymode, 'manual')
-    obj.axes.main.YLim = obj.axes.ylim;
+if strcmpi(obj.settings.ymode, 'manual')
+    obj.axes.main.YLim = obj.settings.ylim;
 end
 
 obj.updateAxesLimitEditText();

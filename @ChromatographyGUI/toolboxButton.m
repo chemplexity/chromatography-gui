@@ -170,16 +170,16 @@ e4(3) = e3(3);
 e4(4) = e3(4);
 
 obj.controls.xMin = newEditText(...
-    obj, obj.panel.xlim, sprintf('%.3f', obj.axes.xlim(1)), 'xminedit', e3);
+    obj, obj.panel.xlim, sprintf('%.3f', obj.settings.xlim(1)), 'xminedit', e3);
 
 obj.controls.xMax = newEditText(...
-    obj, obj.panel.xlim, sprintf('%.3f', obj.axes.xlim(2)), 'xmaxedit', e4);
+    obj, obj.panel.xlim, sprintf('%.3f', obj.settings.xlim(2)), 'xmaxedit', e4);
 
 obj.controls.yMin = newEditText(...
-    obj, obj.panel.ylim, sprintf('%.3f', obj.axes.ylim(1)), 'yminedit', e3);
+    obj, obj.panel.ylim, sprintf('%.3f', obj.settings.ylim(1)), 'yminedit', e3);
 
 obj.controls.yMax = newEditText(...
-    obj, obj.panel.ylim, sprintf('%.3f', obj.axes.ylim(2)), 'ymaxedit', e4);
+    obj, obj.panel.ylim, sprintf('%.3f', obj.settings.ylim(2)), 'ymaxedit', e4);
 
 % Integrate Tab --> Options
 ie1(1) = 0.075 + 0.05 + 0.25;
@@ -551,26 +551,26 @@ switch src.Tag
             if row ~= 0
                 xmin = min(obj.data(row).time(:,1));
                 xmax = max(obj.data(row).time(:,1));
-                obj.axes.xlim(1) = xmin - ((xmax - xmin) * 0.02);
+                obj.settings.xlim(1) = xmin - ((xmax - xmin) * 0.02);
             else
-                obj.axes.xlim(1) = 0;
+                obj.settings.xlim(1) = 0;
             end
             
-            src.String = str(obj.axes.xlim(1));
+            src.String = str(obj.settings.xlim(1));
             obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
-            src.String = str(obj.axes.xlim(1));
+            src.String = str(obj.settings.xlim(1));
             return
             
-        elseif x < obj.axes.xlim(2)
+        elseif x < obj.settings.xlim(2)
             obj.settings.xmode = 'manual';
-            obj.axes.xlim(1) = x;
+            obj.settings.xlim(1) = x;
             obj.updateAxesXLim();
             
         else
-            src.String = str(obj.axes.xlim(1));
+            src.String = str(obj.settings.xlim(1));
             return
         end
         
@@ -581,26 +581,26 @@ switch src.Tag
             if row ~= 0
                 xmin = min(obj.data(row).time(:,1));
                 xmax = max(obj.data(row).time(:,1));
-                obj.axes.xlim(2) = xmax + ((xmax - xmin) * 0.02);
+                obj.settings.xlim(2) = xmax + ((xmax - xmin) * 0.02);
             else
-                obj.axes.xlim(2) = 1;
+                obj.settings.xlim(2) = 1;
             end
             
-            src.String = str(obj.axes.xlim(2));
+            src.String = str(obj.settings.xlim(2));
             obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
-            src.String = str(obj.axes.xlim(2));
+            src.String = str(obj.settings.xlim(2));
             return
             
-        elseif x > obj.axes.xlim(1)
-            obj.axes.xlim(2) = x;
+        elseif x > obj.settings.xlim(1)
+            obj.settings.xlim(2) = x;
             obj.settings.xmode = 'manual';
             obj.updateAxesXLim();
             
         else
-            src.String = str(obj.axes.xlim(2));
+            src.String = str(obj.settings.xlim(2));
             return
         end
         
@@ -611,27 +611,27 @@ switch src.Tag
             if row ~= 0
                 x = obj.data(row).time(:,1);
                 y = obj.data(row).intensity(:,1);
-                y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
-                obj.axes.ylim(1) = min(y) - ((obj.axes.ylim(2) - min(y)) * 0.02);
+                y = y(x >= obj.settings.xlim(1) & x <= obj.settings.xlim(2));
+                obj.settings.ylim(1) = min(y) - ((obj.settings.ylim(2) - min(y)) * 0.02);
             else
-                obj.axes.ylim(1) = 0;
+                obj.settings.ylim(1) = 0;
             end
             
-            src.String = str(obj.axes.ylim(1));
-            obj.axes.ymode = 'manual';
+            src.String = str(obj.settings.ylim(1));
+            obj.settings.ymode = 'manual';
             obj.updateAxesYLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
-            src.String = str(obj.axes.ylim(1));
+            src.String = str(obj.settings.ylim(1));
             return
             
-        elseif x < obj.axes.ylim(2)
-            obj.axes.ymode = 'manual';
-            obj.axes.ylim(1) = x;
+        elseif x < obj.settings.ylim(2)
+            obj.settings.ymode = 'manual';
+            obj.settings.ylim(1) = x;
             obj.updateAxesYLim();
             
         else
-            src.String = str(obj.axes.ylim(1));
+            src.String = str(obj.settings.ylim(1));
             return
         end
         
@@ -642,27 +642,27 @@ switch src.Tag
             if row ~= 0
                 x = obj.data(row).time(:,1);
                 y = obj.data(row).intensity(:,1);
-                y = y(x >= obj.axes.xlim(1) & x <= obj.axes.xlim(2));
-                obj.axes.ylim(2) = max(y) + ((max(y) - obj.axes.ylim(1)) * 0.02);
+                y = y(x >= obj.settings.xlim(1) & x <= obj.settings.xlim(2));
+                obj.settings.ylim(2) = max(y) + ((max(y) - obj.settings.ylim(1)) * 0.02);
             else
-                obj.axes.ylim(2) = 1;
+                obj.settings.ylim(2) = 1;
             end
             
-            src.String = str(obj.axes.ylim(2));
-            obj.axes.ymode = 'manual';
+            src.String = str(obj.settings.ylim(2));
+            obj.settings.ymode = 'manual';
             obj.updateAxesYLim();
             
         elseif isnan(x) || isinf(x) || ~isreal(x)
-            src.String = str(obj.axes.ylim(2));
+            src.String = str(obj.settings.ylim(2));
             return
             
-        elseif x > obj.axes.ylim(1)
-            obj.axes.ymode = 'manual';
-            obj.axes.ylim(2) = x;
+        elseif x > obj.settings.ylim(1)
+            obj.settings.ymode = 'manual';
+            obj.settings.ylim(2) = x;
             obj.updateAxesYLim();
             
         else
-            src.String = str(obj.axes.ylim(2));
+            src.String = str(obj.settings.ylim(2));
             return
         end
         

@@ -243,14 +243,13 @@ for i = 1:length(file)
     % Read
     % ---------------------------------------
     if ~ishandle(h)
-        %data = [];
+        data(i,:) = [];
+        status(option.verbose, 'abort', i, length(file));
+        status(option.verbose, 'stats', i-1, toc, sum([data.file_size]));
+        status(option.verbose, 'exit');
         break
     else
         updateWaitbar(h, i, length(file), data(i,1).file_name);
-        %m = num2str(i);
-        %n = num2str();
-        %msg = [' (', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
-        %waitbar(i/length(file), h, ['Loading ' , msg]);    
     end
     
     if data(i,1).file_size ~= 0
@@ -260,12 +259,10 @@ for i = 1:length(file)
         switch option.content
             
             case {'all', 'default'}
-                
                 data(i,1) = parseinfo(f, data(i,1));
                 data(i,1) = parsedata(f, data(i,1));
                 
             case {'header'}
-                
                 data(i,1) = parseinfo(f, data(i,1));
                 
         end
@@ -281,7 +278,7 @@ end
 % ---------------------------------------
 if ishandle(h)
     close(h);
-    status(option.verbose, 'summary_stats', length(data), toc, sum([data.file_size]));
+    status(option.verbose, 'stats', length(data), toc, sum([data.file_size]));
     status(option.verbose, 'exit');
 end
 
@@ -302,7 +299,7 @@ if isempty(x)
     x = filename;
 end
 
-waitbar(i/j, h, ['Loading... ' x, msg]);
+waitbar(i/j, h, ['Loading ..', filesep, x, msg]);
 
 end
 
@@ -335,6 +332,12 @@ switch varargin{2}
         
     case 'java_error'
         fprintf([' STATUS  Unable to load file selection interface...', '\n']);
+        
+    case 'abort'
+        m = num2str(varargin{3});
+        n = num2str(varargin{4});
+        fprintf([' [', [repmat('0', 1, length(n) - length(m)), m], '/', n, ']']);
+        fprintf([' File import cancelled...', '\n']);
         
     case 'loading_file'
         m = num2str(varargin{3});
@@ -580,6 +583,54 @@ switch data.file_version
         
 end
 
+% Units
+switch data.file_version
+    
+    case {'2'}
+        
+        data.time_units      = 'minutes';
+        data.intensity_units = 'counts';
+        data.channel_units   = 'm/z';
+        
+    case {'8', '81', '30'}
+        
+        data.time_units      = 'minutes';
+        data.intensity_units = fpascal(f,  580, 'uint8');
+        data.channel_units   = fpascal(f,  596, 'uint8');
+        
+    case {'31'}
+        
+        data.time_units      = 'minutes';
+        data.intensity_units = fpascal(f, 326, 'uint8');
+        data.channel_units   = fpascal(f, 344, 'uint8');
+        
+    case {'130', '179', '181'}
+        
+        data.time_units      = 'minutes';
+        data.intensity_units = fpascal(f, 4172, 'uint16');
+        data.channel_units   = fpascal(f, 4213, 'uint16');
+        
+    case {'131'}
+        
+        data.time_units      = 'minutes';
+        data.intensity_units = fpascal(f, 3093, 'uint16');
+        data.channel_units   = fpascal(f, 3136, 'uint16');
+        
+end
+
+% Channel
+switch data.file_version
+
+    case {'8', '81', '179', '181'}
+           
+        if ~isempty(regexpi(data.file_name, '(FID1A)', 'tokens', 'once'))
+            data.channel = 'A';
+        elseif ~isempty(regexpi(data.file_name, '(FID2B)', 'tokens', 'once'))
+            data.channel = 'B';
+        end
+                
+end
+
 % Parse datetime
 if ~isempty(data.datetime)
     data.datetime = parsedate(data.datetime);
@@ -619,7 +670,7 @@ switch data.file_version
         
 end
 
-% Time values
+% Time range
 switch data.file_version
     
     case {'81', '179', '181'}
@@ -632,6 +683,11 @@ switch data.file_version
         t0 = fnumeric(f, 282, 'int32') / 60000;
         t1 = fnumeric(f, 286, 'int32') / 60000;
         
+    otherwise
+        
+        t0 = [];
+        t1 = [];
+        
 end
 
 % Intensity values
@@ -641,19 +697,17 @@ switch data.file_version
         
         data.intensity = farray(f, offset + 8, 'int32', scans, 8);
         data.time      = farray(f, offset + 4, 'int32', scans, 8) ./ 60000;
-        
+         
         %offset = farray(f, offset, 'int32', scans, 8) * 2 - 2;
         %data   = fpacket(f, data, offset);
         
     case {'8', '30', '130'}
         
         data.intensity = fdelta(f, offset);
-        data.time      = ftime(t0, t1, numel(data.intensity));
         
     case {'81', '181'}
         
         data.intensity = fdoubledelta(f, offset);
-        data.time      = ftime(t0, t1, numel(data.intensity));
         
     case {'179'}
         
@@ -662,42 +716,17 @@ switch data.file_version
         end
         
         data.intensity = fdoublearray(f, offset);
-        data.time      = ftime(t0, t1, numel(data.intensity));
         
 end
 
-% Units
+% Time values
 switch data.file_version
     
-    case {'2'}
-        
-        data.time_units      = 'minutes';
-        data.intensity_units = 'counts';
-        data.channel_units   = 'm/z';
-        
-    case {'8', '81', '30'}
-        
-        data.time_units      = 'minutes';
-        data.intensity_units = fpascal(f,  580, 'uint8');
-        data.channel_units   = fpascal(f,  596, 'uint8');
-        
-    case {'31'}
-        
-        data.time_units      = 'minutes';
-        data.intensity_units = fpascal(f, 326, 'uint8');
-        data.channel_units   = '';
-        
-    case {'130', '179', '181'}
-        
-        data.time_units      = 'minutes';
-        data.intensity_units = fpascal(f, 4172, 'uint16');
-        data.channel_units   = fpascal(f, 4213, 'uint16');
-        
-    case {'131'}
-        
-        data.time_units      = 'minutes';
-        data.intensity_units = fpascal(f, 3093, 'uint16');
-        data.channel_units   = '';
+    case {'8', '81', '179', '181', '30', '131'}
+
+        if ~isempty(t0) && ~isempty(t1) && t1 > t0
+            data.time = ftime(t0, t1, numel(data.intensity));
+        end
         
 end
 
@@ -843,13 +872,10 @@ switch data.file_version
         
         if instrMatch(str, {'CE'})
             str = 'CE/MS';
-            
         elseif instrMatch(str, {'LC'})
             str = 'LC/MS';
-            
         elseif instrMatch(str, {'GC'})
             str = 'GC/MS';
-            
         else
             str = 'MS';
         end
@@ -866,28 +892,20 @@ switch data.file_version
         
         if instrMatch(str, {'DAD', '1315', '4212', '7117'})
             str = 'LC/DAD';
-            
         elseif instrMatch(str, {'VWD', '1314', '7114'})
             str = 'LC/VWD';
-            
         elseif instrMatch(str, {'MWD', '1365'})
             str = 'LC/MWD';
-            
         elseif instrMatch(str, {'FLD', '1321'})
             str = 'LC/FLD';
-            
         elseif instrMatch(str, {'ELS', '4260', '7102'})
             str = 'LC/ELSD';
-            
         elseif instrMatch(str, {'RID', '1362'})
             str = 'LC/RID';
-            
         elseif instrMatch(str, {'ADC', '35900'})
             str = 'LC/ADC';
-            
         elseif instrMatch(str, {'CE'})
             str = 'CE';
-            
         else
             str = 'LC';
         end

@@ -15,8 +15,6 @@ obj.menu.help.main    = newMenu(obj.figure, 'Help');
 obj.menu.file.load   = newMenu(obj.menu.file.main, 'Load');
 obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
-%obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
-%obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
 obj.menu.file.import.Separator = 'on';
@@ -24,7 +22,7 @@ obj.menu.file.exit.Separator   = 'on';
 
 obj.menu.file.save.Callback = {@saveCheckpoint, obj};
 
-obj.menu.file.exit.Callback = @obj.closeRequest; %'closereq';
+obj.menu.file.exit.Callback = @obj.closeRequest;
 
 % ---------------------------------------
 % File Menu --> Load
@@ -40,44 +38,20 @@ obj.menu.loadPeaklist.Callback  = {@obj.toolboxPeakList, 'load_custom'};
 % ---------------------------------------
 % File Menu --> Save As
 % ---------------------------------------
-%obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
-%obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
-%obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
-%obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
-%obj.menu.saveMat   = newMenu(obj.menu.file.saveAs, 'Workspace (*.MAT)');
-
 obj.menu.saveWorkspace = newMenu(obj.menu.file.saveAs, 'Workspace data (*.MAT)');
 obj.menu.savePeaklist  = newMenu(obj.menu.file.saveAs, 'Peak list (*.MAT)');
-obj.menu.saveImg       = newMenu(obj.menu.file.saveAs, 'Figure image (*.JPG, *.PNG, *.TIFF)');
-obj.menu.saveTable     = newMenu(obj.menu.file.saveAs, 'Table data (*.CSV)');
+obj.menu.saveImg       = newMenu(obj.menu.file.saveAs, 'Figure (*.JPG, *.PNG, *.TIFF)');
+obj.menu.saveTable     = newMenu(obj.menu.file.saveAs, 'Table (*.CSV)');
 
-%obj.menu.saveImg.Callback = {@saveImageCallback, obj};
-%obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};
-%obj.menu.saveMat.Callback = {@saveMatlabCallback, obj};
 obj.menu.saveWorkspace.Callback = {@saveMatlabCallback, obj};
 obj.menu.savePeaklist.Callback  = {@obj.toolboxPeakList, 'save_custom'};
 obj.menu.saveImg.Callback       = {@saveImageCallback, obj};
-obj.menu.saveCsv.Callback       = {@saveCsvCallback, obj};
+obj.menu.saveTable.Callback     = {@saveCsvCallback, obj};
 
 if ispc
-    %obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
-    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table data (*.XLS, *.XLSX)');
+    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLS, *.XLSX)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
-
-% ---------------------------------------
-% File Menu --> Import/Export
-% ---------------------------------------
-%obj.menu.file.importPeakList = newMenu(obj.menu.file.import, 'Peak List');
-%obj.menu.file.importSettings = newMenu(obj.menu.file.import, 'Settings');
-
-%obj.menu.file.exportPeakList = newMenu(obj.menu.file.export, 'Peak List');
-%obj.menu.file.exportSettings = newMenu(obj.menu.file.export, 'Settings');
-
-%obj.menu.file.importPeakList.Callback = {@obj.toolboxPeakList, 'load_custom'};
-%obj.menu.file.importSettings.Callback = {@obj.toolboxSettings, 'load_custom'};
-%obj.menu.file.exportPeakList.Callback = {@obj.toolboxPeakList, 'save_custom'};
-%obj.menu.file.exportSettings.Callback = {@obj.toolboxSettings, 'save_custom'};
 
 % ---------------------------------------
 % Edit Menu
@@ -258,8 +232,8 @@ obj.menu.peakNN2.Tag = 'peaknn2';
 obj.menu.peakEGH.Tag = 'peakegh';
 
 obj.menu.peakNN1.Checked = 'off';
-obj.menu.peakNN2.Checked = 'off';
-obj.menu.peakEGH.Checked = 'on';
+obj.menu.peakNN2.Checked = 'on';
+obj.menu.peakEGH.Checked = 'off';
 
 obj.menu.peakNN1.Callback = {@peakModelMenuCallback, obj};
 obj.menu.peakNN2.Callback = {@peakModelMenuCallback, obj};
@@ -296,7 +270,7 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-% Import options
+% importAgilent 
 isVerbose = 'off';
 searchDepth = 3;
 
@@ -365,9 +339,7 @@ function loadMatlabCallback(~, ~, obj)
 
 [data, file] = importMAT();
 
-if ~isempty(data) && isstruct(data) %&& isfield(data, 'data')
-    
-    %data = data.data;
+if ~isempty(data) && isstruct(data)
     
     if isstruct(data) && length(fields(data)) == 1
         x = fields(data);
