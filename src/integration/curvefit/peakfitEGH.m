@@ -258,6 +258,11 @@ if ii < length(yfit(:,1)) * 0.02 || ii > length(yfit(:,1)) - length(yfit(:,1)) *
     peak.area   = 0;
     peak.fit    = 0;
     peak.error  = 0;
+    peak.xmin   = 0;
+    peak.xmax   = 0;
+    peak.ymin   = 0;
+    peak.ymax   = 0;
+    peak.model  = 'egh_v1';
     
 else
     
@@ -266,12 +271,13 @@ else
     peak.width  = w(yIndex);
     peak.error  = rmsd(yIndex);
     peak.fit    = yfit(:,yIndex);
+    peak.model  = 'egh_v1';
     
     if size(x,1) == size(peak.fit, 1)
-        peak.area = peakArea(x, y, peak.fit, targetArea);
+        peak = peakArea(x, y, peak, targetArea);
     else
         peak.width = w(yIndex);
-        peak.area = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
+        peak.area  = EGH.a(h(index), w(yIndex), e, EGH.c(EGH.t(w(index), e)));
     end
     
     if peak.area < std(y) * minArea
@@ -281,10 +287,14 @@ else
         peak.area   = 0;
         peak.fit    = 0;
         peak.error  = 0;
+        peak.xmin   = 0;
+        peak.xmax   = 0;
+        peak.ymin   = 0;
+        peak.ymax   = 0;
+        peak.model  = 'egh_v1';
     end
     
 end
-
 
 if ~strcmpi(type, 'double')
     peak.fit = cast(peak.fit, type);
@@ -349,9 +359,14 @@ rmsd = rmsd / (ymax - ymin) * 100;
 
 end
 
-function area = peakArea(x0, y0, y1, targetArea)
+function peak = peakArea(x0, y0, peak, targetArea)
 
-area = 0;
+if ~isempty(peak.fit)
+    y1 = peak.fit;
+else
+    return
+end
+
 pad = 3;
 
 yFilter = y1 >= min(y1) + 0.001 * (max(y1)-min(y1));
@@ -381,6 +396,11 @@ end
 
 dy0 = [0; diff(y0)];
 dy1 = [0; diff(y1)];
+%dy0 = [0; diff(movingAverage(y0, 10))];
+%dy1 = [0; diff(movingAverage(y1, 10))];
+
+dy0 = movingAverage(dy0, 10);
+dy1 = movingAverage(dy1, 10);
 
 switch lower(targetArea)
     
@@ -402,11 +422,11 @@ end
 [~, dyi] = min(dy1(xi:end));
 dyi = xi + dyi - 1;
 
-yTailFilter = find(dyt(dyi:end) > 0, 2);
+yTailFilter = find(dyt(dyi:end) > -5E-3, 2);
 
 if ~isempty(yTailFilter)
     
-    yTailFilter = max(yTailFilter)  + dyi;
+    yTailFilter = max(yTailFilter) + dyi;
     
     if yTailFilter <= length(yt)
         x0(yTailFilter:end) = [];
@@ -418,35 +438,38 @@ end
 % Filter peak front
 [~, dyi] = max(dy1(1:xi));
 
-yFrontFilter = find(dyt(1:dyi) < 0);
+yFrontFilter = find(dyt(1:dyi) < 5E-3);
 
 if ~isempty(yFrontFilter)
     
-    if length(yFrontFilter) > 1
-        yFilterMean = mean(x0(yFrontFilter));
-        yFilterIndex = find(x0 >= yFilterMean, 1);
+    %if length(yFrontFilter) > 1
+    %    yFilterMean = mean(x0(yFrontFilter));
+    %    yFilterIndex = find(x0 >= yFilterMean, 1);
         
-        if ~isempty(yFilterIndex)
-            yFrontFilter = yFilterIndex;
-        else
-            yFrontFilter = yFrontFilter(end-1);
-        end
+    %    if ~isempty(yFilterIndex)
+    %        yFrontFilter = yFilterIndex;
+    %    else
+    %        yFrontFilter = yFrontFilter(end-1);
+    %    end
         
-    else
-        yFrontFilter = yFrontFilter(end);
-    end
+    %else
+    %    yFrontFilter = yFrontFilter(end);
+    %end
 
+    yFrontFilter = yFrontFilter(end);
+    
     if yFrontFilter <= length(yt)
         x0(1:yFrontFilter) = [];
         yt(1:yFrontFilter) = [];
     end
+    
 end
 
 if isempty(x0) || isempty(yt)
     return
 end
 
-f0 = 3000;
+f0 = 1500;
 
 if length(x0) >= 20
     f1 = 1/mean(diff(x0(1:20)));
@@ -463,16 +486,20 @@ else
 end
 
 if length(xi) == length(yi)
+    
+    peak.xmin        = min(xi);
+    peak.xmax        = max(xi);
+    peak.ymin        = min(yi);
+    [peak.ymax, idx] = max(yi);
+    peak.time        = xi(idx);
+    peak.height      = peak.ymax - peak.ymin;
+    
     xi = xi .* 60;
-    area = trapz(xi, yi);
+    peak.area = trapz(xi, yi);
+    
 else
-    area = 0;
+    peak.area = 0;
 end
-
-% Scale to Agilent Peak Area
-%if area ~= 0
-%    area = (area - 0.001107524) / 0.016599114;
-%end
 
 end
 
@@ -652,7 +679,46 @@ end
 
 end
 
+
 function peakCenter = findPeakCenter(x,y,peakCenter)
+
+% Select Peak
+px = peakfindNN(x, y,...
+    'xmin', peakCenter - 2.5,...
+    'xmax', peakCenter + 2.5,...
+    'sensitivity', 250);
+
+if ~isempty(px)
+    
+    [~, ii] = min(abs(peakCenter - px(:,1)));
+    xc = px(ii,1);
+    
+    xtol = 0.05;
+    xf = x(x >= xc-xtol & x <= xc+xtol);
+    yf = y(x >= xc-xtol & x <= xc+xtol);
+    
+    if ~isempty(yf)
+        [~,xi] = max(yf);
+        peakCenter = xf(xi);
+    else
+        peakCenter = px(ii,1);
+    end
+    
+else
+    peakCenter = findPeakCenter(x, y, peakCenter);
+end
+
+xi = find(x >= peakCenter, 1);
+
+if ~isempty(xi)
+    peakCenter = x(xi);    
+end
+
+end
+
+function peakCenter = findPeakCenter2(x,y,peakCenter)
+
+y = movingAverage(y, 10);
 
 pIndex = find(x >= peakCenter, 1);
 

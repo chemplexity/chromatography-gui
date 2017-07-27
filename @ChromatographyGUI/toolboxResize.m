@@ -38,12 +38,12 @@ yLimPos(4) = xLimPos(4);
 % ---------------------------------------
 % Resize Callbacks
 % ---------------------------------------
-set(obj.panel.table, 'resizefcn', @(src,evt) resizeTablePanel(obj, src, evt, tablePos));
-set(obj.panel.axes, 'resizefcn', @(src,evt) resizeAxesPanel(obj, src, evt, plotPos));
-set(obj.panel.control, 'resizefcn', @(src,evt) resizeCtrlPanel(obj, src, evt, ctrlPos));
-set(obj.panel.select, 'resizefcn', @(src,evt) resizeSelectPanel(obj, src, evt, selectPos));
-set(obj.panel.xlim, 'resizefcn', @(src,evt) resizeXlimPanel(obj, src, evt, xLimPos));
-set(obj.panel.ylim, 'resizefcn', @(src,evt) resizeYlimPanel(obj, src, evt, yLimPos));
+%set(obj.panel.table,   'resizefcn', @(src,evt) resizeTablePanel(obj, src, evt, tablePos));
+set(obj.panel.axes,    'resizefcn', @(src,evt) resizeAxesPanel(obj, src, evt, plotPos));
+%set(obj.panel.control, 'resizefcn', @(src,evt) resizeCtrlPanel(obj, src, evt, ctrlPos));
+%set(obj.panel.select,  'resizefcn', @(src,evt) resizeSelectPanel(obj, src, evt, selectPos));
+%set(obj.panel.xlim,    'resizefcn', @(src,evt) resizeXlimPanel(obj, src, evt, xLimPos));
+%set(obj.panel.ylim,    'resizefcn', @(src,evt) resizeYlimPanel(obj, src, evt, yLimPos));
 
 end
 

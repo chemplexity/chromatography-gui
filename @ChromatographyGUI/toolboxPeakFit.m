@@ -156,11 +156,15 @@ if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.updatePeakTable(row, col);
     obj.updatePeakLine(col);
     obj.plotPeakLabels(col);
+    obj.updatePeakArea(col);
+    obj.updatePeakBaseline(col);
 else
     obj.clearPeakData(row, col);
     obj.clearPeakTable(row, col);
     obj.clearPeakLine(col);
     obj.clearPeakLabel(col);
+    obj.clearPeakArea(col);
+    obj.clearPeakBaseline(col);
 end
 
 end
@@ -196,12 +200,16 @@ if ~isempty(peak) && ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.updatePeakTable(row, col);
     obj.updatePeakLine(col);
     obj.plotPeakLabels(col);
+    obj.updatePeakArea(col);
+    obj.updatePeakBaseline(col);
     
 else
     obj.clearPeakData(row, col);
     obj.clearPeakTable(row, col);
     obj.clearPeakLine(col);
     obj.clearPeakLabel(col);
+    obj.clearPeakArea(col);
+    obj.clearPeakBaseline(col);
 end
 
 end
@@ -218,7 +226,7 @@ if ~isempty(peak.width) && ~isempty(peak.time) && peak.width > 0
     y = peak.fit(:,2);
     
     t = peak.time;
-    w = peak.width * 2.5;
+    w = peak.width * 3.0;
     
     y(x > t+w | x < t-w) = [];
     x(x > t+w | x < t-w) = [];
@@ -269,7 +277,7 @@ if length(x) == length(y) && any(y)
     y = y(y0);
     b = b(y0);
     
-    y0 = y >= 1E-5;
+    y0 = y >= 1E-3;
     
     x = x(y0);
     y = y(y0);
@@ -277,6 +285,15 @@ if length(x) == length(y) && any(y)
     
     if size(y,1) == size(b,1)
         y = y + b;
+        
+        if isfield(peak,'ymin') && isfield(peak,'ymax')
+            if peak.ymin ~= 0 && peak.ymax ~= 0
+                peak.ymin = min(y);
+                peak.ymax = max(y);
+                peak.height = peak.ymax - peak.ymin;
+            end
+        end
+        
     end
     
     if ~isempty(x) && ~isempty(y) && length(x) == length(y)
@@ -322,7 +339,9 @@ pIndex = find(x >= peakCenter, 1);
 
 pSlope = '';
 pLimit = 0.3;
-pStop  = 10;
+pStop  = 5;
+
+y = movingAverage(y,10);
 
 pLX = x(pIndex,1);
 pRX = x(pIndex,1);

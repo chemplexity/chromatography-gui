@@ -71,32 +71,45 @@ obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.deleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
+obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
+obj.menu.edit.tableDeleteAll = newMenu(obj.menu.edit.delete, 'All table rows...');
 
-obj.menu.edit.deleteSelected.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteSelected.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteAll.Callback = {@tableDeleteRowMenu, obj};
+
+obj.menu.edit.tableDeleteSelected.Tag = 'selected';
+obj.menu.edit.tableDeleteAll.Tag = 'all';
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.data      = newMenu(obj.menu.view.main, 'Sample');
-obj.menu.view.peak      = newMenu(obj.menu.view.main, 'Peak');
-obj.menu.view.zoom      = newMenu(obj.menu.view.main, 'Zoom');
-obj.menu.view.plotLabel = newMenu(obj.menu.view.data, 'Show Label');
-obj.menu.view.peakLabel = newMenu(obj.menu.view.peak, 'Show Label');
-obj.menu.view.peakLine  = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.data         = newMenu(obj.menu.view.main, 'Sample');
+obj.menu.view.peak         = newMenu(obj.menu.view.main, 'Peak');
+obj.menu.view.zoom         = newMenu(obj.menu.view.main, 'Zoom');
+obj.menu.view.plotLabel    = newMenu(obj.menu.view.data, 'Show Label');
+obj.menu.view.peakLabel    = newMenu(obj.menu.view.peak, 'Show Label');
+obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.peakArea     = newMenu(obj.menu.view.peak, 'Show Area');
+obj.menu.view.peakBaseline = newMenu(obj.menu.view.peak, 'Show Baseline');
 
-obj.menu.view.plotLabel.Tag = 'showPlotLabel';
-obj.menu.view.peakLabel.Tag = 'showPeakLabel';
-obj.menu.view.peakLine.Tag  = 'showPeakLine';
+obj.menu.view.plotLabel.Tag    = 'showPlotLabel';
+obj.menu.view.peakLabel.Tag    = 'showPeakLabel';
+obj.menu.view.peakLine.Tag     = 'showPeakLine';
+obj.menu.view.peakArea.Tag     = 'showPeakArea';
+obj.menu.view.peakBaseline.Tag = 'showPeakBaseline';
 
-obj.menu.view.plotLabel.Checked = 'on';
-obj.menu.view.peakLabel.Checked = 'on';
-obj.menu.view.peakLine.Checked  = 'on';
+obj.menu.view.plotLabel.Checked    = 'on';
+obj.menu.view.peakLabel.Checked    = 'on';
+obj.menu.view.peakLine.Checked     = 'on';
+obj.menu.view.peakArea.Checked     = 'on';
+obj.menu.view.peakBaseline.Checked = 'on';
 
-obj.menu.view.plotLabel.Callback = {@plotViewMenuCallback, obj};
-obj.menu.view.peakLabel.Callback = {@peakViewMenuCallback, obj};
-obj.menu.view.peakLine.Callback  = {@peakViewMenuCallback, obj};
-obj.menu.view.zoom.Callback      = {@zoomMenuCallback, obj};
+obj.menu.view.plotLabel.Callback    = {@plotViewMenuCallback, obj};
+obj.menu.view.peakLabel.Callback    = {@peakViewMenuCallback, obj};
+obj.menu.view.peakLine.Callback     = {@peakViewMenuCallback, obj};
+obj.menu.view.peakArea.Callback     = {@peakViewMenuCallback, obj};
+obj.menu.view.peakBaseline.Callback = {@peakViewMenuCallback, obj};
+obj.menu.view.zoom.Callback         = {@zoomMenuCallback, obj};
 
 obj.menu.view.zoom.Separator = 'on';
 
@@ -227,9 +240,9 @@ obj.menu.peakNN1 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v1.0'
 obj.menu.peakNN2 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v2.0');
 obj.menu.peakEGH = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
 
-obj.menu.peakNN1.Tag = 'peaknn1';
-obj.menu.peakNN2.Tag = 'peaknn2';
-obj.menu.peakEGH.Tag = 'peakegh';
+obj.menu.peakNN1.Tag = 'nn1';
+obj.menu.peakNN2.Tag = 'nn2';
+obj.menu.peakEGH.Tag = 'egh';
 
 obj.menu.peakNN1.Checked = 'off';
 obj.menu.peakNN2.Checked = 'on';
@@ -732,15 +745,29 @@ end
 % ---------------------------------------
 % Delete Table Row
 % ---------------------------------------
-function tableDeleteRowMenu(~, ~, obj)
+function tableDeleteRowMenu(src, ~, obj)
 
-if isempty(obj.data) || isempty(obj.table.main.Data) || isempty(obj.table.selection)
+if isempty(obj.data) || isempty(obj.table.main.Data)% || isempty(obj.table.selection)
     return
 else
     row = '';
 end
 
-obj.table.selection = unique(obj.table.selection(:,1));
+switch src.Tag
+    
+    case 'all'
+        obj.table.selection = (1:size(obj.table.main.Data,1))';
+        
+    case 'selected'
+        
+        if isempty(obj.table.selection)
+            return
+        else
+            obj.table.selection = unique(obj.table.selection(:,1));
+        end
+        
+end
+
 nRows = length(obj.table.selection(:,1));
 
 for i = 1:nRows
@@ -863,6 +890,27 @@ if strcmpi(evt.EventName, 'Action')
                 obj.view.showPeakLine = 0;
                 obj.clearAllPeakLine();
             end
+            
+        case 'showPeakArea'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.settings.showPeakArea = 1;
+                obj.updatePeakArea();
+            else
+                obj.settings.showPeakArea = 0;
+                obj.clearAllPeakArea();
+            end
+            
+        case 'showPeakBaseline'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.settings.showPeakBaseline = 1;
+                obj.updatePeakBaseline();
+            else
+                obj.settings.showPeakBaseline = 0;
+                obj.clearAllPeakBaseline();
+            end
+            
     end
     
 end
@@ -1036,18 +1084,7 @@ end
 
 src.Checked = 'on';
 
-switch src.Tag
-
-    case 'peaknn1'
-        obj.settings.peakModel = 'nn1';
-
-    case 'peaknn2'
-        obj.settings.peakModel = 'nn2';
-
-    case 'peakegh'
-        obj.settings.peakModel = 'egh';
-        
-end
+obj.settings.peakModel = src.Tag;
 
 end
 

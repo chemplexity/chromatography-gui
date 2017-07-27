@@ -36,23 +36,34 @@ function initalizeSettings(obj, varargin)
 
 % Font
 obj.settings.gui.fontname    = obj.font;
+obj.settings.axes.fontname   = obj.font;
 obj.settings.labels.fontname = obj.font;
 
 obj.settings.gui.fontsize    = 11.0;
+obj.settings.axes.fontsize   = 11.0;
 obj.settings.labels.fontsize = 11.0;
 
 % Line Width
-obj.settings.plot.linewidth     = 1.25;
-obj.settings.baseline.linewidth = 1.50;
-obj.settings.peaks.linewidth    = 2.00;
+obj.settings.plot.linewidth         = 1.25;
+obj.settings.baseline.linewidth     = 1.50;
+obj.settings.peaks.linewidth        = 2.00;
+obj.settings.peakBaseline.linewidth = 2.00;
 
 % Line Color
-obj.settings.plot.color     = [0.10, 0.10, 0.10];
-obj.settings.baseline.color = [0.95, 0.22, 0.17];
-obj.settings.peaks.color    = [0.00, 0.30, 0.53];
+obj.settings.plot.color         = [0.10, 0.10, 0.10];
+obj.settings.baseline.color     = [0.95, 0.22, 0.17];
+obj.settings.peaks.color        = [0.00, 0.30, 0.53];
+obj.settings.peakFill.color     = [0.00, 0.30, 0.53];
+obj.settings.peakBaseline.color = [0.95, 0.49, 0.69];
+
+% Alpha
+obj.settings.peakFill.alpha = 0.3;
+
+% Markersize
+obj.settings.peakBaseline.markersize = 8;
 
 % Peak Label
-obj.settings.labels.margin    = 3;
+obj.settings.labels.margin = 3;
 obj.settings.labels.precision = '%.2f';
 
 % ---------------------------------------
@@ -60,28 +71,30 @@ obj.settings.labels.precision = '%.2f';
 % --------------------------------------- 
 
 % Auto-Save
-obj.settings.autosave = 1;
+obj.settings.autosave = 1;         % auto-save settings 
 
 % Zoom Settings
-obj.settings.showZoom   = 'off';  % obj.menu.view.zoom.Checked;
-obj.settings.selectZoom = 0;      % obj.view.selectZoom;
+obj.settings.showZoom   = 'off';   % obj.menu.view.zoom.Checked;
+obj.settings.selectZoom = 0;       % obj.view.selectZoom;
 
 % Axes Settings
-obj.settings.xmode = 'auto';      % obj.axes.xmode;
-obj.settings.ymode = 'auto';      % obj.axes.ymode;
-obj.settings.xlim  = [0,1];       % obj.axes.xlim;
-obj.settings.ylim  = [0,1];       % obj.axes.ylim;
-obj.settings.xpad  = 0.02;        % padding between signal & xaxes
-obj.settings.ypad  = 0.02;        % padding between signal & yaxes
+obj.settings.xmode = 'auto';       % obj.axes.xmode;
+obj.settings.ymode = 'auto';       % obj.axes.ymode;
+obj.settings.xlim  = [0,1];        % obj.axes.xlim;
+obj.settings.ylim  = [0,1];        % obj.axes.ylim;
+obj.settings.xpad  = 0.02;         % padding between signal & xaxes
+obj.settings.ypad  = 0.02;         % padding between signal & yaxes
 
 % Plot Settings
-obj.settings.showPeaks    = 1;    % obj.controls.showPeak.Value;
-obj.settings.showBaseLine = 1;    % obj.controls.showBaseline.Value;
-obj.settings.showPeakLine = 1;    % obj.view.showPeakLine;
+obj.settings.showPeaks        = 1; % obj.controls.showPeak.Value;
+obj.settings.showBaseLine     = 1; % obj.controls.showBaseline.Value;
+obj.settings.showPeakLine     = 0; % obj.view.showPeakLine;
+obj.settings.showPeakArea     = 1; % fill peak area 
+obj.settings.showPeakBaseline = 1; % peak baseline 
 
 % Label Settings
-obj.settings.showPlotLabel = 1;   % obj.view.showPlotLabel;
-obj.settings.showPeakLabel = 1;   % obj.view.showPeakLabel;
+obj.settings.showPlotLabel = 1;    % obj.view.showPlotLabel;
+obj.settings.showPeakLabel = 1;    % obj.view.showPeakLabel;
 
 obj.settings.labels.data = {...
     'row_num',...
@@ -110,10 +123,8 @@ obj.settings.peakArea  = 'rawdata';      % 'rawdata', 'fitdata'
 
 obj.settings.keyboard.selectPeak     = 'space';
 obj.settings.keyboard.clearPeak      = 'backspace';
-
 obj.settings.keyboard.previousPeak   = 'uparrow';
 obj.settings.keyboard.nextPeak       = 'downarrow';
-
 obj.settings.keyboard.previousSample = 'leftarrow';
 obj.settings.keyboard.nextSample     = 'rightarrow';
 
@@ -133,6 +144,7 @@ switch mode
         if exist(file, 'file')
             data = importMAT('file', file);
         else
+            applySettings(obj);
             return
         end
         
@@ -169,7 +181,6 @@ obj.settings.showPeaks          = obj.controls.showPeak.Value;
 obj.settings.showPeakLabel      = obj.view.showPeakLabel;
 obj.settings.showPeakLine       = obj.view.showPeakLine;
 obj.settings.showZoom           = obj.menu.view.zoom.Checked;
-obj.settings.selectZoom         = obj.view.selectZoom;
 obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
 obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
 
@@ -192,7 +203,6 @@ obj.settings.showPeaks          = obj.controls.showPeak.Value;
 obj.settings.showPeakLabel      = obj.view.showPeakLabel;
 obj.settings.showPeakLine       = obj.view.showPeakLine;
 obj.settings.showZoom           = obj.menu.view.zoom.Checked;
-obj.settings.selectZoom         = obj.view.selectZoom;
 obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
 obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
 
@@ -213,7 +223,6 @@ obj.view.showPlotLabel = obj.settings.showPlotLabel;
 obj.view.showBaseLine  = obj.settings.showBaseLine;
 obj.view.showPeakLabel = obj.settings.showPeakLabel;
 obj.view.showPeakLine  = obj.settings.showPeakLine;
-obj.view.selectZoom    = obj.settings.selectZoom;
 
 if isfield(obj.settings, 'baselineAsymmetry')
     obj.controls.asymSlider.Value = obj.settings.baselineAsymmetry;
@@ -314,14 +323,27 @@ else
     obj.menu.view.peakLine.Checked = 'off';
 end
 
+if obj.settings.showPeakArea
+    obj.menu.view.peakArea.Checked = 'on';
+else
+    obj.menu.view.peakArea.Checked = 'off';
+end
+
+if obj.settings.showPeakBaseline
+    obj.menu.view.peakBaseline.Checked = 'on';
+else
+    obj.menu.view.peakBaseline.Checked = 'off';
+end
+
+
 if strcmpi(obj.settings.showZoom, 'on')
     obj.menu.view.zoom.Checked = 'on';
-    obj.view.selectZoom = 1;
+    obj.settings.selectZoom = 1;
     obj.userZoom(1);
     obj.userPeak(0);
 else
     obj.menu.view.zoom.Checked = 'off';
-    obj.view.selectZoom = 0;
+    obj.settings.selectZoom = 0;
     obj.userZoom(0);
 end
 
