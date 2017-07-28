@@ -722,7 +722,7 @@ end
 % Time values
 switch data.file_version
     
-    case {'8', '81', '179', '181', '30', '131'}
+    case {'8', '81', '179', '181', '30', '130'}
 
         if ~isempty(t0) && ~isempty(t1) && t1 > t0
             data.time = ftime(t0, t1, numel(data.intensity));
@@ -794,7 +794,7 @@ end
 
 % Sampling Rate
 if ~isempty(data.time)
-    data.sampling_rate = round(1./mean(diff(data.time)));
+    data.sampling_rate = round(1./mean(diff(data.time .* 60)));
 end
 
 end

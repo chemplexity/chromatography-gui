@@ -79,14 +79,14 @@ col = obj.controls.peakList.Value;
 px = peakfindNN(x, y,...
     'xmin', peakCenter - 2.5,...
     'xmax', peakCenter + 2.5,...
-    'sensitivity', 250);
+    'sensitivity', 300);
 
 if ~isempty(px)
     
     [~, ii] = min(abs(peakCenter - px(:,1)));
     xc = px(ii,1);
     
-    xtol = 0.05;
+    xtol = 0.03;
     xf = x(x >= xc-xtol & x <= xc+xtol);
     yf = y(x >= xc-xtol & x <= xc+xtol);
     

@@ -396,8 +396,6 @@ end
 
 dy0 = [0; diff(y0)];
 dy1 = [0; diff(y1)];
-%dy0 = [0; diff(movingAverage(y0, 10))];
-%dy1 = [0; diff(movingAverage(y1, 10))];
 
 dy0 = movingAverage(dy0, 10);
 dy1 = movingAverage(dy1, 10);

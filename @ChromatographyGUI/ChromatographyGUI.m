@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170727-dev';
+        version     = '0.0.7.20170728-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -153,6 +153,10 @@ classdef ChromatographyGUI < handle
                 
                 x = obj.data(row).time;
                 y = obj.data(row).intensity(:,1);
+                
+                if size(x,1) ~= size(y,1)
+                    return
+                end
                 
                 if any(ishandle(obj.view.plotLine))
                     set(obj.view.plotLine, 'xdata', x, 'ydata', y);

@@ -290,15 +290,7 @@ searchDepth = 3;
 try
     data = importAgilent('verbose', isVerbose, 'depth', searchDepth); 
 catch
-    
-    try
-        data = importagilent('verbose', isVerbose, 'depth', searchDepth);
-    catch    
-        disp(['Unable to locate file: ', obj.toolbox_path, filesep,...
-            obj.toolbox_src, filesep, 'file', filesep, 'importAgilent.m']);
-        return
-    end
-    
+    disp('Error importing data...'); 
 end
 
 if ~isempty(data) && isstruct(data)
