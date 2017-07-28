@@ -1353,7 +1353,7 @@ classdef ChromatographyGUI < handle
                     obj.view.name  = obj.data(maxIndex).sample_name;
                 end
                 
-                obj.figure.CurrentObject = obj.controls.peakList;
+                obj.figure.CurrentObject = obj.axes.main;
                 
                 obj.updateSampleText();
                 obj.updateAllPeakListText();
