@@ -29,24 +29,28 @@ columnParameters = {...
 % ---------------------------------------
 if ~isempty(obj.peaks.name)
     
+    width    = obj.settings.table.columnWidth;
+    editable = false;
+    format   = 'numeric';
+    
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Area (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Height (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Height (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Time (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Width (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
 end

@@ -868,13 +868,10 @@ classdef ChromatographyGUI < handle
             obj.table.main.ColumnName = tableHeader;
             obj.table.main.Data = tableData;
             
-            % Set 'ColumnEditable'
+            % Set 'ColumnEditable', 'ColumnWidth', 'ColumnFormat'
             n = length(obj.table.main.ColumnName);
-            
             obj.table.main.ColumnEditable(n) = false;
-            %obj.table.main.ColumnEditable(14:n) = false;
             
-            % Set 'ColumnWidth', 'ColumnFormat'
             m = length(obj.table.main.ColumnWidth);
             w = 110;
             
@@ -1026,31 +1023,12 @@ classdef ChromatographyGUI < handle
             x = fields(obj.peaks);
             x(strcmp(x,'name')) = [];
             
-            for i = 1:length(row)                
-                for j = 1:length(x)
-                    
-                    if size(obj.peaks.(x{j}),1) >= row(i)
-                        obj.peaks.(x{j})(row(i),:) = [];
-                    end
-                    
-                end
+            for i = 1:length(x)                
+                if size(obj.peaks.(x{i}),1) >= max(row)
+                    obj.peaks.(x{i})(row,:) = [];
+                end    
             end
-                
-                %if ~isempty(obj.peaks.time) && size(obj.peaks.time,1) >= row(i)
-                %    obj.peaks.time(row(i),:)   = [];
-                %    obj.peaks.width(row(i),:)  = [];
-                %    obj.peaks.height(row(i),:) = [];
-                %    obj.peaks.area(row(i),:)   = [];
-                %    obj.peaks.error(row(i),:)  = [];
-                %    obj.peaks.fit(row(i),:)    = [];
-                %    obj.peaks.areaOf(row(i),:) = [];
-                %    obj.peaks.model(row(i),:)  = [];
-                %   obj.peaks.xlim(row(i),:)   = [];
-                %    obj.peaks.ylim(row(i),:)   = [];
-                %end
-                
-            %end
-            
+               
         end
         
         % ---------------------------------------
@@ -1192,6 +1170,8 @@ classdef ChromatographyGUI < handle
             fmtStr = '%s%s\t';
             fmtNum = '%s%f\t';
             
+            obj.removeTableHighlightText();
+            
             tableHeader = obj.table.main.ColumnName;
             tableData = obj.table.main.Data;
             
@@ -1231,6 +1211,8 @@ classdef ChromatographyGUI < handle
             end
             
             clipboard('copy', str);
+            
+            obj.addTableHighlightText();
             
         end
         
@@ -1398,10 +1380,6 @@ classdef ChromatographyGUI < handle
                     obj.view.id    = num2str(maxIndex);
                     obj.view.name  = obj.data(maxIndex).sample_name;
                 end
-                
-                %if obj.settings.peakAutoDetect
-                %    obj.toolboxAutoDetect('update');
-                %end
                 
                 obj.figure.CurrentObject = obj.axes.main;
                 

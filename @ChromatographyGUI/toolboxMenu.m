@@ -646,11 +646,15 @@ if size(obj.table.main.Data,2) ~= length(obj.table.main.ColumnName)
     obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
 end
 
+obj.removeTableHighlightText();
+
 try
     excelData = [obj.table.main.ColumnName'; obj.table.main.Data];
 catch
     excelData = obj.table.main.Data;
 end
+
+obj.addTableHighlightText();
 
 if isempty(excelData)
     return
@@ -693,12 +697,16 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
+obj.removeTableHighlightText();
+
 tableHeader = obj.table.main.ColumnName;
 tableData   = obj.table.main.Data;
 
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
+
+obj.addTableHighlightText();
 
 filterExtensions  = '*.csv';
 filterDescription = 'CSV file (*.csv)';

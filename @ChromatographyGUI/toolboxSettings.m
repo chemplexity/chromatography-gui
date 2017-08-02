@@ -37,6 +37,8 @@ obj.settings.gui.color    = [1.00, 1.00, 1.00];
 % Table
 obj.settings.table.backgroundColor = '#0950D0';
 obj.settings.table.textColor       = '#FFFFFF';
+obj.settings.table.columnWidth     = 110;
+obj.settings.table.minColumns      = 13;
 
 % Font
 obj.settings.gui.fontname    = obj.font;
