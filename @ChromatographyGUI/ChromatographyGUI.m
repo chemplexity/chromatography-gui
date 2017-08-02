@@ -115,6 +115,8 @@ classdef ChromatographyGUI < handle
         
         function updateFigure(obj, varargin)
             
+            obj.removeTableHighlightText();
+            
             if obj.view.index == 0 && ~isempty(obj.data)
                 obj.view.index = 1;
                 obj.view.id    = '1';
@@ -129,7 +131,7 @@ classdef ChromatographyGUI < handle
             obj.updateAllPeakListText();
             obj.updatePeakText();
             obj.updatePlot();
-            
+            obj.addTableHighlightText();
         end
         
         function updatePlot(obj, varargin)
@@ -731,8 +733,8 @@ classdef ChromatographyGUI < handle
                 
                 row = obj.table.selection(:,1);
                 
-                %
-                row = unique(row);
+                obj.removeTableHighlightText();
+                %row = unique(row);
                 
                 obj.data(row) = [];
                 obj.peakDeleteRow(row);
@@ -755,6 +757,7 @@ classdef ChromatographyGUI < handle
                 obj.updateAllPeakListText();
                 obj.updatePeakText();
                 obj.updatePlot();
+                obj.addTableHighlightText();
                 
                 if isempty(obj.data)
                     obj.resetAxes();
@@ -865,11 +868,29 @@ classdef ChromatographyGUI < handle
             obj.table.main.ColumnName = tableHeader;
             obj.table.main.Data = tableData;
             
+            % Set 'ColumnEditable'
+            n = length(obj.table.main.ColumnName);
+            
+            obj.table.main.ColumnEditable(n) = false;
+            %obj.table.main.ColumnEditable(14:n) = false;
+            
+            % Set 'ColumnWidth', 'ColumnFormat'
+            m = length(obj.table.main.ColumnWidth);
+            w = 110;
+            
+            for i = 1:n-m
+                obj.table.main.ColumnWidth{end+1} = w;
+                obj.table.main.ColumnFormat{end+1} = 'numeric';
+            end
+            
             obj.validatePeakData(length(obj.data), length(obj.peaks.name));
             
             if length(obj.peaks.name) == 1
                 obj.updatePeakText()
             end
+            
+            obj.removeTableHighlightText();
+            obj.addTableHighlightText();
             
         end
         
@@ -932,6 +953,21 @@ classdef ChromatographyGUI < handle
                 obj.table.main.ColumnName(col+13 + nCol*1 - 1) = [];
                 obj.table.main.ColumnName(col+13 + nCol*2 - 2) = [];
                 obj.table.main.ColumnName(col+13 + nCol*3 - 3) = [];
+                
+                obj.table.main.ColumnEditable(col+13 + nCol*0 - 0) = [];
+                obj.table.main.ColumnEditable(col+13 + nCol*1 - 1) = [];
+                obj.table.main.ColumnEditable(col+13 + nCol*2 - 2) = [];
+                obj.table.main.ColumnEditable(col+13 + nCol*3 - 3) = [];
+                
+                obj.table.main.ColumnWidth(col+13 + nCol*0 - 0) = [];
+                obj.table.main.ColumnWidth(col+13 + nCol*1 - 1) = [];
+                obj.table.main.ColumnWidth(col+13 + nCol*2 - 2) = [];
+                obj.table.main.ColumnWidth(col+13 + nCol*3 - 3) = [];
+                
+                obj.table.main.ColumnFormat(col+13 + nCol*0 - 0) = [];
+                obj.table.main.ColumnFormat(col+13 + nCol*1 - 1) = [];
+                obj.table.main.ColumnFormat(col+13 + nCol*2 - 2) = [];
+                obj.table.main.ColumnFormat(col+13 + nCol*3 - 3) = [];
             end
             
             if ~isempty(obj.table.main.Data) && length(obj.table.main.Data(1,:)) >= col
@@ -1409,38 +1445,38 @@ classdef ChromatographyGUI < handle
         
         function addTableHighlightText(obj, varargin)
             
+            format = obj.table.main.ColumnFormat;
+            width  = cell2mat(obj.table.main.ColumnWidth);
+            
             row = obj.view.index;
-            
-            x = obj.table.main.Data(row,:);
-            n = obj.table.main.ColumnFormat;
-            w = cell2mat(obj.table.main.ColumnWidth);
-            
-            if size(x,2) ~= length(n)
-                obj.table.main.Data{end,length(n)} = [];
-                x = obj.table.main.Data(row,:);
-            end
-            
-            if size(x,1) < 1
+            col = length(format);
+                        
+            if row < 1 || isempty(obj.table.main.Data)
                 return
             end
             
-            cellColor = '#0950D0';
-            textColor = '#FFFFFF';
+            if col > size(obj.table.main.Data,2)
+                obj.table.main.Data{end,col} = [];
+            end
+            
+            x = obj.table.main.Data(row,:);
             
             str = ['<html><body ',...
-                'bgcolor="', cellColor, '" ',...
-                'text="',    textColor, '" ',...
+                'bgcolor="', obj.settings.table.backgroundColor, '" ',...
+                'text="',    obj.settings.table.textColor, '" ',...
                 'width="'];
             
             for i = 1:length(x)
                 
-                xstr = [str, num2str(w(i)), '"'];
-                
-                switch n{i}
-                    case 'char'
-                        x{i} = [xstr, '>', x{i}, '&nbsp</html>'];
-                    case 'numeric'
-                        x{i} = [xstr, ' align="right">', num2str(x{i}), '&nbsp</html>'];
+                if ~strcmpi(format{i}, 'numeric')
+                    x{i} = [str, num2str(width(i)), '">',...
+                        x{i}, '&nbsp</html>'];
+                elseif i > 13
+                    x{i} = [str, num2str(width(i)), '" align="right">',...
+                        sprintf('%.4f', x{i}), '&nbsp</html>'];
+                else
+                    x{i} = [str, num2str(width(i)), '" align="right">',...
+                        num2str(x{i}), '&nbsp</html>'];
                 end
                 
             end
@@ -1449,46 +1485,85 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function addCellHighlightText(obj, row, col)
+            
+            format = obj.table.main.ColumnFormat{col};
+            width  = obj.table.main.ColumnWidth{col};
+            
+            if row < 1 || isempty(obj.table.main.Data)
+                return
+            end
+            
+            if row > size(obj.table.main.Data,1)
+                obj.table.main.Data{row,1} = [];
+            end
+            
+            if col > size(obj.table.main.Data,2)
+                obj.table.main.Data{end,col} = [];
+            end
+            
+            x = obj.table.main.Data{row,col};
+            
+            str = ['<html><body ',...
+                'bgcolor="', obj.settings.table.backgroundColor, '" ',...
+                'text="',    obj.settings.table.textColor, '" ',...
+                'width="',   num2str(width), '"'];
+
+            if ~strcmpi(format, 'numeric')
+                x = [str, '>', x, '&nbsp</html>'];
+            elseif col > 13
+                x = [str, ' align="right">', num2str(x,'%.4f'), '&nbsp</html>'];
+            else
+                x = [str, ' align="right">', num2str(x), '&nbsp</html>'];
+            end
+            
+            obj.table.main.Data{row,col} = x;
+            
+        end
+        
         function removeTableHighlightText(obj, varargin)
             
+            format = obj.table.main.ColumnFormat;
+            
             row = obj.view.index;
+            col = length(format);
+            
+            if row < 1 || isempty(obj.table.main.Data)
+                return
+            end
+            
+            if col > size(obj.table.main.Data,2)
+                obj.table.main.Data{end,col} = [];
+            end
             
             x = obj.table.main.Data(row,:);
-            n = obj.table.main.ColumnFormat;
-            
-            if size(x,2) ~= length(n)
-                obj.table.main.Data{end,length(n)} = [];
-                x = obj.table.main.Data(row,:);
-            end
             
             for i = 1:length(x)
                 
                 if isempty(x{i}) || isnumeric(x{i})
                     continue
+                elseif ischar(x{i}) && ~any(strfind(x{i}, 'html'))
+                    continue
                 end
                 
-                xstr = regexpi(x{i}, '["][>](.+)[&]nbsp[<]', 'tokens', 'once');
+                str = regexpi(x{i}, '["][>](.+)[&]nbsp[<]', 'tokens', 'once');
                 
-                if ~isempty(xstr)
-                    xstr = xstr{1};
-                elseif isempty(xstr) && any(strfind(x{i}, 'html'))
-                    xstr = [];
+                if ~isempty(str)
+                    str = str{1};
+                elseif isempty(str) && any(strfind(x{i}, 'html'))
+                    str = [];
                 else
-                    xstr = x{i};
+                    str = x{i};
                 end
                 
-                if ~isempty(xstr)
-                    switch n{i}
-                        case 'numeric'
-                            xstr = str2double(xstr);
+                if ~isempty(str) && strcmpi(format{i}, 'numeric')
+                    str = str2double(str);
+                    if isnan(str)
+                        str = [];
                     end
                 end
                 
-                if ~isempty(xstr) && isnumeric(xstr) && isnan(xstr)
-                    xstr = [];
-                end
-                
-                x{i} = xstr;
+                x{i} = str;
                 
             end
             
@@ -2107,23 +2182,37 @@ classdef ChromatographyGUI < handle
         
         function clearPeakTable(obj, row, col)
             
-            nCol = length(obj.peaks.name);
+            n = length(obj.peaks.name);
             
-            obj.table.main.Data{row, col+13 + nCol*0} = [];
-            obj.table.main.Data{row, col+13 + nCol*1} = [];
-            obj.table.main.Data{row, col+13 + nCol*2} = [];
-            obj.table.main.Data{row, col+13 + nCol*3} = [];
+            obj.table.main.Data{row, col+13 + n*0} = [];
+            obj.table.main.Data{row, col+13 + n*1} = [];
+            obj.table.main.Data{row, col+13 + n*2} = [];
+            obj.table.main.Data{row, col+13 + n*3} = [];
+            
+            if row == obj.view.index
+                obj.addCellHighlightText(row, col+13 + n*0);
+                obj.addCellHighlightText(row, col+13 + n*1);
+                obj.addCellHighlightText(row, col+13 + n*2);
+                obj.addCellHighlightText(row, col+13 + n*3);
+            end
             
         end
         
         function updatePeakTable(obj, row, col)
             
-            nCol = length(obj.peaks.name);
+            n = length(obj.peaks.name);
             
-            obj.table.main.Data{row, col+13 + nCol*0} = obj.peaks.area{row,col};
-            obj.table.main.Data{row, col+13 + nCol*1} = obj.peaks.height{row,col};
-            obj.table.main.Data{row, col+13 + nCol*2} = obj.peaks.time{row,col};
-            obj.table.main.Data{row, col+13 + nCol*3} = obj.peaks.width{row,col};
+            obj.table.main.Data{row, col+13 + n*0} = obj.peaks.area{row,col};
+            obj.table.main.Data{row, col+13 + n*1} = obj.peaks.height{row,col};
+            obj.table.main.Data{row, col+13 + n*2} = obj.peaks.time{row,col};
+            obj.table.main.Data{row, col+13 + n*3} = obj.peaks.width{row,col};
+            
+            if row == obj.view.index
+                obj.addCellHighlightText(row, col+13 + n*0);
+                obj.addCellHighlightText(row, col+13 + n*1);
+                obj.addCellHighlightText(row, col+13 + n*2);
+                obj.addCellHighlightText(row, col+13 + n*3);
+            end
             
         end
         

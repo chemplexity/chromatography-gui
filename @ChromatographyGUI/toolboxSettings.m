@@ -34,6 +34,10 @@ function initalizeSettings(obj, varargin)
 obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
+% Table
+obj.settings.table.backgroundColor = '#0950D0';
+obj.settings.table.textColor       = '#FFFFFF';
+
 % Font
 obj.settings.gui.fontname    = obj.font;
 obj.settings.table.fontname  = obj.font;

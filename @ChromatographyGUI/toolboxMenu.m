@@ -346,10 +346,6 @@ if ~isempty(data) && isstruct(data)
         
     end
     
-    for i = 1:length(data)
-        data(i).visited = 0;
-    end
-        
     % Update GUI
     for i = 1:length(data)
         obj.data = [obj.data; data(i)];
