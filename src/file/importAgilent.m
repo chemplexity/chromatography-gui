@@ -197,7 +197,7 @@ m = num2str('0');
 n = num2str(length(file));
 msg = ['(', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
 
-h = waitbar(0, ['Loading... ', msg]);
+h = waitbar(0, ['Loading... ', msg], 'name', 'Loading...');
 
 % ---------------------------------------
 % Import
@@ -299,7 +299,7 @@ if isempty(x)
     x = filename;
 end
 
-waitbar(i/j, h, ['Loading ..', filesep, x, msg]);
+waitbar(i/j, h, ['Loading ../', x, msg]);
 
 end
 

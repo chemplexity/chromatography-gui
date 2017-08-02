@@ -185,12 +185,17 @@ end
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
-obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
-obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'Area');
+obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
+obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'Area');
+%obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detect');
 
 obj.menu.peakOptionsLabel.Tag = 'peak';
+
 obj.menu.peakOptionsModel.Separator = 'on';
+%obj.menu.peakOptionsAutoDetect.Separator = 'on';
+
+%obj.menu.peakOptionsAutoDetect.Callback = {@peakAutodetectCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -298,6 +303,8 @@ if ~isempty(data) && isstruct(data)
     % Check file path
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
+    data(cellfun(@isempty, {data.time}))      = [];
+    data(cellfun(@isempty, {data.intensity})) = [];
     
     if isempty(data)
         return
@@ -310,6 +317,17 @@ if ~isempty(data) && isstruct(data)
         data(idx(i)).seqindex = 99;
     end
     
+    % Sort by file name
+    if all(cellfun(@length, {data.channel}) == 1)
+        
+        [~, idx] = sort({data.channel});
+    
+        if length(idx) == length(data)
+            data = data(idx);
+        end
+        
+    end
+    
     % Sort by sequence index
     [~, idx] = sort([data.seqindex], 'ascend');
     
@@ -318,12 +336,20 @@ if ~isempty(data) && isstruct(data)
     end
     
     % Sort by file path
-    [~, idx] = sort({data.file_path});
+    if length(unique({data.file_path})) > 1
     
-    if length(idx) == length(data)
-        data = data(idx);
+        [~, idx] = sort({data.file_path});
+    
+        if length(idx) == length(data)
+            data = data(idx);
+        end
+        
     end
     
+    for i = 1:length(data)
+        data(i).visited = 0;
+    end
+        
     % Update GUI
     for i = 1:length(data)
         obj.data = [obj.data; data(i)];
@@ -342,7 +368,7 @@ end
 % ---------------------------------------
 function loadMatlabCallback(~, ~, obj)
 
-[data, file] = importMAT();
+[data, file] = importMAT('waitbar', true);
 
 if ~isempty(data) && isstruct(data)
     
@@ -355,6 +381,12 @@ if ~isempty(data) && isstruct(data)
         
         if ~isfield(data, 'time') && ~isfield(data, 'intensity')
             return
+        end
+        
+        if ~isfield(data, 'visited')
+            for i = 1:length(data)
+                data(i).visited = 0;
+            end
         end
         
         if ~isfield(data, 'baseline')
@@ -408,7 +440,10 @@ else
     file = [];
 end
 
-file = exportMAT(obj.data, 'file', file, 'varname', 'data');
+file = exportMAT(obj.data,...
+    'file',    file,...
+    'varname', 'data',...
+    'waitbar', true);
 
 if ischar(file)
     obj.checkpoint = file;
@@ -427,7 +462,9 @@ else
     return
 end
 
-file = exportMAT(obj.data, 'varname', 'data');
+file = exportMAT(obj.data,...
+    'varname', 'data',...
+    'waitbar', true);
 
 if ischar(file)
     obj.checkpoint = file;
@@ -594,6 +631,7 @@ if ischar(fileName) && ischar(filePath)
         if ishandle(exportFigure)
             close(exportFigure);
         end
+        
     end
 end
 
@@ -866,20 +904,20 @@ if strcmpi(evt.EventName, 'Action')
         case 'showPeakLabel'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPeakLabel = 1;
+                obj.settings.showPeakLabel = 1;
                 obj.plotPeakLabels();
             else
-                obj.view.showPeakLabel = 0;
+                obj.settings.showPeakLabel = 0;
                 obj.clearAllPeakLabel();
             end
             
         case 'showPeakLine'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPeakLine = 1;
+                obj.settings.showPeakLine = 1;
                 obj.updatePeakLine();
             else
-                obj.view.showPeakLine = 0;
+                obj.settings.showPeakLine = 0;
                 obj.clearAllPeakLine();
             end
             
@@ -931,10 +969,10 @@ if strcmpi(evt.EventName, 'Action')
         case 'showPlotLabel'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPlotLabel = 1;
+                obj.settings.showPlotLabel = 1;
                 obj.updatePlotLabel();
             else
-                obj.view.showPlotLabel = 0;
+                obj.settings.showPlotLabel = 0;
                 obj.clearAxesChildren('plotlabel');
             end
             
@@ -1049,7 +1087,7 @@ switch src.Parent.Tag
         
         obj.settings.labels.data = plotLabel;
 
-        if obj.view.showPlotLabel
+        if obj.settings.showPlotLabel
             obj.updatePlotLabel();
         end
 
@@ -1057,7 +1095,7 @@ switch src.Parent.Tag
         
         obj.settings.labels.peak = plotLabel;
 
-        if obj.view.showPeakLabel
+        if obj.settings.showPeakLabel
             obj.plotPeakLabels();
         end
         
@@ -1094,6 +1132,20 @@ src.Checked = 'on';
 obj.settings.peakArea = src.Tag;
 
 end
+
+% ---------------------------------------
+% Set Peak Auto-Detection
+% ---------------------------------------
+%function peakAutodetectCallback(src, ~, obj)
+
+%switch src.Checked
+%    case 'on'
+%        obj.settings.peakAutoDetect = 1;
+%    case 'off'
+%        obj.settings.peakAutoDetect = 0;
+%end
+%
+%end
 
 % ---------------------------------------
 % Menu

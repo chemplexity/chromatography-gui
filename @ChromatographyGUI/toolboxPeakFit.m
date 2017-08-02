@@ -86,7 +86,7 @@ if ~isempty(px)
     [~, ii] = min(abs(peakCenter - px(:,1)));
     xc = px(ii,1);
     
-    xtol = 0.03;
+    xtol = 0.04;
     xf = x(x >= xc-xtol & x <= xc+xtol);
     yf = y(x >= xc-xtol & x <= xc+xtol);
     
@@ -128,7 +128,11 @@ xi = find(x >= peakCenter, 1);
 
 if ~isempty(xi)
     
-    if y(xi) > 50
+    if y(xi) > 175
+        f = 100;
+    elseif y(xi) > 125
+        f = 200;
+    elseif y(xi) > 50
         f = 300;
     elseif y(xi) > 25
         f = 400;
@@ -150,6 +154,10 @@ peak = peakfitNN(x, y, peakCenter,...
     'baseline', b,...
     'frequency', f);
 
+if peak.error >= 200
+    peak.fit = [];
+end
+
 % Update
 if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.updatePeakData(row, col, peak);
@@ -158,6 +166,7 @@ if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.plotPeakLabels(col);
     obj.updatePeakArea(col);
     obj.updatePeakBaseline(col);
+    
 else
     obj.clearPeakData(row, col);
     obj.clearPeakTable(row, col);
@@ -226,10 +235,19 @@ if ~isempty(peak.width) && ~isempty(peak.time) && peak.width > 0
     y = peak.fit(:,2);
     
     t = peak.time;
-    w = peak.width * 3.0;
+    w = peak.width * 2.5;
     
-    y(x > t+w | x < t-w) = [];
-    x(x > t+w | x < t-w) = [];
+    if isfield(peak, 'xmin') && t-w < peak.xmin
+        yf = y <= 0.02 * max(y) + min(y);
+        y(x < t-w & yf) = [];
+        x(x < t-w & yf) = [];
+    end
+        
+    if isfield(peak, 'xmax') && t+w > peak.xmax
+        yf = y <= 0.02 * max(y) + min(y);
+        y(x > t+w & yf) = [];
+        x(x > t+w & yf) = [];
+    end
     
     if ~isempty(x) && ~isempty(y) && length(x) == length(y)
         peak.fit = [x,y];
@@ -284,6 +302,7 @@ if length(x) == length(y) && any(y)
     b = b(y0);
     
     if size(y,1) == size(b,1)
+        
         y = y + b;
         
         if isfield(peak,'ymin') && isfield(peak,'ymax')
@@ -309,10 +328,13 @@ function b = getBaselineFit(obj,x,y,varargin)
 row = obj.view.index;
 b = [];
 
+xmin = min(x);
+xmax = max(x);
+    
 if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
     
     b = obj.data(row).baseline;
-    b = b(b(:,1) >= min(x) & b(:,1) <= max(x), :);
+    b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
     
     if size(b,1) ~= size(y,1)
         obj.getBaseline(varargin{:});
@@ -322,7 +344,7 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
 elseif isempty(obj.data(row).baseline)
     obj.getBaseline();
     b = obj.data(row).baseline;
-    b = b(b(:,1) >= min(x) & b(:,1) <= max(x), :);
+    b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
 end
 
 if ~isempty(b) && size(b,1) == size(y,1) && size(b,2) == 2

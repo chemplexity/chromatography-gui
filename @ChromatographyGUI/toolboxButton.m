@@ -46,7 +46,7 @@ obj.controls.editPeak = newPushButton(...
 obj.controls.delPeak = newPushButton(...
     obj, obj.panel.peakList, 'Delete', 'delpeak', pl3);
 
-% Integrate Tab --> Baseline --> Refresh, Clear
+% Integrate Tab --> Baseline --> Apply, Clear
 b2(1) = 0.50 - 0.15;
 b2(2) = 0.03;
 b2(3) = 0.30;
@@ -370,13 +370,21 @@ set(obj.controls.peakTimeEdit,   'callback', {@peakEditTextCallback, obj});
 set(obj.controls.peakWidthEdit,  'callback', {@peakEditTextCallback, obj});
 set(obj.controls.peakHeightEdit, 'callback', {@peakEditTextCallback, obj});
 set(obj.controls.peakAreaEdit,   'callback', {@peakEditTextCallback, obj});
-set(obj.controls.showPeak,       'callback', @obj.plotPeaks);
+set(obj.controls.showPeak,       'callback', {@peakCallback, obj});
 set(obj.controls.clearPeak,      'callback', @obj.clearPeak);
 set(obj.controls.selectPeak,     'callback', {@peakSelectCallback, obj});
 
 set(obj.controls.addPeak,  'keypressfcn', {@browseKeyCallback, obj});
 set(obj.controls.editPeak, 'keypressfcn', {@browseKeyCallback, obj});
 set(obj.controls.delPeak,  'keypressfcn', {@browseKeyCallback, obj});
+
+end
+
+function peakCallback(src, ~, obj)
+
+obj.settings.showPeaks = src.Value;
+
+obj.plotPeaks();
 
 end
 
@@ -430,7 +438,10 @@ switch src.String
             return
         end
         
-        x = questdlg('Delete this peak?', 'Delete', 'Yes', 'No', 'Yes');
+        peakName = obj.peaks.name{col};
+        
+        x = questdlg(['Delete "', peakName, '" from the peak list?'],...
+            'Delete', 'Yes', 'No', 'Yes');
         
         if strcmpi(x, 'Yes')
             
@@ -692,21 +703,21 @@ switch src.Tag
     case 'showbaseline'
         
         if src.Value
-            obj.view.showBaseLine = 1;
-            obj.updateBaseLine();
+            obj.settings.showPlotBaseline = 1;
+            obj.updatePlotBaseline();
         else
-            obj.view.showBaseLine = 0;
-            obj.clearAllBaseLine();
+            obj.settings.showPlotBaseline = 0;
+            obj.clearAllPlotBaseline();
         end
         
     case 'applybaseline'
         
         obj.getBaseline();
-        obj.updateBaseLine();
+        obj.updatePlotBaseline();
         
     case 'clearbaseline'
         
-        obj.clearAllBaseLine();
+        obj.clearAllPlotBaseline();
         
         if ~isempty(obj.data(row).baseline)
             obj.data(row).baseline = [];

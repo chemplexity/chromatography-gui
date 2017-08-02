@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170728-dev';
+        version     = '0.0.7.20170802-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -13,8 +13,6 @@ classdef ChromatographyGUI < handle
     end
     
     properties
-        
-        checkpoint
         
         data
         peaks
@@ -32,6 +30,9 @@ classdef ChromatographyGUI < handle
     end
     
     properties (Hidden = true)
+        
+        %autodetect
+        checkpoint
         
         font = ChromatographyGUI.getFont();
         
@@ -82,19 +83,15 @@ classdef ChromatographyGUI < handle
             
             obj.view.plotLine     = [];
             obj.view.plotLabel    = [];
-            obj.view.baseLine     = [];
+            obj.view.plotBaseline = [];
             obj.view.peakLine     = [];
             obj.view.peakLabel    = [];
             obj.view.peakArea     = [];
             obj.view.peakBaseline = [];
+            
             obj.view.selectPeak   = 0;
             
-            obj.view.showPlotLabel = 1;
-            obj.view.showBaseLine  = 1;
-            obj.view.showPeakLabel = 1;
-            obj.view.showPeakLine  = 1;
-            
-            obj.table.selection = [];
+            obj.table.selection   = [];
             
             obj.peaks.time    = {};
             obj.peaks.width   = {};
@@ -109,12 +106,10 @@ classdef ChromatographyGUI < handle
             %obj.peaks.color   = {};
             %obj.peaks.visible = {};
             
-            % ---------------------------------------
-            % GUI
-            % ---------------------------------------
             obj.initializeGUI();
-            
             obj.toolboxSettings([], [], 'load_default');
+            
+            %obj.toolboxAutoDetect('initialize');
             
         end
         
@@ -124,7 +119,6 @@ classdef ChromatographyGUI < handle
                 obj.view.index = 1;
                 obj.view.id    = '1';
                 obj.view.name  = obj.data(1).sample_name;
-                
             elseif isempty(obj.data)
                 obj.view.index = 0;
                 obj.view.id    = 'N/A';
@@ -174,11 +168,11 @@ classdef ChromatographyGUI < handle
                 
                 obj.updateAxesLimits();
                 
-                if obj.controls.showBaseline.Value
+                if obj.settings.showPlotBaseline
                     obj.plotBaseline();
                 end
                 
-                if obj.controls.showPeak.Value
+                if obj.settings.showPeaks
                     obj.plotPeaks();
                 end
                 
@@ -344,7 +338,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.controls.showBaseline.Value
+            elseif ~obj.settings.showPlotBaseline
                 return
             else
                 row = obj.view.index;
@@ -359,14 +353,15 @@ classdef ChromatographyGUI < handle
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if any(ishandle(obj.view.baseLine))
-                    set(obj.view.baseLine, 'xdata', x, 'ydata', y);
+                if any(ishandle(obj.view.plotBaseline))
+                    set(obj.view.plotBaseline, 'xdata', x, 'ydata', y);
                 else
-                    obj.view.baseLine = plot(x, y,...
+                    obj.view.plotBaseline = plot(x, y,...
                         'parent',    obj.axes.main,...
                         'color',     obj.settings.baseline.color,...
                         'linewidth', obj.settings.baseline.linewidth,...
                         'visible',   'on',...
+                        'hittest',   'off',...
                         'tag',       'baseline');
                 end
                 
@@ -385,7 +380,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.controls.showPeak.Value || isempty(obj.peaks.fit)
+            elseif ~obj.settings.showPeaks || isempty(obj.peaks.fit)
                 return
             else
                 row = obj.view.index;
@@ -404,7 +399,7 @@ classdef ChromatographyGUI < handle
                     x = obj.peaks.fit{row,i}(:,1);
                     y = obj.peaks.fit{row,i}(:,2);
                     
-                    if obj.view.showPeakLine
+                    if obj.settings.showPeakLine
                         
                         obj.view.peakLine{i} = plot(x, y,...
                             'parent',    obj.axes.main,...
@@ -428,7 +423,7 @@ classdef ChromatographyGUI < handle
         
         function plotPeakLabels(obj, varargin)
             
-            if ~obj.controls.showPeak.Value || ~obj.view.showPeakLabel
+            if ~obj.settings.showPeaks || ~obj.settings.showPeakLabel
                 return
             elseif isempty(obj.data) || obj.view.index == 0
                 return
@@ -620,6 +615,8 @@ classdef ChromatographyGUI < handle
                             obj.controls.xMax.String = sprintf('%.3f', obj.settings.xlim(2));
                             obj.axes.main.XLim = obj.settings.xlim;
                             
+                            obj.updatePlotLabelPosition();
+                            
                         end
                         
                         if textX >= obj.settings.xlim(1) && tL <= obj.settings.xlim(1)
@@ -688,6 +685,7 @@ classdef ChromatographyGUI < handle
         function b = getBaseline(obj, varargin)
             
             row = obj.view.index;
+            b = [];
             
             if isempty(obj.data) || row == 0
                 return
@@ -707,7 +705,6 @@ classdef ChromatographyGUI < handle
                 setBaseline = 1;
             end
                     
-            
             x = obj.data(row).time;
             y = obj.data(row).intensity;
             
@@ -733,6 +730,9 @@ classdef ChromatographyGUI < handle
             if ~isempty(obj.table.selection)
                 
                 row = obj.table.selection(:,1);
+                
+                %
+                row = unique(row);
                 
                 obj.data(row) = [];
                 obj.peakDeleteRow(row);
@@ -873,9 +873,6 @@ classdef ChromatographyGUI < handle
             
         end
         
-        %function peakInsertColumn(obj, str)
-        %end
-        
         function peakEditColumn(obj, col, str)
             
             if col == 0
@@ -990,22 +987,33 @@ classdef ChromatographyGUI < handle
         
         function peakDeleteRow(obj, row)
             
-            for i = 1:length(row)
-                
-                if ~isempty(obj.peaks.time) && size(obj.peaks.time,1) >= row(i)
-                    obj.peaks.time(row(i),:)   = [];
-                    obj.peaks.width(row(i),:)  = [];
-                    obj.peaks.height(row(i),:) = [];
-                    obj.peaks.area(row(i),:)   = [];
-                    obj.peaks.error(row(i),:)  = [];
-                    obj.peaks.fit(row(i),:)    = [];
-                    obj.peaks.areaOf(row(i),:) = [];
-                    obj.peaks.model(row(i),:)  = [];
-                    obj.peaks.xlim(row(i),:)   = [];
-                    obj.peaks.ylim(row(i),:)   = [];
+            x = fields(obj.peaks);
+            x(strcmp(x,'name')) = [];
+            
+            for i = 1:length(row)                
+                for j = 1:length(x)
+                    
+                    if size(obj.peaks.(x{j}),1) >= row(i)
+                        obj.peaks.(x{j})(row(i),:) = [];
+                    end
+                    
                 end
-                
             end
+                
+                %if ~isempty(obj.peaks.time) && size(obj.peaks.time,1) >= row(i)
+                %    obj.peaks.time(row(i),:)   = [];
+                %    obj.peaks.width(row(i),:)  = [];
+                %    obj.peaks.height(row(i),:) = [];
+                %    obj.peaks.area(row(i),:)   = [];
+                %    obj.peaks.error(row(i),:)  = [];
+                %    obj.peaks.fit(row(i),:)    = [];
+                %    obj.peaks.areaOf(row(i),:) = [];
+                %    obj.peaks.model(row(i),:)  = [];
+                %   obj.peaks.xlim(row(i),:)   = [];
+                %    obj.peaks.ylim(row(i),:)   = [];
+                %end
+                
+            %end
             
         end
         
@@ -1328,6 +1336,8 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(currentIndex) && currentIndex ~= 0
                 
+                obj.removeTableHighlightText();
+                
                 if length(varargin) == 1
                     n = varargin{1};
                 elseif length(varargin) == 3
@@ -1353,12 +1363,17 @@ classdef ChromatographyGUI < handle
                     obj.view.name  = obj.data(maxIndex).sample_name;
                 end
                 
+                %if obj.settings.peakAutoDetect
+                %    obj.toolboxAutoDetect('update');
+                %end
+                
                 obj.figure.CurrentObject = obj.axes.main;
                 
                 obj.updateSampleText();
                 obj.updateAllPeakListText();
                 obj.updatePeakText();
                 obj.updatePlot();
+                obj.addTableHighlightText();
                 obj.userPeak(0);
                 
             end
@@ -1390,6 +1405,95 @@ classdef ChromatographyGUI < handle
                 
             end
             
+        end
+        
+        function addTableHighlightText(obj, varargin)
+            
+            row = obj.view.index;
+            
+            x = obj.table.main.Data(row,:);
+            n = obj.table.main.ColumnFormat;
+            w = cell2mat(obj.table.main.ColumnWidth);
+            
+            if size(x,2) ~= length(n)
+                obj.table.main.Data{end,length(n)} = [];
+                x = obj.table.main.Data(row,:);
+            end
+            
+            if size(x,1) < 1
+                return
+            end
+            
+            cellColor = '#0950D0';
+            textColor = '#FFFFFF';
+            
+            str = ['<html><body ',...
+                'bgcolor="', cellColor, '" ',...
+                'text="',    textColor, '" ',...
+                'width="'];
+            
+            for i = 1:length(x)
+                
+                xstr = [str, num2str(w(i)), '"'];
+                
+                switch n{i}
+                    case 'char'
+                        x{i} = [xstr, '>', x{i}, '&nbsp</html>'];
+                    case 'numeric'
+                        x{i} = [xstr, ' align="right">', num2str(x{i}), '&nbsp</html>'];
+                end
+                
+            end
+            
+            obj.table.main.Data(row,:) = x;
+            
+        end
+        
+        function removeTableHighlightText(obj, varargin)
+            
+            row = obj.view.index;
+            
+            x = obj.table.main.Data(row,:);
+            n = obj.table.main.ColumnFormat;
+            
+            if size(x,2) ~= length(n)
+                obj.table.main.Data{end,length(n)} = [];
+                x = obj.table.main.Data(row,:);
+            end
+            
+            for i = 1:length(x)
+                
+                if isempty(x{i}) || isnumeric(x{i})
+                    continue
+                end
+                
+                xstr = regexpi(x{i}, '["][>](.+)[&]nbsp[<]', 'tokens', 'once');
+                
+                if ~isempty(xstr)
+                    xstr = xstr{1};
+                elseif isempty(xstr) && any(strfind(x{i}, 'html'))
+                    xstr = [];
+                else
+                    xstr = x{i};
+                end
+                
+                if ~isempty(xstr)
+                    switch n{i}
+                        case 'numeric'
+                            xstr = str2double(xstr);
+                    end
+                end
+                
+                if ~isempty(xstr) && isnumeric(xstr) && isnan(xstr)
+                    xstr = [];
+                end
+                
+                x{i} = xstr;
+                
+            end
+            
+            obj.table.main.Data(row,:) = x;
+
         end
         
         function updateSampleText(obj, varargin)
@@ -1492,7 +1596,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.view.showPlotLabel
+            elseif ~obj.settings.showPlotLabel
                 return
             else
                 row = obj.view.index;
@@ -1654,7 +1758,7 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.controls.showPeak.Value || ~obj.view.showPeakLine
+            elseif ~obj.settings.showPeaks || ~obj.settings.showPeakLine
                 return
             else
                 row = obj.view.index;
@@ -1701,7 +1805,7 @@ classdef ChromatographyGUI < handle
         
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.settings.showPeakArea
+            elseif ~obj.settings.showPeaks || ~obj.settings.showPeakArea
                 return
             else
                 row = obj.view.index;
@@ -1791,7 +1895,7 @@ classdef ChromatographyGUI < handle
         
             if isempty(obj.data) || obj.view.index == 0
                 return
-            elseif ~obj.settings.showPeakBaseline
+            elseif ~obj.settings.showPeaks || ~obj.settings.showPeakBaseline
                 return
             else
                 row = obj.view.index;
@@ -1857,9 +1961,9 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function updateBaseLine(obj, varargin)
+        function updatePlotBaseline(obj, varargin)
             
-            if ~obj.controls.showBaseline.Value || isempty(obj.data)
+            if ~obj.settings.showPlotBaseline || isempty(obj.data)
                 return
             elseif obj.view.index == 0
                 return
@@ -1867,15 +1971,19 @@ classdef ChromatographyGUI < handle
                 row = obj.view.index;
             end
             
+            if isempty(obj.data(row).baseline)
+                obj.getBaseline();
+            end
+            
             if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline, 2) == 2
                 
                 x = obj.data(row).baseline(:,1);
                 y = obj.data(row).baseline(:,2);
                 
-                if any(ishandle(obj.view.baseLine))
-                    set(obj.view.baseLine, 'xdata', x, 'ydata', y);
+                if any(ishandle(obj.view.plotBaseline))
+                    set(obj.view.plotBaseline, 'xdata', x, 'ydata', y);
                 else
-                    obj.view.baseLine = plot(x, y,...
+                    obj.view.plotBaseline = plot(x, y,...
                         'parent',    obj.axes.main,...
                         'color',     obj.settings.baseline.color,...
                         'linewidth', obj.settings.baseline.linewidth,...
@@ -2090,8 +2198,8 @@ classdef ChromatographyGUI < handle
         
         function clearAllPlot(obj)
             
-            obj.clearAllLine();
-            obj.clearAllBaseLine();
+            obj.clearAllPlotLine();
+            obj.clearAllPlotBaseline();
             obj.clearAllPeakLine();
             obj.clearAllPeakLabel();
             obj.clearAllPeakArea();
@@ -2107,10 +2215,10 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function clearAllBaseLine(obj)
+        function clearAllPlotBaseline(obj)
             
-            if any(ishandle(obj.view.baseLine))
-                set(obj.view.baseLine, 'xdata', [], 'ydata', []);
+            if any(ishandle(obj.view.plotBaseline))
+                set(obj.view.plotBaseline, 'xdata', [], 'ydata', []);
             end
             
         end
@@ -2433,32 +2541,27 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            %peaks = obj.peaks;
-             
-            %peaks.time   = obj.validateData(peaks.time, rows, cols);
-            %peaks.area   = obj.validateData(peaks.area, rows, cols);
-            %peaks.height = obj.validateData(peaks.height, rows, cols);
-            %peaks.width  = obj.validateData(peaks.width, rows, cols);
-            %peaks.error  = obj.validateData(peaks.error, rows, cols);
-            %peaks.fit    = obj.validateData(peaks.fit, rows, cols);
-            
-            %obj.peaks = p;
-            
         end
         
         function closeRequest(obj, varargin)
             
-            if obj.settings.autosave
+            try
                 
-                try
-                    obj.toolboxSettings([], [], 'save_default');
-                catch
+                if obj.settings.autosave
+                    
+                    try
+                        obj.toolboxSettings([], [], 'save_default');
+                    catch
+                    end
+                
+                end
+            
+                if ishandle(obj.figure)
+                    delete(obj.figure);
                 end
                 
-            end
-            
-            if ishandle(obj.figure)
-                delete(obj.figure);
+            catch
+                closereq();
             end
             
         end
@@ -2472,7 +2575,13 @@ classdef ChromatographyGUI < handle
         end
         
         function x = getScreenSize()
+            
             x = get(0, 'screensize');
+            
+            if length(x) == 4
+                x = x(3:4);
+            end
+            
         end
         
         function x = getEnvironment()
