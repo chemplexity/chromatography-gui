@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170802-dev';
+        version     = '0.0.7.20170803-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -90,7 +90,6 @@ classdef ChromatographyGUI < handle
             obj.view.peakBaseline = [];
             
             obj.view.selectPeak   = 0;
-            
             obj.table.selection   = [];
             
             obj.peaks.time    = {};
@@ -103,16 +102,15 @@ classdef ChromatographyGUI < handle
             obj.peaks.model   = {};
             obj.peaks.xlim    = {};
             obj.peaks.ylim    = {};
-            %obj.peaks.color   = {};
-            %obj.peaks.visible = {};
             
             obj.initializeGUI();
             obj.toolboxSettings([], [], 'load_default');
-            
-            %obj.toolboxAutoDetect('initialize');
-            
+                        
         end
         
+        % ---------------------------------------
+        % Update figure after loading data
+        % ---------------------------------------
         function updateFigure(obj, varargin)
             
             obj.removeTableHighlightText();
@@ -132,8 +130,12 @@ classdef ChromatographyGUI < handle
             obj.updatePeakText();
             obj.updatePlot();
             obj.addTableHighlightText();
+            
         end
         
+        % ---------------------------------------
+        % Plot - update all
+        % ---------------------------------------
         function updatePlot(obj, varargin)
             
             cla(obj.axes.main);
@@ -185,6 +187,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Update x-axes limits
+        % ---------------------------------------
         function updateAxesXLim(obj, varargin)
             
             switch obj.settings.xmode
@@ -240,6 +245,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Update y-axes limits
+        % ---------------------------------------
         function updateAxesYLim(obj, varargin)
             
             row = obj.view.index;
@@ -286,6 +294,10 @@ classdef ChromatographyGUI < handle
             
         end
         
+        
+        % ---------------------------------------
+        % Update mode for axes limits
+        % ---------------------------------------
         function updateAxesLimitMode(obj, varargin)
             
             if obj.controls.xUser.Value
@@ -302,6 +314,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Update toggle buttons for axes limits
+        % ---------------------------------------
         function updateAxesLimitToggle(obj, varargin)
             
             switch obj.settings.xmode
@@ -324,6 +339,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Update text for axes limits
+        % ---------------------------------------
         function updateAxesLimitEditText(obj, varargin)
             
             str = @(x) sprintf('%.3f', x);
@@ -336,6 +354,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Plot - basline
+        % ---------------------------------------
         function plotBaseline(obj)
             
             if isempty(obj.data) || obj.view.index == 0
@@ -371,6 +392,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Plot - peak fit data
+        % ---------------------------------------
         function plotPeaks(obj, varargin)
             
             obj.clearAxesChildren('peak');
@@ -423,6 +447,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Plot - peak labels
+        % ---------------------------------------
         function plotPeakLabels(obj, varargin)
             
             if ~obj.settings.showPeaks || ~obj.settings.showPeakLabel
@@ -664,6 +691,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Axes handle
+        % ---------------------------------------
         function axesMain = getAxes(obj, varargin)
             
             axesLine = obj.axes.main.Children;
@@ -684,6 +714,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Baseline
+        % ---------------------------------------
         function b = getBaseline(obj, varargin)
             
             row = obj.view.index;
@@ -727,6 +760,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Table - delete row
+        % ---------------------------------------
         function tableDeleteRow(obj, varargin)
             
             if ~isempty(obj.table.selection)
@@ -734,7 +770,6 @@ classdef ChromatographyGUI < handle
                 row = obj.table.selection(:,1);
                 
                 obj.removeTableHighlightText();
-                %row = unique(row);
                 
                 obj.data(row) = [];
                 obj.peakDeleteRow(row);
@@ -769,6 +804,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Table - add peak columns
+        % ---------------------------------------
         function peakAddColumn(obj, str)
             
             offset = length(obj.peaks.name);
@@ -891,6 +929,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Table - edit peak column names 
+        % ---------------------------------------
         function peakEditColumn(obj, col, str)
             
             if col == 0
@@ -916,6 +957,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Table - delete peak columns
+        % ---------------------------------------
         function peakDeleteColumn(obj, col)
             
             if col == 0
@@ -1018,21 +1062,38 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Peak data - delete column
+        % ---------------------------------------
+        function peakDeleteCol(obj, col)
+            
+            x = fields(obj.peaks);
+            x(strcmp(x,'name')) = [];
+            
+            for i = 1:length(x)
+                obj.peaks.(x{i})(:,col) = [];
+            end
+            
+            obj.peaks.name(col) = [];
+            
+        end
+        
+        % ---------------------------------------
+        % Peak data - delete row
+        % ---------------------------------------
         function peakDeleteRow(obj, row)
             
             x = fields(obj.peaks);
             x(strcmp(x,'name')) = [];
             
-            for i = 1:length(x)                
-                if size(obj.peaks.(x{i}),1) >= max(row)
-                    obj.peaks.(x{i})(row,:) = [];
-                end    
+            for i = 1:length(x)
+                obj.peaks.(x{i})(row,:) = [];
             end
                
         end
         
         % ---------------------------------------
-        % Copy Figure Plot
+        % Figure - copy to clipboard
         % ---------------------------------------
         function copyFigure(obj, varargin)
             
@@ -1164,6 +1225,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Table - copy to clipboard
+        % ---------------------------------------
         function copyTable(obj, varargin)
             
             str = '';
@@ -1175,6 +1239,8 @@ classdef ChromatographyGUI < handle
             tableHeader = obj.table.main.ColumnName;
             tableData = obj.table.main.Data;
             
+            obj.addTableHighlightText();
+                        
             nRow = size(tableData, 1);
             nCol = length(tableHeader);
             
@@ -1212,10 +1278,11 @@ classdef ChromatographyGUI < handle
             
             clipboard('copy', str);
             
-            obj.addTableHighlightText();
-            
         end
         
+        % ---------------------------------------
+        % Callback - mouse movement
+        % ---------------------------------------
         function figureMotionCallback(obj, src, ~)
             
             if isprop(src, 'CurrentObject')
@@ -1251,6 +1318,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Callback - peak selection
+        % ---------------------------------------
         function peakTimeSelectCallback(obj, ~, evt)
             
             switch evt.EventName
@@ -1275,6 +1345,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Callback - zoom event
+        % ---------------------------------------
         function zoomCallback(obj, varargin)
             
             if obj.view.index ~= 0
@@ -1447,7 +1520,7 @@ classdef ChromatographyGUI < handle
             for i = 1:length(x)
                 
                 if ~strcmpi(format{i}, 'numeric')
-                    x{i} = [str, num2str(width(i)), '">',...
+                    x{i} = [str, num2str(900), '">',...
                         x{i}, '&nbsp</html>'];
                 elseif i > 13
                     x{i} = [str, num2str(width(i)), '" align="right">',...
