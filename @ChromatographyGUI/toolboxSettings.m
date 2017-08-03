@@ -55,7 +55,7 @@ obj.settings.labels.fontsize = 11;
 obj.settings.plot.linewidth         = 1.25;
 obj.settings.baseline.linewidth     = 1.25;
 obj.settings.peaks.linewidth        = 1.75;
-obj.settings.peakBaseline.linewidth = 1.75;
+obj.settings.peakBaseline.linewidth = 1.00;
 
 % Line Color
 obj.settings.plot.color         = [0.10, 0.10, 0.10];

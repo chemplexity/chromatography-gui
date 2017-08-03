@@ -121,9 +121,22 @@ end
 % ---------------------------------------
 % Table Selection Callback
 % ---------------------------------------
-function tableSelectCallback(~, evt, obj)
+function tableSelectCallback(src, evt, obj)
 
 obj.table.selection = evt.Indices;
+
+if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.index
+
+    row = evt.Indices(1,1);
+    col = evt.Indices(1,2);
+    
+    if evt.Indices(1,2) == 9
+        src.Data{row,col} = obj.data(row).sample_info;
+    elseif evt.Indices(1,2) == 13
+        src.Data{row,col} = obj.data(row).injvol;
+    end
+    
+end
 
 end
 
