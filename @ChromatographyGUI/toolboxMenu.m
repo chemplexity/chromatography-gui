@@ -670,8 +670,8 @@ if length(excelData(1,:)) >= 14
     end
 end
 
-filterExtensions  = '*.xls;*.xlsx';
-filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
+filterExtensions  = '*.xlsx;*.xls';
+filterDescription = 'Excel spreadsheet (*.xlsx, *.xls)';
 filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
@@ -787,6 +787,8 @@ else
     row = '';
 end
 
+previousSelection = obj.table.selection;
+
 switch src.Tag
     
     case 'all'
@@ -857,6 +859,7 @@ switch msg
     case 'Yes'
         obj.tableDeleteRow();
     case 'No'
+        obj.table.selection = previousSelection;
         return
 end
 

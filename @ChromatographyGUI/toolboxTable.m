@@ -165,6 +165,8 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
+            previousSelection = obj.table.selection;
+            
             msgPrompt = tableDeleteMessage(obj);
             
             msg = questdlg(...
@@ -176,6 +178,7 @@ if strcmpi(evt.EventName, 'KeyPress')
                 case 'Yes'
                     obj.tableDeleteRow();
                 case 'No'
+                    obj.table.selection = previousSelection;
                     return
             end
             
