@@ -5,7 +5,6 @@ function toolboxTable(obj, varargin)
 % ---------------------------------------
 backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 foregroundColor = [0.00, 0.00, 0.00];
-fontSize = 10;
 
 % ---------------------------------------
 % Table Columns (metadata)
@@ -14,11 +13,11 @@ columnParameters = {...
     'Filepath',   125,   false,   'char';...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
-    'Instrument', 100,   true,    'char';...
-    'Detector',   100,   true,    'char';...
+    'Instrument', 100,   false,   'char';...
+    'Detector',   100,   false,   'char';...
     'Method',     125,   false,   'char';...
-    'Operator',   75,    true,    'char';...
-    'SampleName', 100,   true,    'char';
+    'Operator',   75,    false,   'char';...
+    'SampleName', 100,   false,   'char';
     'SampleInfo', 100,   true,    'char';...
     'SeqLine',    75,    false,   'numeric';...
     'VialNum',    75,    false,   'numeric';...
@@ -30,24 +29,28 @@ columnParameters = {...
 % ---------------------------------------
 if ~isempty(obj.peaks.name)
     
+    width    = obj.settings.table.columnWidth;
+    editable = false;
+    format   = 'numeric';
+    
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Area (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Area (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Height (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Height (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Time (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Time (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
     for i = 1:length(obj.peaks.name)
         columnParameters(end+1, 1:4) = ...
-            {['Width (', obj.peaks.name{i}, ')'], 110, false, 'numeric'};
+            {['Width (', obj.peaks.name{i}, ')'], width, editable, format};
     end
     
 end
@@ -68,8 +71,8 @@ obj.table.main = uitable(...
     'columnformat',          columnParameters(:,4)',...
     'backgroundcolor',       backgroundColor,....
     'foregroundcolor',       foregroundColor,...
-    'fontname',              obj.font,...
-    'fontsize',              fontSize,...
+    'fontname',              obj.settings.table.fontname,...
+    'fontsize',              obj.settings.table.fontsize,...
     'rearrangeablecolumns',  'off',....
     'selectionhighlight',    'off',...
     'celleditcallback',      {@tableEditCallback, obj},...
@@ -88,50 +91,52 @@ if isempty(src.Data)
 end
 
 switch evt.Indices(2)
-    
-    case 4
-        obj.data(evt.Indices(1)).instrument = evt.NewData;
-        
-    case 5
-        obj.data(evt.Indices(1)).instmodel = evt.NewData;
-        
-    case 7
-        obj.data(evt.Indices(1)).operator = evt.NewData;
-        
-    case 8
-        obj.data(evt.Indices(1)).sample_name = evt.NewData;
-        
+
     case 9
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
+        src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
         
     case 13
         
-        if ~isinf(evt.NewData) && isreal(evt.NewData) && ~isnan(evt.NewData)
-            obj.data(evt.Indices(1)).injvol = evt.NewData;
-            %src.Data{evt.Indices(1), evt.Indices(2)} = evt.NewData;
-            
-        elseif isnan(evt.NewData)
+        x = src.Data{evt.Indices(1), evt.Indices(2)};
+        
+        if isempty(x) || ~isnumeric(x) || isnan(x)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
             return
             
+        elseif ~isinf(x) && isreal(x) && ~isnan(x)
+            obj.data(evt.Indices(1)).injvol = x;
+
         else
+            obj.data(evt.Indices(1)).injvol = evt.PreviousData;
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
             return
         end
         
 end
 
-src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
-
 end
 
 % ---------------------------------------
 % Table Selection Callback
 % ---------------------------------------
-function tableSelectCallback(~, evt, obj)
+function tableSelectCallback(src, evt, obj)
 
 obj.table.selection = evt.Indices;
+
+if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.index
+
+    row = evt.Indices(1,1);
+    col = evt.Indices(1,2);
+    
+    if evt.Indices(1,2) == 9
+        src.Data{row,col} = obj.data(row).sample_info;
+    elseif evt.Indices(1,2) == 13
+        src.Data{row,col} = obj.data(row).injvol;
+    end
+    
+end
 
 end
 
@@ -150,8 +155,8 @@ if strcmpi(evt.EventName, 'KeyPress')
         
         case 'return'
             
-            if ~any(obj.table.selection(1,2) == [4,5,7,8,9,13])
-                obj.selectSample(obj.table.selection(1,1) - obj.view.index);
+            if ~any(obj.table.selection(1,2) == [9,13])
+                obj.selectSample(obj.table.selection(1,1)-obj.view.index);
             end
             
         case 'delete'
@@ -159,6 +164,8 @@ if strcmpi(evt.EventName, 'KeyPress')
             if isempty(obj.table.selection) || isempty(obj.data)
                 return
             end
+            
+            previousSelection = obj.table.selection;
             
             msgPrompt = tableDeleteMessage(obj);
             
@@ -171,6 +178,7 @@ if strcmpi(evt.EventName, 'KeyPress')
                 case 'Yes'
                     obj.tableDeleteRow();
                 case 'No'
+                    obj.table.selection = previousSelection;
                     return
             end
             
@@ -180,23 +188,26 @@ if strcmpi(evt.EventName, 'KeyPress')
                 return
             end
             
-            if obj.table.selection(1,2) == 1
+            if any(any(obj.table.selection(:,2) == 13))
                 
-                msgPrompt = tableDeleteMessage(obj);
-                
-                msg = questdlg(...
-                    msgPrompt,...
-                    'Delete',...
-                    'Yes', 'No', 'Yes');
-                
-                switch msg
-                    case 'Yes'
-                        obj.tableDeleteRow();
-                    case 'No'
-                        return
+                for i = 1:length(obj.table.selection(:,2))
+                    
+                    if obj.table.selection(i,2) == 9
+                        row = obj.table.selection(i,1);
+                        obj.data(row).sample_info = [];
+                        obj.table.main.Data{row,9} = []; 
+                    elseif obj.table.selection(i,2) == 13
+                        row = obj.table.selection(i,1);
+                        obj.data(row).injvol = [];
+                        obj.table.main.Data{row,13} = []; 
+                    end
+                    
                 end
+                
             end
+            
     end
+    
 end
 
 end
@@ -251,9 +262,9 @@ for i = 1:nRows
 end
 
 if isempty(row)
-    message = 'Delete selected rows?';
+    message = 'Delete selected samples?';
 else
-    message = ['Delete selected rows (', row, ')?'];
+    message = ['Delete selected samples (', row, ')?'];
 end
 
 end

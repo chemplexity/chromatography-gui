@@ -7,14 +7,10 @@ url.win   = 'Visit ''git-scm.com/download/windows'' to install Git for PC...';
 url.mac   = 'Visit ''git-scm.com/download/mac'' to install Git for OSX...';
 url.linux = 'Visit ''git-scm.com/download/linux'' to install Git for Linux...';
 
-toolboxVersion = obj.version;
-
 % ---------------------------------------
 % Waitbar
 % ---------------------------------------
-w = waitbar(0, 'Updating toolbox...');
-updateWaitbar(w, 0.0, 'Checking online for updates...');
-updateWaitbar(w, 0.1, ['Current toolbox version: ', toolboxVersion]);
+w = waitbar(0, 'Initiating toolbox update...');
 
 % ---------------------------------------
 % Path
@@ -28,6 +24,38 @@ if ~isdir([sourcePath, filesep, '@ChromatographyGUI'])
     return
 else
     cd(sourcePath);
+end
+
+% ---------------------------------------
+% Check Online Version
+% ---------------------------------------
+updateWaitbar(w, 0.0, 'Checking online for new updates...');
+
+[latestVersion, updateStatus] = checkUpdate();
+
+updateWaitbar(w, 0.15, ['Latest online version: ', latestVersion]);
+pause(3);
+
+switch updateStatus
+    
+    case {'unknown'}
+        updateWaitbar(w, 1, 'Unable to update toolbox at this time...');
+        closeWaitbar(w, returnPath);
+        return
+        
+    case {'n'}
+        updateWaitbar(w, 1, 'Everything is up-to-date!');
+        closeWaitbar(w, returnPath);
+        return
+        
+    case {'y'}
+        updateWaitbar(w, 0.15, 'New updates are available!' );
+        
+    otherwise
+        updateWaitbar(w, 1, 'Error retrieving latest online version...');
+        closeWaitbar(w, returnPath);
+        return
+        
 end
 
 % ---------------------------------------
@@ -109,11 +137,10 @@ status = hashGit(git);
 
 switch status
     
-    case 0
-        updateWaitbar(w, 0.7, 'New updates available...');
+    case 0 
         
     case -1
-        updateWaitbar(w, 1, 'Already up-to-date!');
+        updateWaitbar(w, 1, 'Everything is up-to-date!');
         closeWaitbar(w, returnPath);
         return
         
@@ -140,32 +167,6 @@ end
 updateWaitbar(w, 1, 'Update complete!');
 
 updateFinish(git, w, returnPath);
-
-end
-
-function updateCleanup()
-
-% Toolbox Path
-toolboxPath = fileparts(fileparts(mfilename('fullpath')));
-
-% Version < v0.0.5 
-examplePath   = [toolboxPath, filesep, 'examples'];
-integratePath = [toolboxPath, filesep, 'src', filesep, 'integration'];
-integrateFile = {'findpeaks.p', 'exponentialgaussian.m', 'peakdetection.m'};
-
-% chromatography-gui/examples
-if isdir(examplePath)
-    if length(dir(examplePath)) <= 3
-        rmdir(examplePath, 's');
-    end
-end
-
-% chromatography-gui/src/integration
-for i = 1:length(integrateFile)
-    if exist([integratePath, filesep, integrateFile{i}], 'file')
-        delete([integratePath, filesep, integrateFile{i}]);
-    end
-end
 
 end
 
@@ -197,7 +198,6 @@ end
 status = hashGit(git);
 
 if status == -1
-    updateCleanup();
     msg = 'Please exit and restart ChromatographyGUI to complete update...';
     questdlg(msg, 'Update', 'OK', 'OK');
 end
@@ -307,6 +307,35 @@ if status
     updateWaitbar(w, 1, 'Error executing ''git --version''...');
 end
 
+status = configGit(git);
+
+if status
+    updateWaitbar(w, 1, 'Error executing ''git config''...');
+end
+
+end
+
+% ---------------------------------------
+% Check 'git config'
+% ---------------------------------------
+function status = configGit(git)
+
+[status, str] = system([git, ' config --list']);
+
+if ~status
+    
+    % Setup user.name
+    if isempty(regexpi(str, 'user[.]name[=](\w+)', 'tokens', 'once'))
+        [status, ~] = system([git, ' config user.name ChromatographyGUI']);
+    end
+    
+    % Setup user.email
+    if isempty(regexpi(str, 'user[.]name[=](\w+)', 'tokens', 'once'))
+        [status, ~] = system([git, ' config user.email abc@xyz.com']);
+    end
+    
+end
+
 end
 
 % ---------------------------------------
@@ -341,7 +370,7 @@ function status = remoteGit(git, url, w, n)
 
 if status || isempty(remote)
     
-    updateWaitbar(w, n, 'Linking repository to online remote...');
+    updateWaitbar(w, n, 'Linking ''git'' repository to online remote...');
     
     [status, remote] = system([git, ' remote add origin ', url, '.git']);
     
@@ -378,6 +407,22 @@ end
 % Check 'git' branch
 % ---------------------------------------
 function [status, branch] = branchGit(git, w)
+
+[status, msg] = system([git, ' branch --list']);
+
+if ~status && isempty(msg)
+    
+    if ~isempty(contains(ChromatographyGUI.version, 'dev'))
+        status = addBranch(git, 'develop');
+    else
+        status = addBranch(git, 'master');
+    end
+    
+    if status
+        updateWaitbar(w, 1, 'Error executing ''git branch''...');
+    end
+    
+end
 
 [status, msg] = system([git, ' status']);
 
@@ -417,17 +462,23 @@ end
 
 isClean = ~isempty(regexpi(msg, 'working tree clean', 'once'));
 
-if ~status && isClean
-    status = addBranch(git, 'develop');
+if ~isClean
+    status = 1;
 end
 
-if ~status && isClean
-    status = addBranch(git, 'master');
-end
+%if ~status && isClean
+%    if ~isempty(contains(ChromatographyGUI.version, 'dev'))
+%        status = addBranch(git, 'develop');
+%    end
+%end
 
-if ~isempty(branch) && ischar(branch)
-    status = checkoutBranch(git, branch);
-end
+%if ~status && isClean
+%    status = addBranch(git, 'master');
+%end
+
+%if ~isempty(branch) && ischar(branch)
+%    status = checkoutBranch(git, branch);
+%end
 
 end
 
@@ -512,8 +563,8 @@ isBranch = ~isempty(regexp(branchList, str, 'once'));
 
 if ~status && ~isBranch
     [status, ~] = system([git, ' checkout -b ', str]);
-elseif isBranch
-    [status, ~] = system([git, ' checkout ', str]);
+%elseif isBranch
+%    [status, ~] = system([git, ' checkout ', str]);
 end
 
 end
@@ -545,8 +596,13 @@ function status = addCommit(git, w)
 isUncommitted = ~isempty(regexpi(msg, 'changes to be committed', 'once'));
 
 if ~status && isUncommitted
-    [status, ~] = system([git, ' commit -m "new commit"']);
+    msg = ['GUI initialized update - ', ChromatographyGUI.version];
+    [status, ~] = system([git, ' commit -m "', msg, '"']);
 end
+
+%if ~status && isUncommitted
+%    [status, ~] = system([git, ' commit -m "new commit"']);
+%end
 
 if status
     updateWaitbar(w, 1, 'Unable to commit changes to current branch...');
@@ -554,31 +610,25 @@ end
 
 end
 
-function status = checkoutBranch(git, str)
+%function status = checkoutBranch(git, str)
 
-[status, branchList] = system([git, ' branch']);
-isBranch = ~isempty(regexp(branchList, str, 'once'));
-isActive = ~isempty(regexp(branchList, ['[*] ', str], 'once'));
+%[status, branchList] = system([git, ' branch']);
+%isBranch = ~isempty(regexp(branchList, str, 'once'));
+%isActive = ~isempty(regexp(branchList, ['[*] ', str], 'once'));
 
-if ~status && isBranch && ~isActive
-    [status, ~] = system([git, ' checkout ', branch]);
-end
+%if ~status && isBranch && ~isActive
+%    [status, ~] = system([git, ' checkout ', branch]);
+%end
 
-end
+%end
 
 function str = getBranch(git)
 
 [status, branchList] = system([git, ' branch']);
-str = regexp(branchList, '[*] \w+', 'match');
+str = regexp(branchList, '[*] (\w+)', 'tokens', 'once');
 
 if ~status && ~isempty(str) && iscell(str)
-    
-    str = strsplit(deblank(strtrim(str{1})));
-    
-    if iscell(str) && length(str) >= 2
-        str = str{2};
-    end
-    
+    str = str{1};
 else
     str = '';
 end
@@ -610,6 +660,106 @@ if ~isempty(x) && isnumeric(x)
     x = diff(x);
 else
     x = [];
+end
+
+end
+
+function [latestVersion, updateStatus] = checkUpdate()
+
+installedVersion = ChromatographyGUI.version;
+latestVersion    = 'unknown';
+updateStatus     = 'unknown';
+
+% Github URL
+urlHome = 'https://raw.githubusercontent.com/chemplexity/chromatography-gui/';
+urlFile = '/%40ChromatographyGUI/ChromatographyGUI.m';
+
+if ~isempty(regexp(installedVersion, 'dev', 'once'))
+    urlBranch = 'develop';
+else
+    urlBranch = 'master';
+end
+
+% Read ChromatographyGUI.m
+[txt, s] = urlread([urlHome, urlBranch, urlFile], 'timeout', 7);
+
+if s ~= 1
+    updateStatus = 'error';
+    return
+else
+    [txt, ~] = regexpi(txt, '(\d+[.]\d+[.]\d+[.]\d+[-]*\w*)', 'tokens', 'once');
+end
+
+% Parse version number
+if iscell(txt) && ~isempty(txt)
+    latestVersion = txt{1};
+else
+    return
+end
+
+if strcmpi(installedVersion, latestVersion)
+    updateStatus = 'n';
+    return
+end
+    
+installed = parseVersion(installedVersion);
+latest = parseVersion(latestVersion);
+
+if compareVersion(installed, latest, 'date')
+    updateStatus = 'y'; 
+elseif compareVersion(installed, latest, 'a')
+    updateStatus = 'y';
+elseif compareVersion(installed, latest, 'b')
+    updateStatus = 'y';
+elseif compareVersion(installed, latest, 'b')
+    updateStatus = 'y';
+else
+    updateStatus = 'n';
+end
+
+end
+
+function v = parseVersion(x)
+
+v.a = regexpi(x, '^v*(\d+)(?:[.])', 'tokens', 'once');
+v.b = regexpi(x, '[.](\d+)(?:[.])', 'tokens', 'once');
+v.c = regexpi(x, '[.]\d+[.](\d{1,2})', 'tokens', 'once');
+v.date = regexpi(x, '[.](\d{8})', 'tokens', 'once');
+
+if ~isempty(v.a) && ischar(v.a{1})
+    v.a = str2double(v.a{1});
+end
+
+if ~isempty(v.b) && ischar(v.b{1})
+    v.b = str2double(v.b{1});
+end
+
+if ~isempty(v.c) && ischar(v.c{1})
+    v.c = str2double(v.c{1});
+end
+
+if ~isempty(v.date) && ischar(v.date{1}) && length(v.date{1}) == 8
+    v.date = datenum(v.date{1}, 'yyyymmdd');
+end
+
+end
+
+function x = compareVersion(a,b,str)
+
+x = 0;
+
+if ~isstruct(a) || ~isstruct(b)
+    return
+end
+
+if ~isfield(a, str) || ~isfield(b, str)
+    return
+elseif isempty(a.(str)) || isempty(b.(str))
+    return
+elseif ~isnumeric(a.(str)) || ~isnumeric(b.(str)) 
+    return
+elseif a.(str) < b.(str)
+    x = 1;
 end
 
 end

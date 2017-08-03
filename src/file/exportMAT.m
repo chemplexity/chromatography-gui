@@ -16,8 +16,11 @@ function fileName = exportMAT(varargin)
 %   'file' -- name of file
 %       empty (default) | char | cell array of strings
 %
-%   'name' -- variable name
-%       'data' | char
+%   'varname' -- variable name
+%       'data' (default) | char
+%
+%   'waitbar' -- use waitbar to show progress
+%       false (default) | true
 
 % ---------------------------------------
 % Defaults
@@ -25,6 +28,7 @@ function fileName = exportMAT(varargin)
 default.file    = [];
 default.path    = [];
 default.varname = 'data';
+default.waitbar = false;
 default.suggest = [datestr(date, 'yyyymmdd'), '_data'];
 
 % ---------------------------------------
@@ -36,7 +40,8 @@ addRequired(p, 'data');
 
 addParameter(p, 'file', default.file);
 addParameter(p, 'path', default.path);
-addParameter(p, 'name', default.varname);
+addParameter(p, 'varname', default.varname);
+addParameter(p, 'waitbar', default.waitbar);
 addParameter(p, 'suggest', default.suggest);
 
 parse(p, varargin{:});
@@ -48,7 +53,8 @@ data = p.Results.data;
 
 option.file    = p.Results.file;
 option.path    = p.Results.path;
-option.name    = p.Results.name;
+option.varname = p.Results.varname;
+option.waitbar = p.Results.waitbar;
 option.suggest = p.Results.suggest;
 
 default.filter  = {{'*.mat', 'MAT (*.mat)'}, 'Save As...', option.suggest};
@@ -106,14 +112,33 @@ if ~isempty(option.file)
     
 end
 
-if ~isempty(option.name) && ~ischar(option.name)
-    option.name = default.varname;
-elseif isempty(option.name)
-    option.name = default.varname;
+if ~isempty(option.varname) && ~ischar(option.varname)
+    option.varname = default.varname;
+elseif isempty(option.varname)
+    option.varname = default.varname;
 end
 
-feval(@()assignin('caller', option.name, data));
+feval(@()assignin('caller', option.varname, data));
 
+if isnumeric(option.waitbar)
+    if option.waitbar == 1
+        option.waitbar = true;
+    elseif option.waitbar ~= 1
+        option.waitbar = default.waitbar;
+    end
+elseif ~islogical(option.waitbar)
+    option.waitbar = default.waitbar;
+end
+
+% ---------------------------------------
+% Waitbar
+% ---------------------------------------
+if option.waitbar
+    h = waitbar(0, 'Saving file...');
+else
+    h = [];
+end
+   
 % ---------------------------------------
 % Save file
 % ---------------------------------------
@@ -125,12 +150,24 @@ else
     fileName = [filePath, filesep, fileName, fileExt];
 end
 
+if option.waitbar && ishandle(h)
+    waitbar(0.7, h, 'Saving file...');
+end
+
 if ischar(fileName) && ischar(filePath)
-    save(fileName, option.name, '-mat');
+    save(fileName, option.varname, '-mat');
 else
     fileName = [];
 end
 
+if option.waitbar && ishandle(h)
+    waitbar(0.9, h, 'Saving complete!');
+end
+
 cd(userPath);
+
+if ishandle(h)
+    close(h);
+end
 
 end

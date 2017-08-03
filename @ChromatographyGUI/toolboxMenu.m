@@ -15,60 +15,43 @@ obj.menu.help.main    = newMenu(obj.figure, 'Help');
 obj.menu.file.load   = newMenu(obj.menu.file.main, 'Load');
 obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
-obj.menu.file.import = newMenu(obj.menu.file.main, 'Import');
-obj.menu.file.export = newMenu(obj.menu.file.main, 'Export');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
 obj.menu.file.import.Separator = 'on';
 obj.menu.file.exit.Separator   = 'on';
 
-obj.menu.file.save.Callback    = {@saveCheckpoint, obj};
+obj.menu.file.save.Callback = {@saveCheckpoint, obj};
 
-obj.menu.file.exit.Callback    = 'closereq';
+obj.menu.file.exit.Callback = @obj.closeRequest;
 
 % ---------------------------------------
 % File Menu --> Load
 % ---------------------------------------
-obj.menu.loadRaw     = newMenu(obj.menu.file.load, 'Data');
-obj.menu.loadData    = newMenu(obj.menu.file.load, 'Workspace');
-obj.menu.loadAgilent = newMenu(obj.menu.loadRaw, 'Agilent (*.D)');
-obj.menu.loadMat     = newMenu(obj.menu.loadData, 'MAT (*.MAT)');
+obj.menu.loadAgilent   = newMenu(obj.menu.file.load, 'Agilent data (*.D)');
+obj.menu.loadWorkspace = newMenu(obj.menu.file.load, 'Workspace data (*.MAT)');
+obj.menu.loadPeaklist  = newMenu(obj.menu.file.load, 'Peak list (*.MAT)');
 
-obj.menu.loadAgilent.Callback = {@loadAgilentCallback, obj};
-obj.menu.loadMat.Callback     = {@loadMatlabCallback, obj};
+obj.menu.loadAgilent.Callback   = {@loadAgilentCallback, obj};
+obj.menu.loadWorkspace.Callback = {@loadMatlabCallback, obj};
+obj.menu.loadPeaklist.Callback  = {@obj.toolboxPeakList, 'load_custom'};
 
 % ---------------------------------------
 % File Menu --> Save As
 % ---------------------------------------
-obj.menu.saveFig   = newMenu(obj.menu.file.saveAs, 'Figure');
-obj.menu.saveTable = newMenu(obj.menu.file.saveAs, 'Table');
-obj.menu.saveData  = newMenu(obj.menu.file.saveAs, 'Workspace');
-obj.menu.saveImg   = newMenu(obj.menu.saveFig, 'Image (*.JPG, *.PNG, *.TIFF)');
-obj.menu.saveCsv   = newMenu(obj.menu.saveTable, 'CSV (*.CSV)');
-obj.menu.saveMat   = newMenu(obj.menu.saveData, 'MAT (*.MAT)');
+obj.menu.saveWorkspace = newMenu(obj.menu.file.saveAs, 'Workspace data (*.MAT)');
+obj.menu.savePeaklist  = newMenu(obj.menu.file.saveAs, 'Peak list (*.MAT)');
+obj.menu.saveImg       = newMenu(obj.menu.file.saveAs, 'Figure (*.JPG, *.PNG, *.TIFF)');
+obj.menu.saveTable     = newMenu(obj.menu.file.saveAs, 'Table (*.CSV)');
 
-obj.menu.saveImg.Callback = {@saveImageCallback, obj};
-obj.menu.saveCsv.Callback = {@saveCsvCallback, obj};
-obj.menu.saveMat.Callback = {@saveMatlabCallback, obj};
+obj.menu.saveWorkspace.Callback = {@saveMatlabCallback, obj};
+obj.menu.savePeaklist.Callback  = {@obj.toolboxPeakList, 'save_custom'};
+obj.menu.saveImg.Callback       = {@saveImageCallback, obj};
+obj.menu.saveTable.Callback     = {@saveCsvCallback, obj};
 
 if ispc
-    obj.menu.saveXls = newMenu(obj.menu.saveTable, 'Excel (*.XLS, *.XLSX)');
+    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLS, *.XLSX)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
-
-% ---------------------------------------
-% File Menu --> Import/Export
-% ---------------------------------------
-obj.menu.file.importPeakList = newMenu(obj.menu.file.import, 'Peak List');
-obj.menu.file.importSettings = newMenu(obj.menu.file.import, 'Settings');
-
-obj.menu.file.exportPeakList = newMenu(obj.menu.file.export, 'Peak List');
-obj.menu.file.exportSettings = newMenu(obj.menu.file.export, 'Settings');
-
-obj.menu.file.importPeakList.Callback = {@obj.toolboxPeakList, 'load_custom'};
-obj.menu.file.importSettings.Callback = {@obj.toolboxSettings, 'load_custom'};
-obj.menu.file.exportPeakList.Callback = {@obj.toolboxPeakList, 'save_custom'};
-obj.menu.file.exportSettings.Callback = {@obj.toolboxSettings, 'save_custom'};
 
 % ---------------------------------------
 % Edit Menu
@@ -88,40 +71,52 @@ obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.deleteSample   = newMenu(obj.menu.edit.delete, 'Data');
-obj.menu.edit.deleteSelected = newMenu(obj.menu.edit.deleteSample, 'Selected rows...');
+obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
+obj.menu.edit.tableDeleteAll = newMenu(obj.menu.edit.delete, 'All table rows...');
 
-obj.menu.edit.deleteSelected.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteSelected.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteAll.Callback = {@tableDeleteRowMenu, obj};
+
+obj.menu.edit.tableDeleteSelected.Tag = 'selected';
+obj.menu.edit.tableDeleteAll.Tag = 'all';
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.data      = newMenu(obj.menu.view.main, 'Data');
-obj.menu.view.peak      = newMenu(obj.menu.view.main, 'Peak');
-obj.menu.view.zoom      = newMenu(obj.menu.view.main, 'Zoom');
-obj.menu.view.plotLabel = newMenu(obj.menu.view.data, 'Show Label');
-obj.menu.view.peakLabel = newMenu(obj.menu.view.peak, 'Show Label');
-obj.menu.view.peakLine  = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.data         = newMenu(obj.menu.view.main, 'Sample');
+obj.menu.view.peak         = newMenu(obj.menu.view.main, 'Peak');
+obj.menu.view.zoom         = newMenu(obj.menu.view.main, 'Zoom');
+obj.menu.view.plotLabel    = newMenu(obj.menu.view.data, 'Show Label');
+obj.menu.view.peakLabel    = newMenu(obj.menu.view.peak, 'Show Label');
+obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.peakArea     = newMenu(obj.menu.view.peak, 'Show Area');
+obj.menu.view.peakBaseline = newMenu(obj.menu.view.peak, 'Show Baseline');
 
-obj.menu.view.plotLabel.Tag      = 'showPlotLabel';
-obj.menu.view.peakLabel.Tag      = 'showPeakLabel';
-obj.menu.view.peakLine.Tag       = 'showPeakLine';
+obj.menu.view.plotLabel.Tag    = 'showPlotLabel';
+obj.menu.view.peakLabel.Tag    = 'showPeakLabel';
+obj.menu.view.peakLine.Tag     = 'showPeakLine';
+obj.menu.view.peakArea.Tag     = 'showPeakArea';
+obj.menu.view.peakBaseline.Tag = 'showPeakBaseline';
 
-obj.menu.view.plotLabel.Checked  = 'on';
-obj.menu.view.peakLabel.Checked  = 'on';
-obj.menu.view.peakLine.Checked   = 'on';
+obj.menu.view.plotLabel.Checked    = 'on';
+obj.menu.view.peakLabel.Checked    = 'on';
+obj.menu.view.peakLine.Checked     = 'on';
+obj.menu.view.peakArea.Checked     = 'on';
+obj.menu.view.peakBaseline.Checked = 'on';
 
-obj.menu.view.plotLabel.Callback = {@plotViewMenuCallback, obj};
-obj.menu.view.peakLabel.Callback = {@peakViewMenuCallback, obj};
-obj.menu.view.peakLine.Callback  = {@peakViewMenuCallback, obj};
-obj.menu.view.zoom.Callback      = {@zoomMenuCallback, obj};
+obj.menu.view.plotLabel.Callback    = {@plotViewMenuCallback, obj};
+obj.menu.view.peakLabel.Callback    = {@peakViewMenuCallback, obj};
+obj.menu.view.peakLine.Callback     = {@peakViewMenuCallback, obj};
+obj.menu.view.peakArea.Callback     = {@peakViewMenuCallback, obj};
+obj.menu.view.peakBaseline.Callback = {@peakViewMenuCallback, obj};
+obj.menu.view.zoom.Callback         = {@zoomMenuCallback, obj};
 
-obj.menu.view.zoom.Separator     = 'on';
+obj.menu.view.zoom.Separator = 'on';
 
 % ---------------------------------------
 % Options Menu
 % ---------------------------------------
-obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Data');
+obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Sample');
 obj.menu.peakOptions = newMenu(obj.menu.options.main, 'Peak');
 
 % ---------------------------------------
@@ -147,18 +142,18 @@ obj.menu.labelVialNum    = newMenu(obj.menu.labelData, 'Vial #');
 obj.menu.labelSelectAll  = newMenu(obj.menu.labelData, 'Select All');
 obj.menu.labelSelectNone = newMenu(obj.menu.labelData, 'Select None');
 
-obj.menu.labelRowNum.Tag          = 'row_num';
-obj.menu.labelFilePath.Tag        = 'file_path';
-obj.menu.labelFileName.Tag        = 'file_name';
-obj.menu.labelInstrument.Tag      = 'instrument';
-obj.menu.labelDatetime.Tag        = 'datetime';
-obj.menu.labelMethodName.Tag      = 'method_name';
-obj.menu.labelSampleName.Tag      = 'sample_name';
-obj.menu.labelOperator.Tag        = 'operator';
-obj.menu.labelSeqIndex.Tag        = 'seqindex';
-obj.menu.labelVialNum.Tag         = 'vial';
-obj.menu.labelSelectAll.Tag       = 'selectAll';
-obj.menu.labelSelectNone.Tag      = 'selectNone';
+obj.menu.labelRowNum.Tag     = 'row_num';
+obj.menu.labelFilePath.Tag   = 'file_path';
+obj.menu.labelFileName.Tag   = 'file_name';
+obj.menu.labelInstrument.Tag = 'instrument';
+obj.menu.labelDatetime.Tag   = 'datetime';
+obj.menu.labelMethodName.Tag = 'method_name';
+obj.menu.labelSampleName.Tag = 'sample_name';
+obj.menu.labelOperator.Tag   = 'operator';
+obj.menu.labelSeqIndex.Tag   = 'seqindex';
+obj.menu.labelVialNum.Tag    = 'vial';
+obj.menu.labelSelectAll.Tag  = 'selectAll';
+obj.menu.labelSelectNone.Tag = 'selectNone';
 
 obj.menu.labelRowNum.Callback     = {@plotLabelCallback, obj};
 obj.menu.labelFilePath.Callback   = {@plotLabelCallback, obj};
@@ -190,12 +185,17 @@ end
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
-obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
-obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'Area');
+obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
+obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'Area');
+%obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detect');
 
 obj.menu.peakOptionsLabel.Tag = 'peak';
+
 obj.menu.peakOptionsModel.Separator = 'on';
+%obj.menu.peakOptionsAutoDetect.Separator = 'on';
+
+%obj.menu.peakOptionsAutoDetect.Callback = {@peakAutodetectCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -208,13 +208,13 @@ obj.menu.labelPeakArea   = newMenu(obj.menu.peakOptionsLabel, 'Area');
 obj.menu.labelPeakAll    = newMenu(obj.menu.peakOptionsLabel, 'Select All');
 obj.menu.labelPeakNone   = newMenu(obj.menu.peakOptionsLabel, 'Select None');
 
-obj.menu.labelPeakName.Tag        = 'peakName';
-obj.menu.labelPeakTime.Tag        = 'peakTime';
-obj.menu.labelPeakWidth.Tag       = 'peakWidth';
-obj.menu.labelPeakHeight.Tag      = 'peakHeight';
-obj.menu.labelPeakArea.Tag        = 'peakArea';
-obj.menu.labelPeakAll.Tag         = 'selectAll';
-obj.menu.labelPeakNone.Tag        = 'selectNone';
+obj.menu.labelPeakName.Tag   = 'peakName';
+obj.menu.labelPeakTime.Tag   = 'peakTime';
+obj.menu.labelPeakWidth.Tag  = 'peakWidth';
+obj.menu.labelPeakHeight.Tag = 'peakHeight';
+obj.menu.labelPeakArea.Tag   = 'peakArea';
+obj.menu.labelPeakAll.Tag    = 'selectAll';
+obj.menu.labelPeakNone.Tag   = 'selectNone';
 
 obj.menu.labelPeakName.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelPeakTime.Callback   = {@plotLabelCallback, obj};
@@ -241,17 +241,21 @@ end
 % ---------------------------------------
 % Options --> Peak --> Model
 % ---------------------------------------
-obj.menu.peakNeuralNetwork = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN)');
-obj.menu.peakExpGaussian   = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
+obj.menu.peakNN1 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v1.0');
+obj.menu.peakNN2 = newMenu(obj.menu.peakOptionsModel, 'Neural Network (NN) v2.0');
+obj.menu.peakEGH = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybrid (EGH)');
 
-obj.menu.peakNeuralNetwork.Tag      = 'peakNN';
-obj.menu.peakExpGaussian.Tag        = 'peakEGH';
+obj.menu.peakNN1.Tag = 'nn1';
+obj.menu.peakNN2.Tag = 'nn2';
+obj.menu.peakEGH.Tag = 'egh';
 
-obj.menu.peakNeuralNetwork.Checked  = 'off';
-obj.menu.peakExpGaussian.Checked    = 'on';
+obj.menu.peakNN1.Checked = 'off';
+obj.menu.peakNN2.Checked = 'on';
+obj.menu.peakEGH.Checked = 'off';
 
-obj.menu.peakNeuralNetwork.Callback = {@peakModelMenuCallback, obj};
-obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
+obj.menu.peakNN1.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakNN2.Callback = {@peakModelMenuCallback, obj};
+obj.menu.peakEGH.Callback = {@peakModelMenuCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Area
@@ -259,11 +263,11 @@ obj.menu.peakExpGaussian.Callback   = {@peakModelMenuCallback, obj};
 obj.menu.peakOptionsAreaActual = newMenu(obj.menu.peakOptionsArea, 'Raw Data');
 obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
 
-obj.menu.peakOptionsAreaActual.Tag      = 'rawData';
-obj.menu.peakOptionsAreaFit.Tag         = 'fitData';
+obj.menu.peakOptionsAreaActual.Tag = 'rawdata';
+obj.menu.peakOptionsAreaFit.Tag    = 'fitdata';
 
-obj.menu.peakOptionsAreaActual.Checked  = 'on';
-obj.menu.peakOptionsAreaFit.Checked     = 'off';
+obj.menu.peakOptionsAreaActual.Checked = 'on';
+obj.menu.peakOptionsAreaFit.Checked    = 'off';
 
 obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
 obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
@@ -271,40 +275,11 @@ obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
-obj.menu.help.update = newMenu(obj.menu.help.main, 'Check for updates...');
+obj.menu.help.website = newMenu(obj.menu.help.main, 'Project Website');
+obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
 
-obj.menu.help.update.Callback = @obj.toolboxUpdate;
-
-% ---------------------------------------
-% Developer Mode
-% ---------------------------------------
-sourcePath = dir(fileparts(fileparts(mfilename('fullpath'))));
-
-if any(strcmpi('.git', {sourcePath.name}))
-    [gitStatus, ~] = system('git --version');
-    
-    if ~gitStatus
-        [gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
-        
-        if ~gitStatus
-            
-            gitBranch = deblank(strtrim(gitBranch));
-            
-            if strcmpi(gitBranch, 'develop')
-                developerMode = 'on';
-            else
-                developerMode = 'off';
-            end
-            
-            obj.menu.help.update = newMenu(obj.menu.help.main, 'Developer Mode');
-            
-            obj.menu.help.update.Checked   = developerMode;
-            obj.menu.help.update.Callback  = @developerModeCallback;
-            obj.menu.help.update.Separator = 'on';
-            
-        end
-    end
-end
+obj.menu.help.website.Callback = @obj.toolboxWebsite;
+obj.menu.help.update.Callback  = @obj.toolboxUpdate;
 
 end
 
@@ -313,22 +288,14 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-% Import options
+% importAgilent 
 isVerbose = 'off';
 searchDepth = 3;
 
 try
     data = importAgilent('verbose', isVerbose, 'depth', searchDepth); 
 catch
-    
-    try
-        data = importagilent('verbose', isVerbose, 'depth', searchDepth);
-    catch    
-        disp(['Unable to locate file: ', obj.toolbox_path, filesep,...
-            obj.toolbox_src, filesep, 'file', filesep, 'importAgilent.m']);
-        return
-    end
-    
+    disp('Error importing data...'); 
 end
 
 if ~isempty(data) && isstruct(data)
@@ -336,6 +303,8 @@ if ~isempty(data) && isstruct(data)
     % Check file path
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
+    data(cellfun(@isempty, {data.time}))      = [];
+    data(cellfun(@isempty, {data.intensity})) = [];
     
     if isempty(data)
         return
@@ -348,18 +317,33 @@ if ~isempty(data) && isstruct(data)
         data(idx(i)).seqindex = 99;
     end
     
+    % Sort by file name
+    if all(cellfun(@length, {data.channel}) == 1)
+        
+        [~, idx] = sort({data.channel});
+    
+        if length(idx) == length(data)
+            data = data(idx);
+        end
+        
+    end
+    
     % Sort by sequence index
-    [~, idx] = sort([data.seqindex]);
+    [~, idx] = sort([data.seqindex], 'ascend');
     
     if length(idx) == length(data)
-        data(idx) = data;
+        data = data(idx);
     end
     
     % Sort by file path
-    [~, idx] = sort({data.file_path});
+    if length(unique({data.file_path})) > 1
     
-    if length(idx) == length(data)
-        data(idx) = data;
+        [~, idx] = sort({data.file_path});
+    
+        if length(idx) == length(data)
+            data = data(idx);
+        end
+        
     end
     
     % Update GUI
@@ -380,13 +364,35 @@ end
 % ---------------------------------------
 function loadMatlabCallback(~, ~, obj)
 
-[data, file] = importMAT();
+[data, file] = importMAT('waitbar', true);
 
-if ~isempty(data) && isstruct(data) && isfield(data, 'data')
+if ~isempty(data) && isstruct(data)
     
-    data = data.data;
-    
+    if isstruct(data) && length(fields(data)) == 1
+        x = fields(data);
+        data = data.(x{1});
+    end
+        
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
+        
+        if ~isfield(data, 'time') && ~isfield(data, 'intensity')
+            return
+        end
+        
+        if ~isfield(data, 'visited')
+            for i = 1:length(data)
+                data(i).visited = 0;
+            end
+        end
+        
+        if ~isfield(data, 'baseline')
+            data(1).baseline = [];
+        end
+        
+        if ~isfield(data, 'peaks')
+            data(1).peaks = [];
+            data(1).peaks.name = obj.peaks.name;
+        end
         
         obj.data = data;
         obj.peaks = obj.data(1).peaks;
@@ -408,6 +414,7 @@ if ~isempty(data) && isstruct(data) && isfield(data, 'data')
         obj.updateFigure();
         
     end
+    
 end
 
 end
@@ -429,7 +436,10 @@ else
     file = [];
 end
 
-file = exportMAT(obj.data, 'file', file, 'name', 'data');
+file = exportMAT(obj.data,...
+    'file',    file,...
+    'varname', 'data',...
+    'waitbar', true);
 
 if ischar(file)
     obj.checkpoint = file;
@@ -448,7 +458,9 @@ else
     return
 end
 
-file = exportMAT(obj.data, 'name', 'data');
+file = exportMAT(obj.data,...
+    'varname', 'data',...
+    'waitbar', true);
 
 if ischar(file)
     obj.checkpoint = file;
@@ -615,6 +627,7 @@ if ischar(fileName) && ischar(filePath)
         if ishandle(exportFigure)
             close(exportFigure);
         end
+        
     end
 end
 
@@ -633,11 +646,15 @@ if size(obj.table.main.Data,2) ~= length(obj.table.main.ColumnName)
     obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
 end
 
+obj.removeTableHighlightText();
+
 try
     excelData = [obj.table.main.ColumnName'; obj.table.main.Data];
 catch
     excelData = obj.table.main.Data;
 end
+
+obj.addTableHighlightText();
 
 if isempty(excelData)
     return
@@ -653,8 +670,8 @@ if length(excelData(1,:)) >= 14
     end
 end
 
-filterExtensions  = '*.xls;*.xlsx';
-filterDescription = 'Excel spreadsheet (*.xls, *.xlsx)';
+filterExtensions  = '*.xlsx;*.xls';
+filterDescription = 'Excel spreadsheet (*.xlsx, *.xls)';
 filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
@@ -680,12 +697,16 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
+obj.removeTableHighlightText();
+
 tableHeader = obj.table.main.ColumnName;
 tableData   = obj.table.main.Data;
 
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
+
+obj.addTableHighlightText();
 
 filterExtensions  = '*.csv';
 filterDescription = 'CSV file (*.csv)';
@@ -758,15 +779,31 @@ end
 % ---------------------------------------
 % Delete Table Row
 % ---------------------------------------
-function tableDeleteRowMenu(~, ~, obj)
+function tableDeleteRowMenu(src, ~, obj)
 
-if isempty(obj.data) || isempty(obj.table.main.Data) || isempty(obj.table.selection)
+if isempty(obj.data) || isempty(obj.table.main.Data)% || isempty(obj.table.selection)
     return
 else
     row = '';
 end
 
-obj.table.selection = unique(obj.table.selection(:,1));
+previousSelection = obj.table.selection;
+
+switch src.Tag
+    
+    case 'all'
+        obj.table.selection = (1:size(obj.table.main.Data,1))';
+        
+    case 'selected'
+        
+        if isempty(obj.table.selection)
+            return
+        else
+            obj.table.selection = unique(obj.table.selection(:,1));
+        end
+        
+end
+
 nRows = length(obj.table.selection(:,1));
 
 for i = 1:nRows
@@ -808,9 +845,9 @@ for i = 1:nRows
 end
 
 if isempty(row)
-    message = 'Delete selected rows?';
+    message = 'Delete selected samples?';
 else
-    message = ['Delete selected rows (', row, ')?'];
+    message = ['Delete selected samples (', row, ')?'];
 end
 
 msg = questdlg(...
@@ -822,6 +859,7 @@ switch msg
     case 'Yes'
         obj.tableDeleteRow();
     case 'No'
+        obj.table.selection = previousSelection;
         return
 end
 
@@ -873,22 +911,43 @@ if strcmpi(evt.EventName, 'Action')
         case 'showPeakLabel'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPeakLabel = 1;
+                obj.settings.showPeakLabel = 1;
                 obj.plotPeakLabels();
             else
-                obj.view.showPeakLabel = 0;
+                obj.settings.showPeakLabel = 0;
                 obj.clearAllPeakLabel();
             end
             
         case 'showPeakLine'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPeakLine = 1;
+                obj.settings.showPeakLine = 1;
                 obj.updatePeakLine();
             else
-                obj.view.showPeakLine = 0;
+                obj.settings.showPeakLine = 0;
                 obj.clearAllPeakLine();
             end
+            
+        case 'showPeakArea'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.settings.showPeakArea = 1;
+                obj.updatePeakArea();
+            else
+                obj.settings.showPeakArea = 0;
+                obj.clearAllPeakArea();
+            end
+            
+        case 'showPeakBaseline'
+            
+            if strcmpi(src.Checked, 'on')
+                obj.settings.showPeakBaseline = 1;
+                obj.updatePeakBaseline();
+            else
+                obj.settings.showPeakBaseline = 0;
+                obj.clearAllPeakBaseline();
+            end
+            
     end
     
 end
@@ -917,10 +976,10 @@ if strcmpi(evt.EventName, 'Action')
         case 'showPlotLabel'
             
             if strcmpi(src.Checked, 'on')
-                obj.view.showPlotLabel = 1;
+                obj.settings.showPlotLabel = 1;
                 obj.updatePlotLabel();
             else
-                obj.view.showPlotLabel = 0;
+                obj.settings.showPlotLabel = 0;
                 obj.clearAxesChildren('plotlabel');
             end
             
@@ -1035,7 +1094,7 @@ switch src.Parent.Tag
         
         obj.settings.labels.data = plotLabel;
 
-        if obj.view.showPlotLabel
+        if obj.settings.showPlotLabel
             obj.updatePlotLabel();
         end
 
@@ -1043,7 +1102,7 @@ switch src.Parent.Tag
         
         obj.settings.labels.peak = plotLabel;
 
-        if obj.view.showPeakLabel
+        if obj.settings.showPeakLabel
             obj.plotPeakLabels();
         end
         
@@ -1062,15 +1121,7 @@ end
 
 src.Checked = 'on';
 
-switch src.Tag
-    
-    case 'peakNN'
-        obj.settings.peakModel = 'nn';
-        
-    case 'peakEGH'
-        obj.settings.peakModel = 'egh';
-        
-end
+obj.settings.peakModel = src.Tag;
 
 end
 
@@ -1090,65 +1141,18 @@ obj.settings.peakArea = src.Tag;
 end
 
 % ---------------------------------------
-% Enable/Disable Developer Mode
+% Set Peak Auto-Detection
 % ---------------------------------------
-function developerModeCallback(src, ~)
+%function peakAutodetectCallback(src, ~, obj)
 
-[gitStatus, ~] = system('git --version');
-
-if gitStatus
-    return
-end
-
-if strcmpi(src.Checked, 'on')
-    src.Checked = 'off';
-else
-    src.Checked = 'on';
-end
-
-currentPath = pwd;
-sourcePath = fileparts(fileparts(mfilename('fullpath')));
-cd(sourcePath);
-
-[gitStatus, gitBranch] = system('git rev-parse --abbrev-ref HEAD');
-
-if gitStatus
-    return
-else
-    gitBranch = deblank(strtrim(gitBranch));
-end
-
-if strcmpi(src.Checked, 'on') && ~strcmpi(gitBranch, 'develop')
-    
-    [gitStatus,~] = system('git checkout develop');
-    
-    if gitStatus
-        msg = 'Error switching to developer mode...';
-    else
-        msg = 'Please restart ChromatographyGUI to enter developer mode...';
-    end
-    
-elseif strcmpi(src.Checked, 'off') && ~strcmpi(gitBranch, 'master')
-    
-    [gitStatus,~] = system('git checkout master');
-    
-    if gitStatus
-        msg = 'Error switching from developer mode...';
-    else
-        msg = 'Please restart ChromatographyGUI to exit developer mode...';
-    end
-    
-else
-    msg = '';
-end
-
-if ~isempty(msg)
-    questdlg(msg, 'Developer Mode', 'OK', 'OK');
-end
-
-cd(currentPath);
-
-end
+%switch src.Checked
+%    case 'on'
+%        obj.settings.peakAutoDetect = 1;
+%    case 'off'
+%        obj.settings.peakAutoDetect = 0;
+%end
+%
+%end
 
 % ---------------------------------------
 % Menu

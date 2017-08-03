@@ -1,14 +1,14 @@
-function peaks = peakdetection(varargin)
+function peaks = peakfindEGH(varargin)
 % ------------------------------------------------------------------------
-% Method      : peakdetection
+% Method      : peakfindEGH
 % Description : Locate peaks and peak boundary points
 % ------------------------------------------------------------------------
 %
 % ------------------------------------------------------------------------
 % Syntax
 % ------------------------------------------------------------------------
-%   peaks = peakdetection(x, y)
-%   peaks = peakdetection( __ , Name, Value)
+%   peaks = peakfindEGH(x, y)
+%   peaks = peakfindEGH( __ , Name, Value)
 %
 % ------------------------------------------------------------------------
 % Input (Required)
@@ -31,8 +31,8 @@ function peaks = peakdetection(varargin)
 % ------------------------------------------------------------------------
 % Examples
 % ------------------------------------------------------------------------
-%   peaks = peakdetection(x, y, 'width', 1.5, 'center', 42)
-%   peaks = peakdetection(x, y, 'center', 22.10)
+%   peaks = peakfindEGH(x, y, 'width', 1.5, 'center', 42)
+%   peaks = peakfindEGH(x, y, 'center', 22.10)
 
 % ---------------------------------------
 % Defaults
