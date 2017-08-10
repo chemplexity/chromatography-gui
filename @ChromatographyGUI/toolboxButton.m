@@ -707,7 +707,7 @@ switch src.Tag
             obj.updatePlotBaseline();
         else
             obj.settings.showPlotBaseline = 0;
-            obj.clearAllPlotBaseline();
+            obj.clearLine('plotBaseline');
         end
         
     case 'applybaseline'
@@ -717,7 +717,7 @@ switch src.Tag
         
     case 'clearbaseline'
         
-        obj.clearAllPlotBaseline();
+        obj.clearLine('plotBaseline');
         
         if ~isempty(obj.data(row).baseline)
             obj.data(row).baseline = [];

@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.7.20170803';
+        version     = '0.0.8.20170810-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -31,7 +31,6 @@ classdef ChromatographyGUI < handle
     
     properties (Hidden = true)
         
-        %autodetect
         checkpoint
         
         font = ChromatographyGUI.getFont();
@@ -89,23 +88,23 @@ classdef ChromatographyGUI < handle
             obj.view.peakArea     = [];
             obj.view.peakBaseline = [];
             
-            obj.view.selectPeak   = 0;
-            obj.table.selection   = [];
+            obj.view.selectPeak = 0;
+            obj.table.selection = [];
             
-            obj.peaks.time    = {};
-            obj.peaks.width   = {};
-            obj.peaks.height  = {};
-            obj.peaks.area    = {};
-            obj.peaks.areaOf  = {};
-            obj.peaks.error   = {};
-            obj.peaks.fit     = {};
-            obj.peaks.model   = {};
-            obj.peaks.xlim    = {};
-            obj.peaks.ylim    = {};
+            obj.peaks.time   = {};
+            obj.peaks.width  = {};
+            obj.peaks.height = {};
+            obj.peaks.area   = {};
+            obj.peaks.areaOf = {};
+            obj.peaks.error  = {};
+            obj.peaks.fit    = {};
+            obj.peaks.model  = {};
+            obj.peaks.xlim   = {};
+            obj.peaks.ylim   = {};
             
             obj.initializeGUI();
             obj.toolboxSettings([], [], 'load_default');
-                        
+            
         end
         
         % ---------------------------------------
@@ -346,11 +345,10 @@ classdef ChromatographyGUI < handle
             
             str = @(x) sprintf('%.3f', x);
             
-            % Fixed '-0.000' w/ addition of 0
             obj.controls.xMin.String = str(obj.settings.xlim(1) + 0);
-            obj.controls.xMax.String = str(obj.settings.xlim(2));
+            obj.controls.xMax.String = str(obj.settings.xlim(2) + 0);
             obj.controls.yMin.String = str(obj.settings.ylim(1) + 0);
-            obj.controls.yMax.String = str(obj.settings.ylim(2));
+            obj.controls.yMax.String = str(obj.settings.ylim(2) + 0);
             
         end
         
@@ -739,7 +737,7 @@ classdef ChromatographyGUI < handle
             else
                 setBaseline = 1;
             end
-                    
+            
             x = obj.data(row).time;
             y = obj.data(row).intensity;
             
@@ -793,10 +791,6 @@ classdef ChromatographyGUI < handle
                 obj.updatePeakText();
                 obj.updatePlot();
                 obj.addTableHighlightText();
-                
-                if isempty(obj.data)
-                    obj.resetAxes();
-                end
                 
                 obj.validatePeakData(length(obj.data), length(obj.peaks.name));
                 
@@ -930,7 +924,89 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
-        % Table - edit peak column names 
+        % Table - update column header
+        % ---------------------------------------
+        function updateTableHeader(obj, varargin)
+            
+            str = {'Area', 'Height', 'Time', 'Width'};
+            
+            x = obj.table.main.ColumnName(1:obj.settings.table.minColumns);
+            n = obj.peaks.name;
+            
+            if length(n) < 1
+                return
+            end
+            
+            for i = 1:length(str)
+                
+                if obj.settings.table.(['show', str{i}])
+                    a = [str{i}, ' ('];
+                    x = [x; cellfun(@(x) [a,x,')'], n, 'uniformoutput', 0)];
+                end
+                
+            end
+            
+            obj.table.main.ColumnName = x;
+            
+        end
+        
+        % ---------------------------------------
+        % Table - update column properties
+        % ---------------------------------------
+        function updateTableProperties(obj, varargin)
+            
+            str = {'ColumnEditable', 'ColumnWidth', 'ColumnFormat'};
+            
+            m = obj.settings.table.minColumns;
+            n = length(obj.table.main.ColumnName);
+            
+            for i = 1:length(str)
+                
+                x = obj.table.main.(str{i})(1:m);
+                
+                if n > m
+                    
+                    switch str{i}
+                        case 'ColumnEditable'
+                            x(n) = false;
+                        case 'ColumnWidth'
+                            w = obj.settings.table.columnWidth;
+                            x = [x, repmat({w}, 1, n-m)];
+                        case 'ColumnFormat'
+                            x = [x, repmat({'numeric'}, 1, n-m)];
+                    end
+                    
+                end
+                
+                obj.table.main.(str{i}) = x;
+                
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Table - update data
+        % ---------------------------------------
+        function updateTableData(obj, varargin)
+            
+            str = {'Area', 'Height', 'Time', 'Width'};
+            
+            x = obj.table.main.Data(:,1:obj.settings.table.minColumns);
+            
+            for i = 1:length(str)
+                
+                if obj.settings.table.(['show', str{i}])
+                    x = [x, obj.peaks.(lower(str{i}))];
+                end
+                
+            end
+            
+            obj.table.main.Data = x;
+            
+        end
+        
+        % ---------------------------------------
+        % Table - edit peak column names
         % ---------------------------------------
         function peakEditColumn(obj, col, str)
             
@@ -1089,7 +1165,7 @@ classdef ChromatographyGUI < handle
             for i = 1:length(x)
                 obj.peaks.(x{i})(row,:) = [];
             end
-               
+            
         end
         
         % ---------------------------------------
@@ -1240,7 +1316,7 @@ classdef ChromatographyGUI < handle
             tableData = obj.table.main.Data;
             
             obj.addTableHighlightText();
-                        
+            
             nRow = size(tableData, 1);
             nCol = length(tableHeader);
             
@@ -1501,7 +1577,7 @@ classdef ChromatographyGUI < handle
             
             row = obj.view.index;
             col = length(format);
-                        
+            
             if row < 1 || isempty(obj.table.main.Data)
                 return
             end
@@ -1520,8 +1596,7 @@ classdef ChromatographyGUI < handle
             for i = 1:length(x)
                 
                 if ~strcmpi(format{i}, 'numeric')
-                    x{i} = [str, num2str(900), '">',...
-                        x{i}, '&nbsp</html>'];
+                    x{i} = [str, num2str(1000), '">', x{i}, '&nbsp</html>'];
                 elseif i > 13
                     x{i} = [str, num2str(width(i)), '" align="right">',...
                         sprintf('%.4f', x{i}), '&nbsp</html>'];
@@ -1559,10 +1634,10 @@ classdef ChromatographyGUI < handle
                 'bgcolor="', obj.settings.table.backgroundColor, '" ',...
                 'text="',    obj.settings.table.textColor, '" ',...
                 'width="',   num2str(width), '"'];
-
+            
             if ~strcmpi(format, 'numeric')
                 x = [str, '>', x, '&nbsp</html>'];
-            elseif col > 13
+            elseif col > 13 && ~isempty(x)
                 x = [str, ' align="right">', num2str(x,'%.4f'), '&nbsp</html>'];
             else
                 x = [str, ' align="right">', num2str(x), '&nbsp</html>'];
@@ -1597,10 +1672,11 @@ classdef ChromatographyGUI < handle
                     continue
                 end
                 
-                str = regexpi(x{i}, '["][>](.+)[&]nbsp[<]', 'tokens', 'once');
+                str = regexpi(x{i}, '["][>](.+)[<][/]h', 'tokens', 'once');
                 
                 if ~isempty(str)
                     str = str{1};
+                    str = strrep(str, '&nbsp', '');
                 elseif isempty(str) && any(strfind(x{i}, 'html'))
                     str = [];
                 else
@@ -1619,7 +1695,7 @@ classdef ChromatographyGUI < handle
             end
             
             obj.table.main.Data(row,:) = x;
-
+            
         end
         
         function updateSampleText(obj, varargin)
@@ -1928,7 +2004,7 @@ classdef ChromatographyGUI < handle
         end
         
         function updatePeakArea(obj, varargin)
-        
+            
             if isempty(obj.data) || obj.view.index == 0
                 return
             elseif ~obj.settings.showPeaks || ~obj.settings.showPeakArea
@@ -2002,7 +2078,7 @@ classdef ChromatographyGUI < handle
                     else
                         obj.view.peakArea{col(i)} = fill(xArea, yArea,...
                             obj.settings.peakFill.color,...
-                            'parent',    obj.axes.main,...    
+                            'parent',    obj.axes.main,...
                             'facecolor', obj.settings.peakFill.color,...
                             'facealpha', obj.settings.peakFill.alpha,...
                             'edgecolor', 'none',...
@@ -2018,7 +2094,7 @@ classdef ChromatographyGUI < handle
         end
         
         function updatePeakBaseline(obj, varargin)
-        
+            
             if isempty(obj.data) || obj.view.index == 0
                 return
             elseif ~obj.settings.showPeaks || ~obj.settings.showPeakBaseline
@@ -2073,7 +2149,7 @@ classdef ChromatographyGUI < handle
                         set(obj.view.peakBaseline{col(i)}, 'xdata', x, 'ydata', y);
                     else
                         obj.view.peakBaseline{col(i)} = plot(x, y, '.-',...
-                            'parent',     obj.axes.main,...    
+                            'parent',     obj.axes.main,...
                             'color',      obj.settings.peakBaseline.color,...
                             'markersize', obj.settings.peakBaseline.markersize,...,...
                             'linewidth',  obj.settings.peakBaseline.linewidth,...
@@ -2198,7 +2274,7 @@ classdef ChromatographyGUI < handle
             obj.peaks.model{row,col}  = [];
             obj.peaks.xlim{row,col}   = [];
             obj.peaks.ylim{row,col}   = [];
-                    
+            
         end
         
         function updatePeakData(obj, row, col, peak)
@@ -2338,75 +2414,56 @@ classdef ChromatographyGUI < handle
         
         function clearAllPlot(obj)
             
-            obj.clearAllPlotLine();
-            obj.clearAllPlotBaseline();
-            obj.clearAllPeakLine();
-            obj.clearAllPeakLabel();
-            obj.clearAllPeakArea();
-            obj.clearAllPeakBaseline();
+            obj.clearLine('plotLine');
+            obj.clearLine('plotBaseline');
+            obj.clearLine('peakLine');
+            obj.clearLine('peakArea');
+            obj.clearLine('peakBaseLine');
+            
+            obj.clearLabel('peakLabel');
             
         end
         
-        function clearAllPlotLine(obj)
+        function clearLine(obj, str)
             
-            if any(ishandle(obj.view.plotLine))
-                set(obj.view.plotLine, 'xdata', [], 'ydata', []);
-            end
-            
-        end
-        
-        function clearAllPlotBaseline(obj)
-            
-            if any(ishandle(obj.view.plotBaseline))
-                set(obj.view.plotBaseline, 'xdata', [], 'ydata', []);
-            end
-            
-        end
-        
-        function clearAllPeakLine(obj)
-            
-            if ~isempty(obj.view.peakLine)
-                for i = 1:length(obj.view.peakLine)
-                    if any(ishandle(obj.view.peakLine{i}))
-                        set(obj.view.peakLine{i}, 'xdata', [], 'ydata', []);
+            if isfield(obj.view, str)
+                
+                for i = 1:length(obj.view.(str))
+                    
+                    if iscell(obj.view.(str))
+                        x = obj.view.(str){i};
+                    else
+                        x = obj.view.(str)(i);
                     end
+                    
+                    if any(ishandle(x))
+                        set(x, 'xdata', [], 'ydata', []);
+                    end
+                    
                 end
+                
             end
             
         end
         
-        function clearAllPeakLabel(obj)
+        function clearLabel(obj, str)
             
-            if ~isempty(obj.view.peakLabel)
-                for i = 1:length(obj.view.peakLabel)
-                    if any(ishandle(obj.view.peakLabel{i}))
-                        delete(obj.view.peakLabel{i});
+            if isfield(obj.view, str)
+                
+                for i = 1:length(obj.view.(str))
+                    
+                    if iscell(obj.view.(str))
+                        x = obj.view.(str){i};
+                    else
+                        x = obj.view.(str)(i);
                     end
-                end
-            end
-            
-        end
-        
-        function clearAllPeakArea(obj)
-            
-            if ~isempty(obj.view.peakArea)
-                for i = 1:length(obj.view.peakArea)
-                    if any(ishandle(obj.view.peakArea{i}))
-                        set(obj.view.peakArea{i}, 'xdata', [], 'ydata', []);
+                    
+                    if any(ishandle(x))
+                        delete(x);
                     end
+                    
                 end
-            end
-            
-        end
-        
-        function clearAllPeakBaseline(obj)
-            
-            if ~isempty(obj.view.peakBaseline)
-                for i = 1:length(obj.view.peakBaseline)
-                    if any(ishandle(obj.view.peakBaseline{i}))
-                        set(obj.view.peakBaseline{i}, 'xdata', [], 'ydata', []);
-                    end
-                end
+                
             end
             
         end
@@ -2424,21 +2481,6 @@ classdef ChromatographyGUI < handle
         
         function updateAxesLimits(obj)
             
-            obj.updateAxesXLim();
-            obj.updateAxesYLim();
-            
-        end
-        
-        function resetAxes(obj)
-            
-            obj.settings.xlim  = [0.000, 1.000];
-            obj.settings.ylim  = [0.000, 1.000];
-            
-            obj.settings.xmode = 'auto';
-            obj.settings.ymode = 'auto';
-            
-            obj.updateAxesLimitToggle();
-            obj.updateAxesLimitEditText();
             obj.updateAxesXLim();
             obj.updateAxesYLim();
             
@@ -2665,8 +2707,8 @@ classdef ChromatographyGUI < handle
         
         function validatePeakData(obj, rows, cols)
             
-            x = {'time', 'width', 'height', 'area', 'error',...
-                'fit', 'model', 'areaOf', 'xlim', 'ylim'};
+            x = fields(obj.peaks);
+            x(strcmp(x,'name')) = [];
             
             for i = 1:length(x)
                 
@@ -2674,10 +2716,17 @@ classdef ChromatographyGUI < handle
                     obj.peaks.(x{i}) = {};
                 end
                 
-                obj.peaks.(x{i}) = obj.validateData(...
-                    obj.peaks.(x{i}),...
-                    rows,...
-                    cols);
+                if size(obj.peaks.(x{i}),1) < rows
+                    obj.peaks.(x{i}){rows,1} = [];
+                elseif size(obj.peaks.(x{i}),1) > rows
+                    obj.peaks.(x{i})(rows+1:end,:) = [];
+                end
+                
+                if size(obj.peaks.(x{i}),2) < cols
+                    obj.peaks.(x{i}){1,cols} = [];
+                elseif size(obj.peaks.(x{i}),2) > cols
+                    obj.peaks.(x{i})(:,cols+1:end) = [];
+                end
                 
             end
             
@@ -2693,9 +2742,9 @@ classdef ChromatographyGUI < handle
                         obj.toolboxSettings([], [], 'save_default');
                     catch
                     end
-                
+                    
                 end
-            
+                
                 if ishandle(obj.figure)
                     delete(obj.figure);
                 end
@@ -2742,8 +2791,7 @@ classdef ChromatographyGUI < handle
             sysFonts = listfonts;
             x = 'FixedWidth';
             
-            fontPref = {...
-                'Avenir'; 'SansSerif'; 'Helvetica Neue';
+            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue';
                 'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
             
             for i = 1:length(fontPref)
@@ -2755,18 +2803,18 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function data = validateData(data, rows, cols)
+        function x = validateData(x, rows, cols)
             
-            if size(data,1) < rows
-                data{rows,1} = [];
-            elseif size(data,1) > rows
-                data(rows+1:end,:) = [];
+            if size(x,1) < rows
+                x{rows,1} = [];
+            elseif size(x,1) > rows
+                x(rows+1:end,:) = [];
             end
             
-            if size(data,2) < cols
-                data{1,cols} = [];
-            elseif size(data,2) > cols
-                data(:,cols+1:end) = [];
+            if size(x,2) < cols
+                x{1,cols} = [];
+            elseif size(x,2) > cols
+                x(:,cols+1:end) = [];
             end
             
         end
