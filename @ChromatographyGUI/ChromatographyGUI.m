@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20170810-dev';
+        version     = '0.0.8.20170828-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -32,7 +32,6 @@ classdef ChromatographyGUI < handle
     properties (Hidden = true)
         
         checkpoint
-        
         font = ChromatographyGUI.getFont();
         
         % /path/to/chromatography-gui
@@ -752,8 +751,14 @@ classdef ChromatographyGUI < handle
             y = movingAverage(y);
             b = baseline(y, 'asymmetry', a, 'smoothness', s);
             
-            if length(x) == length(b) && setBaseline
-                obj.data(row).baseline = [x, b];
+            if length(x) == length(b)
+                
+                b = [x, b];
+                
+                if setBaseline
+                    obj.data(row).baseline = b;
+                end
+            
             end
             
         end

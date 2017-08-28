@@ -82,11 +82,11 @@ px = peakfindNN(x, y,...
     'sensitivity', 300);
 
 if ~isempty(px)
-    
+
     [~, ii] = min(abs(peakCenter - px(:,1)));
     xc = px(ii,1);
     
-    xtol = 0.04;
+    xtol = 0.03;
     xf = x(x >= xc-xtol & x <= xc+xtol);
     yf = y(x >= xc-xtol & x <= xc+xtol);
     
@@ -336,14 +336,40 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
     b = obj.data(row).baseline;
     b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
     
+    if isempty(b)
+        b = obj.getBaseline(varargin{:});
+        b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
+    end
+    
+    if min(b(:,1)) > xmin && max(b(:,1)) >= xmax
+    
+        if size(b,1) ~= size(y,1)            
+            n = numel(x) - size(b,1);
+            
+            if abs(x(n+1) - b(1,1)) <= 0.01
+                b = [x(1:n), repmat(b(1,2),n,1); b];
+            end
+        end
+
+    elseif min(b(:,1)) <= xmin && max(b(:,1)) < xmax
+       
+        if size(b,1) ~= size(y,1)    
+            n = numel(x) - size(b,1);
+            
+            if abs(x(end-n) - b(end,1)) <= 0.01
+                b = [b; x(end-n+1:end), repmat(b(end,2),n,1)];
+            end
+        end
+        
+    end
+    
     if size(b,1) ~= size(y,1)
-        obj.getBaseline(varargin{:});
-        b = obj.data(row).baseline;
+        b = obj.getBaseline(varargin{:});
+        b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
     end
         
 elseif isempty(obj.data(row).baseline)
-    obj.getBaseline();
-    b = obj.data(row).baseline;
+    b = obj.getBaseline();
     b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
 end
 
