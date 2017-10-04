@@ -2,9 +2,9 @@ function toolboxPeakList(obj, ~, ~, varargin)
 
 % Peak List (struct) > v0.0.5
 %
-% version (char)    : 'x.y.z.date'
-% name (char)       : 'peaklist'
-% data (cell) (nx1) : peak name (char) 
+% version (char) : 'x.y.z.date'
+% name (char)    : 'peaklist'
+% data (cell)    : peak name (char) 
 
 if isempty(varargin) || ~ischar(varargin{1})
     return
@@ -18,7 +18,10 @@ switch varargin{1}
     case {'load_default', 'load_custom'}
         loadPeakList(obj, varargin{1});
         
-    case {'save_default', 'save_custom'}
+    case {'save_default'}
+        autosavePeakList(obj, varargin{1});
+        
+    case {'save_custom'}
         savePeakList(obj, varargin{1});
         
     case {'apply'}
@@ -111,17 +114,26 @@ end
 
 function savePeakList(obj, varargin)
 
-if isempty(obj.peaks.name)
-    return
-end
-
 user_peaks.version = obj.version;
-user_peaks.name    = 'peaklist';
-user_peaks.data    = obj.peaks.name;
+user_peaks.name = 'peaklist';
+user_peaks.data = obj.peaks.name;
 
 exportMAT(user_peaks,...
     'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
     'varname', 'user_peaks',...
-    'suggest', 'default_peaklist');
+    'suggest', obj.default.peak_list);
+
+end
+
+function autosavePeakList(obj, varargin)
+
+user_peaks.version = obj.version;
+user_peaks.name = 'peaklist';
+user_peaks.data = obj.peaks.name;
+
+exportMAT(user_peaks,...
+    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
+    'file', obj.default_peaklist,...
+    'varname', 'user_peaks');
 
 end

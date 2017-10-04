@@ -17,11 +17,9 @@ obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
-obj.menu.file.import.Separator = 'on';
-obj.menu.file.exit.Separator   = 'on';
+obj.menu.file.exit.Separator = 'on';
 
 obj.menu.file.save.Callback = {@saveCheckpoint, obj};
-
 obj.menu.file.exit.Callback = @obj.closeRequest;
 
 % ---------------------------------------
@@ -49,7 +47,7 @@ obj.menu.saveImg.Callback       = {@saveImageCallback, obj};
 obj.menu.saveTable.Callback     = {@saveCsvCallback, obj};
 
 if ispc
-    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLS, *.XLSX)');
+    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLSX, *.XLS)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
 
@@ -86,9 +84,10 @@ obj.menu.edit.tableDeleteAll.Tag = 'all';
 obj.menu.view.data         = newMenu(obj.menu.view.main, 'Sample');
 obj.menu.view.peak         = newMenu(obj.menu.view.main, 'Peak');
 obj.menu.view.zoom         = newMenu(obj.menu.view.main, 'Zoom');
+
 obj.menu.view.plotLabel    = newMenu(obj.menu.view.data, 'Show Label');
 obj.menu.view.peakLabel    = newMenu(obj.menu.view.peak, 'Show Label');
-obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Fit');
 obj.menu.view.peakArea     = newMenu(obj.menu.view.peak, 'Show Area');
 obj.menu.view.peakBaseline = newMenu(obj.menu.view.peak, 'Show Baseline');
 
@@ -185,17 +184,13 @@ end
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
-obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
-obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'Area');
-%obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detect');
+obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
+obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'Area');
 
 obj.menu.peakOptionsLabel.Tag = 'peak';
 
 obj.menu.peakOptionsModel.Separator = 'on';
-%obj.menu.peakOptionsAutoDetect.Separator = 'on';
-
-%obj.menu.peakOptionsAutoDetect.Callback = {@peakAutodetectCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -375,14 +370,8 @@ if ~isempty(data) && isstruct(data)
         
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
         
-        if ~isfield(data, 'time') && ~isfield(data, 'intensity')
+        if ~isfield(data, 'time') || ~isfield(data, 'intensity')
             return
-        end
-        
-        if ~isfield(data, 'visited')
-            for i = 1:length(data)
-                data(i).visited = 0;
-            end
         end
         
         if ~isfield(data, 'baseline')
@@ -396,6 +385,7 @@ if ~isempty(data) && isstruct(data)
         
         obj.data = data;
         obj.peaks = obj.data(1).peaks;
+        obj.validatePeakFields();
         
         if ~isempty(obj.peaks.name)
             nRow = length(obj.data);

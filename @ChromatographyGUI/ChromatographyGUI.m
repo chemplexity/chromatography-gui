@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20170828-dev';
+        version     = '0.0.8.20171004-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -477,9 +477,6 @@ classdef ChromatographyGUI < handle
                     
                     obj.clearPeakLabel(col(i));
                     
-                    x = obj.peaks.fit{row,col(i)}(:,1);
-                    y = obj.peaks.fit{row,col(i)}(:,2);
-                    
                     if isempty(obj.settings.labels.peak)
                         continue
                     else
@@ -524,6 +521,9 @@ classdef ChromatographyGUI < handle
                     end
                     
                     % Text Position
+                    x = obj.peaks.fit{row,col(i)}(:,1);
+                    y = obj.peaks.fit{row,col(i)}(:,2);
+                    
                     [~, yi] = max(y);
                     
                     textX = x(yi);
@@ -829,19 +829,19 @@ classdef ChromatographyGUI < handle
                 obj.peaks.name(end+1,1) = str;
             end
             
-            if ~isempty(obj.peaks.time) && ~isempty(obj.data)
-                obj.peaks.time{end,end+1}   = [];
-                obj.peaks.width{end,end+1}  = [];
-                obj.peaks.height{end,end+1} = [];
-                obj.peaks.area{end,end+1}   = [];
-                obj.peaks.error{end,end+1}  = [];
-                obj.peaks.fit{end,end+1}    = [];
-                obj.peaks.areaOf{end,end+1} = [];
-                obj.peaks.model{end,end+1}  = [];
-                obj.peaks.xlim{end,end+1}   = [];
-                obj.peaks.ylim{end,end+1}   = [];
-            end
+            % Expand peak data
+            peakFields = fields(obj.peaks);
             
+            if ~isempty(obj.data)
+                
+                for i = 1:length(peakFields)
+                    if ~isempty(obj.peaks.(peakFields{i}))
+                        obj.peaks.(peakFields{i}){end, end+1} = [];
+                    end     
+                end
+                
+            end
+ 
             headerInfo = tableHeader(1:13);
             
             if offset > 0
@@ -933,21 +933,27 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function updateTableHeader(obj, varargin)
             
-            str = {'Area', 'Height', 'Time', 'Width'};
+            str = obj.settings.table.labelNames;
             
-            x = obj.table.main.ColumnName(1:obj.settings.table.minColumns);
+            m = obj.settings.table.minColumns;
             n = obj.peaks.name;
+            
+            x = obj.table.main.ColumnName(1:m);
             
             if length(n) < 1
                 return
             end
             
             for i = 1:length(str)
-                
-                if obj.settings.table.(['show', str{i}])
-                    a = [str{i}, ' ('];
-                    x = [x; cellfun(@(x) [a,x,')'], n, 'uniformoutput', 0)];
+               
+                if ~isfield(obj.settings.table, ['show', str{i}])
+                    continue
+                elseif ~obj.settings.table.(['show', str{i}])
+                    continue
                 end
+                    
+                a = [str{i}, ' ('];
+                x = [x; cellfun(@(x) [a,x,')'], n, 'uniformoutput', 0)];
                 
             end
             
@@ -960,32 +966,43 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function updateTableProperties(obj, varargin)
             
-            str = {'ColumnEditable', 'ColumnWidth', 'ColumnFormat'};
+            str = obj.settings.table.labelNames;
             
             m = obj.settings.table.minColumns;
-            n = length(obj.table.main.ColumnName);
+            n = length(obj.peaks.name);
+            
+            if n < 1
+                return
+            end
+            
+            w = obj.settings.table.columnWidth;
+            x = obj.table.main.ColumnFormat(1:m);
+            y = obj.table.main.ColumnWidth(1:m);
+            z = obj.table.main.ColumnEditable(1:m);
             
             for i = 1:length(str)
-                
-                x = obj.table.main.(str{i})(1:m);
-                
-                if n > m
-                    
-                    switch str{i}
-                        case 'ColumnEditable'
-                            x(n) = false;
-                        case 'ColumnWidth'
-                            w = obj.settings.table.columnWidth;
-                            x = [x, repmat({w}, 1, n-m)];
-                        case 'ColumnFormat'
-                            x = [x, repmat({'numeric'}, 1, n-m)];
-                    end
-                    
+               
+                if ~isfield(obj.settings.table, ['show', str{i}])
+                    continue
+                elseif ~obj.settings.table.(['show', str{i}])
+                    continue
                 end
                 
-                obj.table.main.(str{i}) = x;
+                if strcmpi(str{i}, 'model')
+                    a = 'char';
+                else
+                    a = 'numeric';
+                end
+                
+                x = [x, repmat({a}, 1, n)];
+                y = [y, repmat({w}, 1, n)];
+                z = [z, false(1,n)];
                 
             end
+            
+            obj.table.main.ColumnFormat = x;
+            obj.table.main.ColumnWidth = y;
+            obj.table.main.ColumnEditable = z;
             
         end
         
@@ -994,11 +1011,19 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function updateTableData(obj, varargin)
             
-            str = {'Area', 'Height', 'Time', 'Width'};
+            if isempty(obj.table.main.Data)
+                return
+            end
+            
+            str = obj.settings.table.labelNames;
             
             x = obj.table.main.Data(:,1:obj.settings.table.minColumns);
             
             for i = 1:length(str)
+                
+                if ~isfield(obj.settings.table, ['show', str{i}])
+                    continue
+                end
                 
                 if obj.settings.table.(['show', str{i}])
                     x = [x, obj.peaks.(lower(str{i}))];
@@ -2710,6 +2735,20 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function validatePeakFields(obj, varargin)
+            
+            str = obj.settings.peakFields;
+            
+            for i = 1:length(str)
+                
+                if ~isfield(obj.peaks, str{i})
+                    obj.peaks.(str{i}) = {};
+                end
+                
+            end
+            
+        end
+        
         function validatePeakData(obj, rows, cols)
             
             x = fields(obj.peaks);
@@ -2745,6 +2784,7 @@ classdef ChromatographyGUI < handle
                     
                     try
                         obj.toolboxSettings([], [], 'save_default');
+                        obj.toolboxPeakList([], [], 'save_default');
                     catch
                     end
                     
