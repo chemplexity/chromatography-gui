@@ -283,12 +283,12 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-% importAgilent 
-isVerbose = 'off';
-searchDepth = 3;
-
+% Import Agilent (.D)
 try
-    data = importAgilent('verbose', isVerbose, 'depth', searchDepth); 
+    data = importAgilent(...
+        'depth', 3,...
+        'content', 'header',...
+        'verbose', 'waitbar'); 
 catch
     disp('Error importing data...'); 
 end
@@ -298,8 +298,8 @@ if ~isempty(data) && isstruct(data)
     % Check file path
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
-    data(cellfun(@isempty, {data.time}))      = [];
-    data(cellfun(@isempty, {data.intensity})) = [];
+    %data(cellfun(@isempty, {data.time}))      = [];
+    %data(cellfun(@isempty, {data.intensity})) = [];
     
     if isempty(data)
         return
@@ -340,7 +340,7 @@ if ~isempty(data) && isstruct(data)
         end
         
     end
-    
+     
     % Update GUI
     for i = 1:length(data)
         obj.data = [obj.data; data(i)];

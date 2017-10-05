@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171004-dev';
+        version     = '0.0.8.20171005-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -139,10 +139,13 @@ classdef ChromatographyGUI < handle
             cla(obj.axes.main);
             
             if isempty(obj.data) || obj.view.index == 0
-                obj.updateAxesLimits();
                 return
             else
                 row = obj.view.index;
+            end
+            
+            if isempty(obj.data(row).time) && isempty(obj.data(row).intensity)
+                obj.loadAgilentData();
             end
             
             if ~isempty(obj.data(row).intensity)
@@ -183,6 +186,33 @@ classdef ChromatographyGUI < handle
             obj.updateAxesLabel();
             obj.updatePlotLabel();
             
+        end
+        
+        % ---------------------------------------
+        % Load signal data
+        % ---------------------------------------
+        function loadAgilentData(obj, varargin)
+            
+            i = obj.view.index;
+            f = [obj.data(i).file_path, filesep, obj.data(i).file_name];
+            
+            if ~exist(f, 'file')
+                return
+            end
+                
+            x = importAgilent(...
+                'file', f,...
+                'content', 'data',...
+                'verbose', 'off');
+                
+            if isempty(x)
+                return
+            end
+            
+            obj.data(i).time = x.time;
+            obj.data(i).intensity = x.intensity;
+            obj.data(i).sampling_rate = x.sampling_rate;
+               
         end
         
         % ---------------------------------------
@@ -2178,7 +2208,7 @@ classdef ChromatographyGUI < handle
                     if length(obj.view.peakBaseline) >= col(i) && any(ishandle(obj.view.peakBaseline{col(i)}))
                         set(obj.view.peakBaseline{col(i)}, 'xdata', x, 'ydata', y);
                     else
-                        obj.view.peakBaseline{col(i)} = plot(x, y, '.-',...
+                        obj.view.peakBaseline{col(i)} = plot(x, y, '-',...
                             'parent',     obj.axes.main,...
                             'color',      obj.settings.peakBaseline.color,...
                             'markersize', obj.settings.peakBaseline.markersize,...,...
@@ -2270,8 +2300,8 @@ classdef ChromatographyGUI < handle
                 obj.clearPeakLabel(col);
                 obj.clearPeakArea(col);
                 obj.clearPeakBaseline(col);
-                obj.clearPeakData(row, col);
-                obj.clearPeakTable(row, col);
+                obj.clearPeakData(row,col);
+                obj.clearPeakTable(row,col);
                 obj.updatePeakListText();
             end
             

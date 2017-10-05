@@ -19,11 +19,11 @@ function data = importAgilent(varargin)
 %   'depth' -- subfolder search depth
 %       1 (default) | integer
 %
-%   'content' -- read all data or header only
-%       'all' (default) | 'header'
+%   'content' -- read all data, header only, or signal data only
+%       'all' (default) | 'header', 'data'
 %
 %   'verbose' -- show progress in command window
-%       'on' (default) | 'off'
+%       'on' (default) | 'off' | 'waitbar'
 %
 % ------------------------------------------------------------------------
 % Examples
@@ -104,6 +104,7 @@ option.file    = p.Results.file;
 option.depth   = p.Results.depth;
 option.content = p.Results.content;
 option.verbose = p.Results.verbose;
+option.waitbar = false;
 
 % ---------------------------------------
 % Validate
@@ -130,15 +131,42 @@ else
 end
 
 % Parameter: 'content'
-if ~any(strcmpi(option.content, {'default', 'all', 'header'}))
-    option.content = 'all';
+option.content = lower(option.content);
+
+switch option.content
+    
+    case {'all', 'default'}
+        option.content = 'all';
+        
+    case {'data', 'signal'}
+        option.content = 'data';
+        
+    case {'metadata', 'header', 'info'}
+        option.content = 'header';
+        
+    otherwise
+        option.content = default.content;
+        
 end
 
 % Parameter: 'verbose'
-if any(strcmpi(option.verbose, {'off', 'no', 'n', 'false', '0'}))
-    option.verbose = false;
-else
-    option.verbose = true;
+option.verbose = lower(option.verbose);
+
+switch option.verbose
+    
+    case {'on', 'true', '1', 'yes', 'y'}
+        option.verbose = true;
+        
+    case {'off', 'false', '0', 'no', 'n'}
+        option.verbose = false;
+        
+    case {'waitbar'}
+        option.verbose = false;
+        option.waitbar = true;
+        
+    otherwise
+        option.verbose = default.verbose;
+        
 end
 
 % ---------------------------------------
@@ -193,11 +221,16 @@ else
     status(option.verbose, 'file_count', length(file));
 end
 
+% Waitbar
 m = num2str('0');
 n = num2str(length(file));
 msg = ['(', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
 
-h = waitbar(0, ['Loading... ', msg], 'name', 'Loading...');
+if option.waitbar
+    h = waitbar(0, ['Loading... ', msg], 'name', 'Loading...');
+else
+    h = [];
+end
 
 % ---------------------------------------
 % Import
@@ -239,19 +272,17 @@ for i = 1:length(file)
     status(option.verbose, 'file_name', statusPath);
     status(option.verbose, 'loading_stats', data(i,1).file_size);
     
+    if option.waitbar && ~ishandle(h)
+        data(i,:) = [];
+        status(option.verbose, 'abort', i, length(file));
+        break
+    elseif option.waitbar
+        updateWaitbar(h, i, length(file), data(i,1).file_name);
+    end    
+    
     % ---------------------------------------
     % Read
     % ---------------------------------------
-    if ~ishandle(h)
-        data(i,:) = [];
-        status(option.verbose, 'abort', i, length(file));
-        status(option.verbose, 'stats', i-1, toc, sum([data.file_size]));
-        status(option.verbose, 'exit');
-        break
-    else
-        updateWaitbar(h, i, length(file), data(i,1).file_name);
-    end
-    
     if data(i,1).file_size ~= 0
         
         f = fopen(file(i).Name, 'r');
@@ -265,6 +296,9 @@ for i = 1:length(file)
             case {'header'}
                 data(i,1) = parseinfo(f, data(i,1));
                 
+            case {'data'}
+                data(i,1) = parsedata(f, data(i,1));
+                   
         end
         
         fclose(f);
@@ -276,11 +310,12 @@ end
 % ---------------------------------------
 % Exit
 % ---------------------------------------
-if ishandle(h)
+if option.waitbar && ishandle(h)
     close(h);
-    status(option.verbose, 'stats', length(data), toc, sum([data.file_size]));
-    status(option.verbose, 'exit');
 end
+
+status(option.verbose, 'stats', length(data), toc, sum([data.file_size]));
+status(option.verbose, 'exit');
 
 end
 
@@ -627,6 +662,8 @@ switch data.file_version
             data.channel = 'A';
         elseif ~isempty(regexpi(data.file_name, '(FID2B)', 'tokens', 'once'))
             data.channel = 'B';
+        else
+            data.channel = '';
         end
                 
 end
@@ -650,6 +687,14 @@ end
 % File data
 % ---------------------------------------
 function data = parsedata(f, data)
+
+if isempty(data.file_version)
+    data.file_version = fpascal(f, 0, 'uint8');
+end
+
+if isnan(str2double(data.file_version))
+    data.file_version = [];
+end
 
 if isempty(data.file_version)
     return
@@ -698,6 +743,7 @@ switch data.file_version
         data.intensity = farray(f, offset + 8, 'int32', scans, 8);
         data.time      = farray(f, offset + 4, 'int32', scans, 8) ./ 60000;
          
+        % Prevent import of full mass spectra scans
         %offset = farray(f, offset, 'int32', scans, 8) * 2 - 2;
         %data   = fpacket(f, data, offset);
         
@@ -794,7 +840,7 @@ end
 
 % Sampling Rate
 if ~isempty(data.time)
-    data.sampling_rate = round(1./mean(diff(data.time .* 60)));
+    data.sampling_rate = round(1./mean(diff(data.time.*60)), 2);
 end
 
 end
