@@ -4,7 +4,7 @@ function toolboxPeakList(obj, ~, ~, varargin)
 %
 % version (char) : 'x.y.z.date'
 % name (char)    : 'peaklist'
-% data (cell)    : peak name (char) 
+% data (cell)    : peak name (char)
 
 if isempty(varargin) || ~ischar(varargin{1})
     return
@@ -103,7 +103,7 @@ switch mode
             end
     
             if ~any(strcmpi(data{i}, obj.peaks.name))
-                obj.peakAddColumn(data{i})
+                obj.tableAddPeakColumn(data{i})
             end
             
         end
@@ -116,7 +116,7 @@ function savePeakList(obj, varargin)
 
 user_peaks.version = obj.version;
 user_peaks.name = 'peaklist';
-user_peaks.data = obj.peaks.name;
+user_peaks.data = obj.peaks.name(:);
 
 exportMAT(user_peaks,...
     'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
@@ -129,7 +129,7 @@ function autosavePeakList(obj, varargin)
 
 user_peaks.version = obj.version;
 user_peaks.name = 'peaklist';
-user_peaks.data = obj.peaks.name;
+user_peaks.data = obj.peaks.name(:);
 
 exportMAT(user_peaks,...
     'path', [obj.toolbox_path, filesep, obj.toolbox_config],...

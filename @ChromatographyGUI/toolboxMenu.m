@@ -115,18 +115,52 @@ obj.menu.view.zoom.Separator = 'on';
 % ---------------------------------------
 % Options Menu
 % ---------------------------------------
-obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Sample');
-obj.menu.peakOptions = newMenu(obj.menu.options.main, 'Peak');
+obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Sample');
+obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
+obj.menu.tableOptions = newMenu(obj.menu.options.main, 'Table');
 
 % ---------------------------------------
-% Options --> Data
+% Options --> Table
+% ---------------------------------------
+obj.menu.tableColumns = newMenu(obj.menu.tableOptions, 'Columns');
+
+obj.menu.tableColumns.Tag = 'table';
+
+obj.menu.tablePeakArea   = newMenu(obj.menu.tableColumns, 'Peak Area');
+obj.menu.tablePeakHeight = newMenu(obj.menu.tableColumns, 'Peak Height');
+obj.menu.tablePeakTime   = newMenu(obj.menu.tableColumns, 'Peak Time');
+obj.menu.tablePeakWidth  = newMenu(obj.menu.tableColumns, 'Peak Width');
+obj.menu.tablePeakModel  = newMenu(obj.menu.tableColumns, 'Peak Model');
+obj.menu.tablePeakAll    = newMenu(obj.menu.tableColumns, 'Select All');
+obj.menu.tablePeakNone   = newMenu(obj.menu.tableColumns, 'Select None');
+
+obj.menu.tablePeakArea.Tag   = 'showPeakArea';
+obj.menu.tablePeakHeight.Tag = 'showPeakHeight';
+obj.menu.tablePeakTime.Tag   = 'showPeakTime';
+obj.menu.tablePeakWidth.Tag  = 'showPeakWidth';
+obj.menu.tablePeakModel.Tag  = 'showPeakModel';
+obj.menu.tablePeakAll.Tag    = 'selectAll';
+obj.menu.tablePeakNone.Tag   = 'selectNone';
+
+obj.menu.tablePeakArea.Callback   = {@plotLabelCallback, obj};
+obj.menu.tablePeakHeight.Callback = {@plotLabelCallback, obj};
+obj.menu.tablePeakTime.Callback   = {@plotLabelCallback, obj};
+obj.menu.tablePeakWidth.Callback  = {@plotLabelCallback, obj};
+obj.menu.tablePeakModel.Callback  = {@plotLabelCallback, obj};
+obj.menu.tablePeakAll.Callback    = {@plotLabelQuickSelectCallback, obj};
+obj.menu.tablePeakNone.Callback   = {@plotLabelQuickSelectCallback, obj};
+
+obj.menu.tablePeakAll.Separator = 'on';
+
+% ---------------------------------------
+% Options --> Sample
 % ---------------------------------------
 obj.menu.labelData = newMenu(obj.menu.dataOptions, 'Label');
 
 obj.menu.labelData.Tag = 'data';
 
 % ---------------------------------------
-% Options --> Data --> Label
+% Options --> Sample --> Label
 % ---------------------------------------
 obj.menu.labelRowNum     = newMenu(obj.menu.labelData, 'ID');
 obj.menu.labelFilePath   = newMenu(obj.menu.labelData, 'File Path');
@@ -298,9 +332,7 @@ if ~isempty(data) && isstruct(data)
     % Check file path
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
-    %data(cellfun(@isempty, {data.time}))      = [];
-    %data(cellfun(@isempty, {data.intensity})) = [];
-    
+
     if isempty(data)
         return
     end
@@ -396,6 +428,9 @@ if ~isempty(data) && isstruct(data)
         obj.checkpoint = file;
         
         obj.clearTableData();
+        obj.updateTableHeader();
+        obj.updateTableProperties();
+        
         obj.resetTableHeader();
         obj.resetTableData();
         
@@ -875,6 +910,8 @@ if strcmpi(evt.EventName, 'Action')
             
     end
     
+    obj.settings.showZoom = src.Checked;
+    
 end
 
 end
@@ -905,7 +942,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.plotPeakLabels();
             else
                 obj.settings.showPeakLabel = 0;
-                obj.clearAllPeakLabel();
+                obj.clearLabel('peakLabel');
             end
             
         case 'showPeakLine'
@@ -915,7 +952,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakLine();
             else
                 obj.settings.showPeakLine = 0;
-                obj.clearAllPeakLine();
+                obj.clearLine('peakLine');
             end
             
         case 'showPeakArea'
@@ -925,7 +962,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakArea();
             else
                 obj.settings.showPeakArea = 0;
-                obj.clearAllPeakArea();
+                obj.clearLine('peakArea');
             end
             
         case 'showPeakBaseline'
@@ -935,7 +972,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakBaseline();
             else
                 obj.settings.showPeakBaseline = 0;
-                obj.clearAllPeakBaseline();
+                obj.clearLine('peakBaseline');
             end
             
     end
@@ -986,21 +1023,29 @@ function plotLabelCallback(src, ~, obj)
 
 switch src.Checked
     
-    case 'on'
-        src.Checked = 'off';
-        
     case 'off'
-        src.Checked = 'on';
-        
+        src.Checked = 'on';        
+    
     otherwise
         src.Checked = 'off';
+
+end
+
+switch src.Parent.Tag
+
+    case {'data', 'peak'}
+        updatePlotLabel(src, obj);
+        
+    case {'table'}
+        updateTableColumns(src, obj)
         
 end
 
-updatePlotLabel(src, obj);
-
 end
 
+% ---------------------------------------
+% Select All / None Menu
+% ---------------------------------------
 function plotLabelQuickSelectCallback(src, ~, obj)
 
 switch src.Tag
@@ -1024,10 +1069,21 @@ for i = 1:length(src.Parent.Children)
     
 end
 
-updatePlotLabel(src, obj);
+switch src.Parent.Tag
+
+    case {'data', 'peak'}
+        updatePlotLabel(src, obj);
+        
+    case {'table'}
+        updateTableColumns(src, obj)
+        
+end
 
 end
 
+% ---------------------------------------
+% Set Plot Labels
+% ---------------------------------------
 function updatePlotLabel(src, obj)
 
 plotLabel = {};
@@ -1101,6 +1157,53 @@ end
 end
 
 % ---------------------------------------
+% Set Table Columns
+% ---------------------------------------
+function updateTableColumns(src, obj)
+
+for i = 1:length(src.Parent.Children)
+    
+    if strcmpi(src.Parent.Children(i).Checked, 'on')
+        
+        switch src.Parent.Children(i).Tag
+            case 'showPeakArea'
+                obj.settings.table.showArea = 1;
+            case 'showPeakHeight'
+                obj.settings.table.showHeight = 1;
+            case 'showPeakTime'
+                obj.settings.table.showTime = 1;
+            case 'showPeakWidth'
+                obj.settings.table.showWidth = 1;
+            case 'showPeakModel'
+                obj.settings.table.showModel = 1;
+        end
+        
+    else
+        
+        switch src.Parent.Children(i).Tag
+            case 'showPeakArea'
+                obj.settings.table.showArea = 0;
+            case 'showPeakHeight'
+                obj.settings.table.showHeight = 0;
+            case 'showPeakTime'
+                obj.settings.table.showTime = 0;
+            case 'showPeakWidth'
+                obj.settings.table.showWidth = 0;
+            case 'showPeakModel'
+                obj.settings.table.showModel = 0;
+        end
+        
+    end
+    
+end
+
+obj.updateTableHeader();
+obj.updateTableProperties();
+obj.updateTablePeakData();
+
+end
+
+% ---------------------------------------
 % Set Peak Model
 % ---------------------------------------
 function peakModelMenuCallback(src, ~, obj)
@@ -1129,20 +1232,6 @@ src.Checked = 'on';
 obj.settings.peakArea = src.Tag;
 
 end
-
-% ---------------------------------------
-% Set Peak Auto-Detection
-% ---------------------------------------
-%function peakAutodetectCallback(src, ~, obj)
-
-%switch src.Checked
-%    case 'on'
-%        obj.settings.peakAutoDetect = 1;
-%    case 'off'
-%        obj.settings.peakAutoDetect = 0;
-%end
-%
-%end
 
 % ---------------------------------------
 % Menu

@@ -25,37 +25,6 @@ columnParameters = {...
     'InjVol',     75,    true,    'numeric'};
 
 % ---------------------------------------
-% Table Columns (peak data)
-% ---------------------------------------
-if ~isempty(obj.peaks.name)
-    
-    width    = obj.settings.table.columnWidth;
-    editable = false;
-    format   = 'numeric';
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
-            {['Area (', obj.peaks.name{i}, ')'], width, editable, format};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
-            {['Height (', obj.peaks.name{i}, ')'], width, editable, format};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
-            {['Time (', obj.peaks.name{i}, ')'], width, editable, format};
-    end
-    
-    for i = 1:length(obj.peaks.name)
-        columnParameters(end+1, 1:4) = ...
-            {['Width (', obj.peaks.name{i}, ')'], width, editable, format};
-    end
-    
-end
-
-% ---------------------------------------
 % Table
 % ---------------------------------------
 obj.table.main = uitable(...
@@ -78,6 +47,10 @@ obj.table.main = uitable(...
     'celleditcallback',      {@tableEditCallback, obj},...
     'cellselectioncallback', {@tableSelectCallback, obj},...
     'keypressfcn',           {@tableKeyDownCallback, obj});
+
+obj.updateTableHeader();
+obj.updateTableProperties();
+obj.updateTablePeakData();
 
 end
 

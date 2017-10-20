@@ -128,8 +128,14 @@ obj.settings.labels.peak = {
     'peakName'};
 
 % Baseline Parameters
-obj.settings.baselineSmoothness = 5.5;  % 0 to 10
-obj.settings.baselineAsymmetry  = -5.5; % -10 to 0
+obj.settings.baseline.minSmoothness = 0;
+obj.settings.baseline.maxSmoothness = 13;
+
+obj.settings.baseline.minAsymmetry = -13;
+obj.settings.baseline.maxAsymmetry = -1;
+
+obj.settings.baselineSmoothness = 7.0;
+obj.settings.baselineAsymmetry  = -5.0;
 
 % Peak Integration Settings
 obj.settings.peakModel = 'nn2';     % 'egh', 'nn', 'nn1', 'nn2'
@@ -173,7 +179,6 @@ switch mode
         if exist(file, 'file')
             data = importMAT('file', file);
         else
-            applySettings(obj);
             return
         end
         
@@ -185,6 +190,7 @@ switch mode
         return
         
 end
+
 if isempty(data) || ~isstruct(data) || ~isfield(data, 'user_settings')
     return
 else
@@ -197,16 +203,11 @@ elseif ~isfield(data, 'data') || isempty(data.data)
     return
 else
     verifySettings(obj, data.data);
-    applySettings(obj);
 end
 
 end
 
 function autosaveSettings(obj, varargin)
-
-obj.settings.showZoom           = obj.menu.view.zoom.Checked;
-obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
-obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
 
 user_settings.version = obj.version;
 user_settings.name = 'global_settings';
@@ -276,7 +277,7 @@ for i = 1:length(obj.menu.peakOptionsLabel.Children)
     end
 end
 
-switch obj.settings.peakModel
+switch lower(obj.settings.peakModel)
     
     case {'nn1'}
         obj.menu.peakNN1.Checked = 'on';
