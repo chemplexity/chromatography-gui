@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171020-dev';
+        version     = '0.0.8.20171025-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -291,11 +291,18 @@ classdef ChromatographyGUI < handle
                         
                         y = y(x >= obj.settings.xlim(1) & x <= obj.settings.xlim(2));
                         
-                        if any(y)
+                        if ~isempty(y)
+                            
                             ymin = min(y);
                             ymax = max(y);
                             ypad = (ymax - ymin) * obj.settings.ypad;
+                            
+                            if ypad == 0
+                                ypad = 1;
+                            end
+                            
                             obj.settings.ylim = [ymin-ypad, ymax+ypad];
+                            
                         end
                         
                     else
@@ -933,6 +940,9 @@ classdef ChromatographyGUI < handle
             end
             
             obj.table.main.Data = x;
+            
+            obj.removeTableHighlightText();
+            obj.addTableHighlightText();
             
         end
         
@@ -1914,8 +1924,15 @@ classdef ChromatographyGUI < handle
                     end
                     
                     if length(obj.view.peakLine) >= col(i) && any(ishandle(obj.view.peakLine{col(i)}))
-                        set(obj.view.peakLine{col(i)}, 'xdata', x, 'ydata', y);
+                        
+                        set(obj.view.peakLine{col(i)},...
+                            'xdata',     x,...
+                            'ydata',     y,...
+                            'color',     obj.settings.peaks.color,...
+                            'linewidth', obj.settings.peaks.linewidth);
+                        
                     else
+                        
                         obj.view.peakLine{col(i)} = plot(x, y,...
                             'parent',    obj.axes.main,...
                             'color',     obj.settings.peaks.color,...
@@ -1923,6 +1940,7 @@ classdef ChromatographyGUI < handle
                             'visible',   'on',...
                             'hittest',   'off',...
                             'tag',       'peak');
+                        
                     end
                 end
             end
@@ -2021,7 +2039,6 @@ classdef ChromatographyGUI < handle
                             'tag',       'peakarea');
                         
                     end
-                    
                 end
             end
             
@@ -2216,17 +2233,20 @@ classdef ChromatographyGUI < handle
         
         function clearPeakData(obj, row, col)
             
-            obj.peaks.time{row,col}   = [];
-            obj.peaks.width{row,col}  = [];
-            obj.peaks.height{row,col} = [];
-            obj.peaks.area{row,col}   = [];
-            obj.peaks.error{row,col}  = [];
-            obj.peaks.fit{row,col}    = [];
-            obj.peaks.areaOf{row,col} = [];
-            obj.peaks.model{row,col}  = [];
-            obj.peaks.xlim{row,col}   = [];
-            obj.peaks.ylim{row,col}   = [];
+            str = obj.settings.peakFields;
             
+            for i = 1:length(str)
+                
+                if strcmpi(str{i}, 'name')
+                    continue
+                end
+                
+                if isfield(obj.peaks, str{i})
+                    obj.peaks.(str{i}){row,col} = [];
+                end
+                
+            end
+               
         end
         
         function updatePeakData(obj, row, col, peak)
@@ -2286,9 +2306,7 @@ classdef ChromatographyGUI < handle
                     xi = xi + 1;
                     
                 end
-                
             end
-            
         end
         
         function updatePeakTable(obj, row, col)
@@ -2318,10 +2336,8 @@ classdef ChromatographyGUI < handle
                     
                     xi = xi + 1;
                     
-                end
-                
+                end 
             end
-            
         end
         
         function clearPeakLine(obj, col)
@@ -2552,7 +2568,6 @@ classdef ChromatographyGUI < handle
                         end 
                     end
                 end
-                
             end
             
         end

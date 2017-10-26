@@ -134,39 +134,29 @@ end
 option.content = lower(option.content);
 
 switch option.content
-    
     case {'all', 'default'}
         option.content = 'all';
-        
     case {'data', 'signal'}
         option.content = 'data';
-        
     case {'metadata', 'header', 'info'}
         option.content = 'header';
-        
     otherwise
         option.content = default.content;
-        
 end
 
 % Parameter: 'verbose'
 option.verbose = lower(option.verbose);
 
 switch option.verbose
-    
     case {'on', 'true', '1', 'yes', 'y'}
         option.verbose = true;
-        
     case {'off', 'false', '0', 'no', 'n'}
         option.verbose = false;
-        
     case {'waitbar'}
         option.verbose = false;
         option.waitbar = true;
-        
     otherwise
         option.verbose = default.verbose;
-        
 end
 
 % ---------------------------------------
@@ -180,6 +170,9 @@ else
     file = FileVerify(option.file, []);
 end
 
+% ---------------------------------------
+% Status
+% ---------------------------------------
 if exist('fileError', 'var') && fileError == 1
     status(option.verbose, 'selection_cancel');
     status(option.verbose, 'exit');
@@ -213,23 +206,15 @@ end
 
 file(cellfun(@(x) ~any(strcmpi(x, default.formats)), ext)) = [];
 
+% ---------------------------------------
+% Status
+% ---------------------------------------
 if isempty(file)
     status(option.verbose, 'selection_error');
     status(option.verbose, 'exit');
     return
 else
     status(option.verbose, 'file_count', length(file));
-end
-
-% Waitbar
-m = num2str('0');
-n = num2str(length(file));
-msg = ['(', repmat('0', 1, length(n) - length(m)), m, '/', n, ')'];
-
-if option.waitbar
-    h = waitbar(0, ['Loading... ', msg], 'name', 'Loading...');
-else
-    h = [];
 end
 
 % ---------------------------------------
@@ -262,6 +247,26 @@ for i = 1:length(file)
     
     data(i,1).file_size = subsref(dir(file(i).Name), substruct('.', 'bytes'));
 
+
+    % ---------------------------------------
+    % Waitbar
+    % ---------------------------------------
+    if i == 1
+        if option.waitbar
+            h = initializeWaitbar(length(file), data(i,1).file_name);
+        else
+            h = [];
+        end
+    end
+    
+    if option.waitbar && ~ishandle(h)
+        data(i,:) = [];
+        status(option.verbose, 'abort', i, length(file));
+        break
+    elseif option.waitbar
+        updateWaitbar(h, i, length(file), data(i,1).file_name);
+    end    
+    
     % ---------------------------------------
     % Status
     % ---------------------------------------
@@ -271,14 +276,6 @@ for i = 1:length(file)
     status(option.verbose, 'loading_file', i, length(file));
     status(option.verbose, 'file_name', statusPath);
     status(option.verbose, 'loading_stats', data(i,1).file_size);
-    
-    if option.waitbar && ~ishandle(h)
-        data(i,:) = [];
-        status(option.verbose, 'abort', i, length(file));
-        break
-    elseif option.waitbar
-        updateWaitbar(h, i, length(file), data(i,1).file_name);
-    end    
     
     % ---------------------------------------
     % Read
@@ -320,7 +317,26 @@ status(option.verbose, 'exit');
 end
 
 % ---------------------------------------
-% Waitbar
+% Initialize Waitbar
+% ---------------------------------------
+function h = initializeWaitbar(n, filename)
+
+m = num2str('0');
+n = num2str(n);
+msg = ['(', repmat('0', 1, length(n) - 1), m, '/', n, ')'];
+           
+x = fileparts(filename);
+
+if isempty(x)
+    x = filename;
+end
+
+h = waitbar(0, ['Loading ../', x, msg], 'name', 'Loading...');
+            
+end
+
+% ---------------------------------------
+% Update Waitbar
 % ---------------------------------------
 function updateWaitbar(h, i, j, filename)
 

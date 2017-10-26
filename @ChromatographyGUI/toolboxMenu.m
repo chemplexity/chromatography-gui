@@ -322,17 +322,18 @@ try
     data = importAgilent(...
         'depth', 3,...
         'content', 'header',...
-        'verbose', 'waitbar'); 
+        'verbose', 'waitbar');
 catch
-    disp('Error importing data...'); 
+    disp('Error importing data...');
 end
 
 if ~isempty(data) && isstruct(data)
     
-    % Check file path
+    % Check data files
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
-
+    data([data.file_size] == 0) = [];
+    
     if isempty(data)
         return
     end
@@ -348,7 +349,7 @@ if ~isempty(data) && isstruct(data)
     if all(cellfun(@length, {data.channel}) == 1)
         
         [~, idx] = sort({data.channel});
-    
+        
         if length(idx) == length(data)
             data = data(idx);
         end
@@ -364,15 +365,48 @@ if ~isempty(data) && isstruct(data)
     
     % Sort by file path
     if length(unique({data.file_path})) > 1
-    
+        
         [~, idx] = sort({data.file_path});
-    
+        
         if length(idx) == length(data)
             data = data(idx);
         end
         
     end
-     
+    
+    % Check structure fields
+    if isstruct(obj.data)
+        
+        a = fieldnames(obj.data);
+        b = fieldnames(data);
+        n = length(obj.data);
+        
+        if any(~ismember(a,b))
+            
+            idx = a(~ismember(a,b));
+            
+            for i = 1:length(idx)
+                data = setfield(data, {1}, idx{i}, []);
+            end
+            
+        end
+        
+        if any(~ismember(b,a))
+            
+            idx = b(~ismember(b,a));
+            
+            for i = 1:length(idx)
+                obj.data = setfield(obj.data, {1}, idx{i}, []);
+            end
+            
+            if n == 0
+                obj.data(:) = [];
+            end
+            
+        end
+        
+    end
+    
     % Update GUI
     for i = 1:length(data)
         obj.data = [obj.data; data(i)];
@@ -399,7 +433,7 @@ if ~isempty(data) && isstruct(data)
         x = fields(data);
         data = data.(x{1});
     end
-        
+    
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
         
         if ~isfield(data, 'time') || ~isfield(data, 'intensity')
@@ -722,66 +756,95 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
+% Get table data
 obj.removeTableHighlightText();
 
 tableHeader = obj.table.main.ColumnName;
 tableData   = obj.table.main.Data;
+tableFormat = obj.table.main.ColumnFormat;
 
+obj.addTableHighlightText();
+
+% Check table data
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
 
-obj.addTableHighlightText();
+if length(tableFormat) ~= length(tableHeader)
+    obj.updateTableProperties();
+end
 
-filterExtensions  = '*.csv';
-filterDescription = 'CSV file (*.csv)';
-filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+% Waitbar
+h = waitbar(0, 'Saving CSV file...');
+    
+% File options
+defaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
-    {filterExtensions, filterDescription},...
+    {'*.csv', 'CSV file (*.csv)'},...
     'Save As...',...
-    filterDefaultName);
+    defaultName);
 
+% Format table as CSV
 if ischar(fileName) && ischar(filePath)
-    
+
+    % Set path
     currentPath = pwd;
     cd(filePath);
-    
-    for i = 1:length(tableData(:,1))
+
+    [m,n] = size(tableData);
+
+    for i = 1:m
         
-        for j = 1:length(tableData(1,:))
+        if ishandle(h)
+            waitbar(i/(m+1), h);
+        end
+            
+        for j = 1:n
+            
+            if j <= length(tableFormat)
+                x = tableFormat{j};
+            else
+                x = 'char';
+            end
             
             if isempty(tableData{i,j})
                 tableData{i,j} = ' ';
                 
-            elseif isnumeric(tableData{i,j}) && j >= 14
+            elseif strcmpi(x, 'numeric')
                 tableData{i,j} = num2str(tableData{i,j});
                 
-            elseif isnumeric(tableData{i,j})
-                tableData{i,j} = num2str(tableData{i,j});
-                
-            elseif ischar(tableData{i,j})
+            elseif strcmpi(x, 'char')
                 tableData{i,j} = regexprep(tableData{i,j}, '([,]|\t)', ' ');
                 tableData{i,j} = deblank(strtrim(tableData{i,j}));
             end
             
         end
+        
     end
     
-    tableHeader{1,1} = ['''', tableHeader{1,1}];
-    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '\n'];
-    
+    if ishandle(h)
+        waitbar(0.99, h);
+    end
+        
+    % Write CSV file
     f = fopen(fileName, 'w');
+    fmt = [repmat('%s,', 1, n-1), '%s' '\n'];
     
-    fprintf(f, tableFmt, tableHeader{:});
+    fprintf(f, fmt, tableHeader{:});
     
-    for i = 1:length(tableData(:,1))
-        fprintf(f, tableFmt, tableData{i,:});
+    for i = 1:m
+        fprintf(f, fmt, tableData{i,:});
     end
     
     fclose(f);
+    
     cd(currentPath);
     
+end
+
+if ishandle(h)
+    close(h);
 end
 
 end
@@ -1024,15 +1087,15 @@ function plotLabelCallback(src, ~, obj)
 switch src.Checked
     
     case 'off'
-        src.Checked = 'on';        
-    
+        src.Checked = 'on';
+        
     otherwise
         src.Checked = 'off';
-
+        
 end
 
 switch src.Parent.Tag
-
+    
     case {'data', 'peak'}
         updatePlotLabel(src, obj);
         
@@ -1051,26 +1114,26 @@ function plotLabelQuickSelectCallback(src, ~, obj)
 switch src.Tag
     
     case 'selectAll'
-        labelState = 'on';
+        src.Checked = 'on';
         
     case 'selectNone'
-        labelState = 'off';
+        src.Checked = 'off';
         
     otherwise
-        labelState = 'off';
+        src.Checked = 'off';
         
 end
 
 for i = 1:length(src.Parent.Children)
     
     if ~any(strcmpi(src.Parent.Children(i).Tag, {'selectAll', 'selectNone'}))
-        src.Parent.Children(i).Checked = labelState;
+        src.Parent.Children(i).Checked = src.Checked;
     end
     
 end
 
 switch src.Parent.Tag
-
+    
     case {'data', 'peak'}
         updatePlotLabel(src, obj);
         
@@ -1139,20 +1202,20 @@ switch src.Parent.Tag
     case 'data'
         
         obj.settings.labels.data = plotLabel;
-
+        
         if obj.settings.showPlotLabel
             obj.updatePlotLabel();
         end
-
+        
     case 'peak'
         
         obj.settings.labels.peak = plotLabel;
-
+        
         if obj.settings.showPeakLabel
             obj.plotPeakLabels();
         end
         
-end  
+end
 
 end
 
@@ -1204,7 +1267,7 @@ obj.updateTablePeakData();
 end
 
 % ---------------------------------------
-% Set Peak Model
+% Set Peak Model/Area
 % ---------------------------------------
 function peakModelMenuCallback(src, ~, obj)
 
