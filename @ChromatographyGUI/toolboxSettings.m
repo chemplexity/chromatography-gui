@@ -72,7 +72,7 @@ obj.settings.labels.fontsize = 11;
 % Line Width
 obj.settings.plot.linewidth         = 1.25;
 obj.settings.baseline.linewidth     = 1.25;
-obj.settings.peaks.linewidth        = 1.75;
+obj.settings.peaks.linewidth        = 1.25;
 obj.settings.peakBaseline.linewidth = 1.00;
 
 % Line Color
@@ -128,14 +128,14 @@ obj.settings.labels.peak = {
     'peakName'};
 
 % Baseline Parameters
-obj.settings.baseline.minSmoothness = 0;
-obj.settings.baseline.maxSmoothness = 13;
+obj.settings.baseline.minSmoothness = 1;
+obj.settings.baseline.maxSmoothness = 12;
 
-obj.settings.baseline.minAsymmetry = -13;
+obj.settings.baseline.minAsymmetry = -10;
 obj.settings.baseline.maxAsymmetry = -1;
 
-obj.settings.baselineSmoothness = 7.0;
-obj.settings.baselineAsymmetry  = -5.0;
+obj.settings.baselineSmoothness = 6.5;
+obj.settings.baselineAsymmetry  = -5.5;
 
 % Peak Integration Settings
 obj.settings.peakModel = 'nn2';     % 'egh', 'nn', 'nn1', 'nn2'

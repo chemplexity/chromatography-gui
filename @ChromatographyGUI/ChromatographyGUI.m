@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171025-dev';
+        version     = '0.0.8.20171028-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -195,12 +195,12 @@ classdef ChromatographyGUI < handle
             if ~exist(f, 'file')
                 return
             end
-                
+            
             x = importAgilent(...
                 'file', f,...
                 'content', 'data',...
                 'verbose', 'off');
-                
+            
             if isempty(x)
                 return
             end
@@ -208,7 +208,7 @@ classdef ChromatographyGUI < handle
             obj.data(i).time = x.time;
             obj.data(i).intensity = x.intensity;
             obj.data(i).sampling_rate = x.sampling_rate;
-               
+            
         end
         
         % ---------------------------------------
@@ -798,7 +798,7 @@ classdef ChromatographyGUI < handle
                 if setBaseline
                     obj.data(row).baseline = b;
                 end
-            
+                
             end
             
         end
@@ -856,13 +856,13 @@ classdef ChromatographyGUI < handle
             x = obj.table.main.ColumnName(1:m);
             
             for i = 1:length(str)
-               
+                
                 if ~isfield(obj.settings.table, ['show', str{i}])
                     continue
                 elseif ~obj.settings.table.(['show', str{i}])
                     continue
                 end
-                    
+                
                 a = [str{i}, ' ('];
                 x = [x; cellfun(@(x) [a,x,')'], n, 'uniformoutput', 0)];
                 
@@ -888,7 +888,7 @@ classdef ChromatographyGUI < handle
             z = obj.table.main.ColumnEditable(1:m);
             
             for i = 1:length(str)
-               
+                
                 if ~isfield(obj.settings.table, ['show', str{i}])
                     continue
                 elseif ~obj.settings.table.(['show', str{i}])
@@ -974,7 +974,7 @@ classdef ChromatographyGUI < handle
             obj.addTableHighlightText();
             
         end
-            
+        
         % ---------------------------------------
         % Table - edit peak column names
         % ---------------------------------------
@@ -1048,7 +1048,7 @@ classdef ChromatographyGUI < handle
         % Listbox - update peak list
         % ---------------------------------------
         function updatePeakListbox(obj, varargin)
-
+            
             obj.controls.peakList.String = obj.peaks.name;
             
             if obj.controls.peakList.Value > length(obj.peaks.name)
@@ -1242,48 +1242,65 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function copyTable(obj, varargin)
             
-            str = '';
-            fmtStr = '%s%s\t';
-            fmtNum = '%s%f\t';
+            if isempty(obj.table.main.Data)
+                return
+            else
+                str = '';
+            end
             
+            % Get table data
             obj.removeTableHighlightText();
             
             tableHeader = obj.table.main.ColumnName;
-            tableData = obj.table.main.Data;
+            tableFormat = obj.table.main.ColumnFormat;
+            tableData   = obj.table.main.Data;
             
             obj.addTableHighlightText();
             
-            nRow = size(tableData, 1);
-            nCol = length(tableHeader);
+            % Check table data
+            [m,n] = size(tableData);
             
-            if size(tableData, 2) ~= nCol && nRow ~= 0
-                tableData = obj.validateData(tableData, nRow, nCol);
+            if length(tableHeader) ~= n && m ~= 0
+                tableData = obj.validateData(tableData, m, n);
             end
             
-            for i = 1:nCol
-                str = sprintf(fmtStr, str, tableHeader{i});
+            if length(tableFormat) ~= length(tableHeader)
+                obj.updateTableProperties();
+            end
+            
+            % Format table header
+            for i = 1:n
+                str = sprintf('%s%s\t', str, tableHeader{i});
             end
             
             str = sprintf('%s\n', str);
             
-            if nRow > 0
+            % Format table data
+            for i = 1:m
                 
-                for i = 1:nRow
+                for j = 1:n
                     
-                    for j = 1:nCol
-                        if j < 10
-                            str = sprintf(fmtStr, str, tableData{i,j});
-                        else
-                            str = sprintf(fmtNum, str, tableData{i,j});
-                        end
+                    if j <= length(tableFormat)
+                        x = tableFormat{j};
+                    else
+                        x = 'char';
                     end
                     
-                    if i < nRow
-                        str = sprintf('%s\n', str);
-                    elseif i == nRow
-                        str = sprintf('%s', str);
+                    switch x
+                        case 'char'
+                            str = sprintf('%s%s\t', str, tableData{i,j});
+                        case 'numeric'
+                            str = sprintf('%s%f\t', str, tableData{i,j});
+                        otherwise
+                            str = sprintf('%s%s\t', str, tableData{i,j});
                     end
                     
+                end
+                
+                if i == m
+                    str = sprintf('%s', str);
+                else
+                    str = sprintf('%s\n', str);
                 end
                 
             end
@@ -2024,7 +2041,7 @@ classdef ChromatographyGUI < handle
                             'ydata',     yArea,...
                             'facecolor', obj.settings.peakFill.color,...
                             'facealpha', obj.settings.peakFill.alpha);
-                    
+                        
                     else
                         
                         obj.view.peakArea{col(i)} = fill(xArea, yArea,...
@@ -2246,7 +2263,7 @@ classdef ChromatographyGUI < handle
                 end
                 
             end
-               
+            
         end
         
         function updatePeakData(obj, row, col, peak)
@@ -2336,7 +2353,7 @@ classdef ChromatographyGUI < handle
                     
                     xi = xi + 1;
                     
-                end 
+                end
             end
         end
         
@@ -2465,7 +2482,7 @@ classdef ChromatographyGUI < handle
         end
         
         function deletePlotObject(obj, str, col)
-           
+            
             if ~isfield(obj.view, str)
                 return
             end
@@ -2547,25 +2564,25 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{i,12} = obj.data(i).replicate;
                 
                 for j = 1:nCol
-                
+                    
                     xi = 0;
-                
+                    
                     for k = 1:length(x)
-                
+                        
                         if ~isfield(obj.settings.table, ['show', x{k}])
                             continue
                         end
-                
+                        
                         if obj.settings.table.(['show', x{k}])
-                    
+                            
                             str = obj.peaks.(lower(x{k})){i,j};
                             idx = (j+m) + (n*xi);
-                    
+                            
                             obj.table.main.Data{i,idx} = str;
-                        
+                            
                             xi = xi + 1;
-                        
-                        end 
+                            
+                        end
                     end
                 end
             end
