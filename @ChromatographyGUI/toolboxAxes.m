@@ -127,8 +127,11 @@ try
         set(get(get(obj.axes.main, 'ybaseline'), 'axle'), 'visible', 'off');
     end
     
-catch
-    
+catch 
+end
+
+if ~verLessThan('matlab', 'R2015b')
+    obj.axes.main.YAxis.Exponent = 0;
 end
 
 updateAxesPosition(obj);

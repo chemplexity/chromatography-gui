@@ -158,6 +158,9 @@ obj.settings.peakFields = {...
     'xlim',...
     'ylim'};
 
+% Other Options
+obj.settings.other.asyncMode = 1;
+
 % Keyboard Shortcuts
 obj.settings.keyboard.selectPeak     = 'space';
 obj.settings.keyboard.clearPeak      = 'backspace';
@@ -382,6 +385,19 @@ for i = 1:length(str)
         end
     end
     
+end
+
+% Menu --> Options --> Other --> Import --> Async Mode
+if isfield(obj.settings, 'other')
+    if isfield(obj.settings.other, 'asyncMode')
+        
+        if obj.settings.other.asyncMode
+            obj.menu.optionsAsyncLoad.Checked = 'on';
+        else
+            obj.menu.optionsAsyncLoad.Checked = 'off';
+        end
+        
+    end
 end
 
 % Menu --> Zoom

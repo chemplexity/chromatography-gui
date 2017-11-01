@@ -124,6 +124,7 @@ obj.menu.view.zoom.Separator = 'on';
 obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Sample');
 obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
 obj.menu.tableOptions = newMenu(obj.menu.options.main, 'Table');
+obj.menu.otherOptions = newMenu(obj.menu.options.main, 'Other');
 
 % ---------------------------------------
 % Options --> Table
@@ -226,7 +227,7 @@ end
 % ---------------------------------------
 obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
 obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'Area');
+obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'AreaOf');
 
 obj.menu.peakOptionsLabel.Tag = 'peak';
 
@@ -308,13 +309,23 @@ obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
 obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 
 % ---------------------------------------
+% Options --> Other
+% ---------------------------------------
+obj.menu.optionsImport = newMenu(obj.menu.otherOptions, 'Import');
+obj.menu.optionsAsyncLoad = newMenu(obj.menu.optionsImport, 'Asynchronous Mode');
+
+obj.menu.optionsAsyncLoad.Tag = 'asyncMode';
+
+obj.menu.optionsAsyncLoad.Callback = {@menuOptionCheckedCallback, obj};
+
+% ---------------------------------------
 % Help Menu
 % ---------------------------------------
 obj.menu.help.website = newMenu(obj.menu.help.main, 'Project Website');
-obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
+%obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
 
 obj.menu.help.website.Callback = @obj.toolboxWebsite;
-obj.menu.help.update.Callback  = @obj.toolboxUpdate;
+%obj.menu.help.update.Callback  = @obj.toolboxUpdate;
 
 end
 
@@ -323,12 +334,29 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-% Import Agilent (.D)
+% Options
+options.depth = 3;
+options.verbose = 'waitbar';
+options.content = 'all';
+
+if isfield(obj.settings, 'other')
+    if isfield(obj.settings.other, 'asyncMode')
+        
+        if obj.settings.other.asyncMode
+            options.content = 'header';
+        else
+            options.content = 'all';
+        end
+        
+    end
+end
+
+% Load
 try
     data = importAgilent(...
-        'depth', 3,...
-        'content', 'header',...
-        'verbose', 'waitbar');
+        'depth', options.depth,...
+        'verbose', options.verbose,...
+        'content', options.content);
 catch
     disp('Error importing data...');
 end
@@ -845,6 +873,7 @@ if ischar(fileName) && ischar(filePath)
     
     fclose(f);
     
+    % Reset path
     cd(currentPath);
     
 end
@@ -1017,6 +1046,36 @@ if strcmpi(evt.EventName, 'Action')
     end
     
     obj.settings.showZoom = src.Checked;
+    
+end
+
+end
+
+% ---------------------------------------
+% Enable/Disable Menu Option
+% ---------------------------------------
+function menuOptionCheckedCallback(src, evt, obj)
+
+if strcmpi(evt.EventName, 'Action')
+    
+    switch src.Checked
+        
+        case 'on'
+            src.Checked = 'off';
+            src.UserData = 0;
+            
+        case 'off'
+            src.Checked = 'on';
+            src.UserData = 1;
+            
+    end
+    
+    switch src.Tag
+       
+        case 'asyncMode'
+            obj.settings.other.asyncMode = src.UserData;
+            
+    end
     
 end
 
