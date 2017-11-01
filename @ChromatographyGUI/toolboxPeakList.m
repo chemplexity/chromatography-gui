@@ -82,7 +82,7 @@ end
 
 if ~isfield(data, 'name') || ~strcmpi(data.name, 'peaklist')
     return
-elseif ~isfield(data, 'data') || isempty(data.data) || ~iscell(data.data)
+elseif ~isfield(data, 'data') || ~iscell(data.data)
     return
 else
     data = data.data;

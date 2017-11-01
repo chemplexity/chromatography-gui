@@ -66,6 +66,7 @@ end
 switch evt.Indices(2)
 
     case 9
+        
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
         src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
         

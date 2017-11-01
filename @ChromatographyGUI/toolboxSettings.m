@@ -64,6 +64,7 @@ obj.settings.table.fontname  = obj.font;
 obj.settings.axes.fontname   = obj.font;
 obj.settings.labels.fontname = obj.font;
 
+% Font Size
 obj.settings.gui.fontsize    = 11;
 obj.settings.table.fontsize  = 10;
 obj.settings.axes.fontsize   = 11;
@@ -102,8 +103,10 @@ obj.settings.selectZoom = 0;
 % Axes Settings
 obj.settings.xmode = 'auto';
 obj.settings.ymode = 'auto';
+
 obj.settings.xlim  = [0,1];
 obj.settings.ylim  = [0,1];
+
 obj.settings.xpad  = 0.02;
 obj.settings.ypad  = 0.02;
 
@@ -134,11 +137,11 @@ obj.settings.baseline.maxSmoothness = 12;
 obj.settings.baseline.minAsymmetry = -10;
 obj.settings.baseline.maxAsymmetry = -1;
 
-obj.settings.baselineSmoothness = 6.5;
-obj.settings.baselineAsymmetry  = -5.5;
+obj.settings.baseline.smoothness = 6.5;
+obj.settings.baseline.asymmetry  = -5.5;
 
 % Peak Integration Settings
-obj.settings.peakModel = 'nn2';     % 'egh', 'nn', 'nn1', 'nn2'
+obj.settings.peakModel = 'nn2';     % 'egh', 'nn1', 'nn2'
 obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
 
 % Peak Data Fields
@@ -222,10 +225,6 @@ end
 
 function saveSettings(obj, varargin)
 
-obj.settings.showZoom           = obj.menu.view.zoom.Checked;
-obj.settings.baselineAsymmetry  = obj.controls.asymSlider.Value;
-obj.settings.baselineSmoothness = obj.controls.smoothSlider.Value;
-
 user_settings.version = obj.version;
 user_settings.name = 'global_settings';
 user_settings.data = obj.settings;
@@ -239,14 +238,20 @@ end
 
 function applySettings(obj, varargin)
 
-if isfield(obj.settings, 'baselineAsymmetry')
+% Baseline Settings
+if isfield(obj.settings.baseline, 'asymmetry')
+    obj.controls.asymSlider.Value = obj.settings.baseline.asymmetry;
+elseif isfield(obj.settings, 'baselineAsymmetry')
     obj.controls.asymSlider.Value = obj.settings.baselineAsymmetry;
 end
 
-if isfield(obj.settings, 'baselineSmoothness')
+if isfield(obj.settings.baseline, 'smoothness')
+    obj.controls.smoothSlider.Value = obj.settings.baseline.smoothness;
+elseif isfield(obj.settings, 'baselineSmoothness')
     obj.controls.smoothSlider.Value = obj.settings.baselineSmoothness;
 end
 
+% Plot Label
 if isfield(obj.settings.labels, 'data')
     labelName = obj.settings.labels.data;
 elseif isfield(obj.settings.labels, 'legend')
@@ -265,6 +270,7 @@ for i = 1:length(obj.menu.labelData.Children)
     end
 end
 
+% Peak Label
 labelName = obj.settings.labels.peak;
 
 for i = 1:length(obj.menu.peakOptionsLabel.Children)
@@ -277,6 +283,7 @@ for i = 1:length(obj.menu.peakOptionsLabel.Children)
     end
 end
 
+% Peak Integration Model
 switch lower(obj.settings.peakModel)
     
     case {'nn1'}
@@ -296,6 +303,7 @@ switch lower(obj.settings.peakModel)
         
 end
 
+% Peak Integration Target
 switch lower(obj.settings.peakArea)
     
     case {'rawdata'}

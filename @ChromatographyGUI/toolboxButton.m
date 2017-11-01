@@ -322,12 +322,12 @@ obj.controls.asymSlider = newSlider(...
 set(obj.controls.smoothSlider,...
     'min', obj.settings.baseline.minSmoothness,...
     'max', obj.settings.baseline.maxSmoothness,...
-    'value', obj.settings.baselineSmoothness);
+    'value', obj.settings.baseline.smoothness);
 
 set(obj.controls.asymSlider,...
     'min', obj.settings.baseline.minAsymmetry,...
     'max', obj.settings.baseline.maxAsymmetry,...
-    'value', obj.settings.baselineAsymmetry);
+    'value', obj.settings.baseline.asymmetry);
 
 % ---------------------------------------
 % Selection Callback
@@ -417,7 +417,7 @@ switch src.String
         
         col = obj.controls.peakList.Value;
         
-        if col < 1 || col > length(obj.peaks.name)
+        if isempty(col) || col < 1 || col > length(obj.peaks.name)
             return
         end
         
@@ -736,10 +736,10 @@ function baselineSliderCallback(src, ~, obj)
 switch src.Tag
     
     case {'baselineSmoothness'}
-        obj.settings.baselineSmoothness = src.Value;
+        obj.settings.baseline.smoothness = src.Value;
         
     case {'baselineAsymmetry'}
-        obj.settings.baselineAsymmetry = src.Value;
+        obj.settings.baseline.asymmetry = src.Value;
         
 end
 

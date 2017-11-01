@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171028-dev';
+        version     = '0.0.8.20171031-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -93,8 +93,8 @@ classdef ChromatographyGUI < handle
                 obj.peaks.(obj.settings.peakFields{i}) = {};
             end
             
-            obj.toolboxPeakList([], [], 'load_default');
             obj.toolboxSettings([], [], 'load_default');
+            obj.toolboxPeakList([], [], 'load_default');
             
             obj.initializeGUI();
             
@@ -1051,7 +1051,9 @@ classdef ChromatographyGUI < handle
             
             obj.controls.peakList.String = obj.peaks.name;
             
-            if obj.controls.peakList.Value > length(obj.peaks.name)
+            if isempty(obj.controls.peakList.Value)
+                obj.controls.peakList.Value = 1;
+            elseif obj.controls.peakList.Value > length(obj.peaks.name)
                 obj.controls.peakList.Value = length(obj.peaks.name);
             elseif obj.controls.peakList.Value < 1
                 obj.controls.peakList.Value = 1;

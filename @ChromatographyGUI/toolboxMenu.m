@@ -69,21 +69,27 @@ obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
-obj.menu.edit.tableDeleteAll = newMenu(obj.menu.edit.delete, 'All table rows...');
+obj.menu.edit.tableDelete    = newMenu(obj.menu.edit.delete, 'Table');
+obj.menu.edit.peaklistDelete = newMenu(obj.menu.edit.delete, 'Peak List');
+
+obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.tableDelete, 'Selected table rows...');
+obj.menu.edit.tableDeleteAll      = newMenu(obj.menu.edit.tableDelete, 'All table rows...');
+obj.menu.edit.peaklistDeleteAll   = newMenu(obj.menu.edit.peaklistDelete, 'All peaks...');
 
 obj.menu.edit.tableDeleteSelected.Callback = {@tableDeleteRowMenu, obj};
-obj.menu.edit.tableDeleteAll.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteAll.Callback      = {@tableDeleteRowMenu, obj};
+obj.menu.edit.peaklistDeleteAll.Callback   = {@peaklistDeleteMenu, obj};
 
 obj.menu.edit.tableDeleteSelected.Tag = 'selected';
-obj.menu.edit.tableDeleteAll.Tag = 'all';
+obj.menu.edit.tableDeleteAll.Tag      = 'all';
+obj.menu.edit.peaklistDeleteAll.Tag   = 'all';
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.data         = newMenu(obj.menu.view.main, 'Sample');
-obj.menu.view.peak         = newMenu(obj.menu.view.main, 'Peak');
-obj.menu.view.zoom         = newMenu(obj.menu.view.main, 'Zoom');
+obj.menu.view.data = newMenu(obj.menu.view.main, 'Sample');
+obj.menu.view.peak = newMenu(obj.menu.view.main, 'Peak');
+obj.menu.view.zoom = newMenu(obj.menu.view.main, 'Zoom');
 
 obj.menu.view.plotLabel    = newMenu(obj.menu.view.data, 'Show Label');
 obj.menu.view.peakLabel    = newMenu(obj.menu.view.peak, 'Show Label');
@@ -944,11 +950,48 @@ msg = questdlg(...
     'Yes', 'No', 'Yes');
 
 switch msg
+    
     case 'Yes'
         obj.tableDeleteRow();
+        
     case 'No'
         obj.table.selection = previousSelection;
         return
+        
+    otherwise
+        return
+        
+end
+
+end
+
+% ---------------------------------------
+% Delete Peak List
+% ---------------------------------------
+function peaklistDeleteMenu(~, ~, obj)
+
+if isempty(obj.peaks.name)
+    return
+end
+
+msg = questdlg('Delete entire peak list?', 'Delete', 'Yes', 'No', 'Yes');
+
+switch msg
+    
+    case 'Yes'
+        
+        n = length(obj.peaks.name);
+
+        for i = n:-1:1
+            obj.tableDeletePeakColumn(i)
+        end
+
+    case 'No'
+        return
+        
+    otherwise
+        return
+        
 end
 
 end
