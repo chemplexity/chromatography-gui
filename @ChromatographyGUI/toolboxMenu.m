@@ -211,14 +211,17 @@ obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
 obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
 obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'AreaOf');
 obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detection');
+obj.menu.peakOptionsAutoStep   = newMenu(obj.menu.peakOptions, 'Auto-Step');
 
-obj.menu.peakOptionsLabel.Tag = 'peak';
+obj.menu.peakOptionsLabel.Tag      = 'peak';
 obj.menu.peakOptionsAutoDetect.Tag = 'autoDetect';
+obj.menu.peakOptionsAutoStep.Tag   = 'autoStep';
 
-obj.menu.peakOptionsModel.Separator = 'on';
+obj.menu.peakOptionsModel.Separator      = 'on';
 obj.menu.peakOptionsAutoDetect.Separator = 'on';
 
 obj.menu.peakOptionsAutoDetect.Callback = {@menuOptionCheckedCallback, obj};
+obj.menu.peakOptionsAutoStep.Callback   = {@menuOptionCheckedCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -1046,6 +1049,9 @@ if strcmpi(evt.EventName, 'Action')
         case 'autoDetect'
             obj.settings.peakAutoDetect = src.UserData;
             obj.peakAutoDetectionCallback();
+            
+        case 'autoStep'
+            obj.settings.peakAutoStep = src.UserData;
             
     end
     

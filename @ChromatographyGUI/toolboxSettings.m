@@ -147,6 +147,7 @@ obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
 % Other Peak Settings
 obj.settings.peakOverride = 0;
 obj.settings.peakAutoDetect = 1;
+obj.settings.peakAutoStep = 0;
 
 % Peak Data Fields
 obj.settings.peakFields = {...

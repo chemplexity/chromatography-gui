@@ -1370,6 +1370,7 @@ classdef ChromatographyGUI < handle
                     obj.userPeak(0);
                     
                 otherwise
+                    
                     obj.userPeak(0);
                     
             end
@@ -1470,8 +1471,10 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function peakAutoDetection(obj, varargin)
+        function status = peakAutoDetection(obj, varargin)
            
+            status = 1;
+            
             if isempty(obj.peaks.name) || isempty(obj.data)
                 return
             end
@@ -1508,7 +1511,9 @@ classdef ChromatographyGUI < handle
             end
             
             % Median retention time
-            if length(group) == size(obj.peaks.time,1)
+            if ~any(group)
+                return
+            elseif length(group) == size(obj.peaks.time,1)
                 x = median([obj.peaks.time{group,col}]);                
             else
                 return
@@ -1525,10 +1530,11 @@ classdef ChromatographyGUI < handle
             
             % Check peak
             minArea   = 0.5;
-            minHeight = 0.3;
+            minHeight = 0.25;
             minError  = 100;
             
             if ~isempty(obj.peaks.area{row,col})
+                
                 if obj.peaks.area{row,col} <= minArea
                     obj.clearPeak();
                 elseif obj.peaks.height{row,col} <= minHeight
@@ -1538,7 +1544,10 @@ classdef ChromatographyGUI < handle
                 else
                     drawnow();
                 end
+                
             end
+            
+            status = 0;
             
         end
         
@@ -1550,26 +1559,55 @@ classdef ChromatographyGUI < handle
                 return
             end
             
+            m = length(obj.data);
+            n = length(obj.peaks.name);
+            
             row = obj.view.index;
             col = obj.controls.peakList.Value;
             
             if ~isempty([obj.peaks.time{row,:}])
                 return
             end
+            
+            % Set interrupt callback
+            set(obj.figure, 'windowkeypressfcn',...
+                'set(obj.menu.peakOptionsAutoStep, ''userdata'', 2)');
    
-            for i = 1:length(obj.peaks.name)
+            status = 0;
+            
+            % Peak auto-detection
+            for i = 1:n
                 
-                obj.peakAutoDetection();
+                if obj.menu.peakOptionsAutoStep.UserData == 2
+                    obj.menu.peakOptionsAutoStep.UserData = obj.settings.peakAutoStep;
+                    break
+                end
                 
-                if col + 1 > length(obj.peaks.name)
+                status = status + obj.peakAutoDetection();
+                
+                if col + 1 > n
                     obj.controls.peakList.Value = 1;
                 else
                     obj.controls.peakList.Value = col + 1;
                 end
                 
                 col = obj.controls.peakList.Value;
+            
+                if i == n && obj.settings.peakAutoStep
+                    
+                    if status == n
+                        break
+                    elseif row < m
+                        if isempty([obj.peaks.time{row+1,:}])
+                            obj.selectSample(1);
+                        end
+                    end
+                end
                 
             end
+            
+            % Reset WindowKeyPressFcn callback
+            set(obj.figure, 'windowkeypressfcn', @obj.keyboardCallback);
             
         end
         
