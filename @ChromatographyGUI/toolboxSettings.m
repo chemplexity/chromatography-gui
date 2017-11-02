@@ -144,6 +144,9 @@ obj.settings.baseline.asymmetry  = -5.5;
 obj.settings.peakModel = 'nn2';     % 'egh', 'nn1', 'nn2'
 obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
 
+% Other Peak Settings
+obj.settings.peakOverride = 0;
+
 % Peak Data Fields
 obj.settings.peakFields = {...
     'name',...
@@ -162,12 +165,13 @@ obj.settings.peakFields = {...
 obj.settings.other.asyncMode = 1;
 
 % Keyboard Shortcuts
-obj.settings.keyboard.selectPeak     = 'space';
-obj.settings.keyboard.clearPeak      = 'backspace';
-obj.settings.keyboard.previousPeak   = 'uparrow';
-obj.settings.keyboard.nextPeak       = 'downarrow';
-obj.settings.keyboard.previousSample = 'leftarrow';
-obj.settings.keyboard.nextSample     = 'rightarrow';
+obj.settings.keyboard.selectPeak         = 'space';
+obj.settings.keyboard.clearPeak          = 'backspace';
+obj.settings.keyboard.previousPeak       = 'uparrow';
+obj.settings.keyboard.nextPeak           = 'downarrow';
+obj.settings.keyboard.previousSample     = 'leftarrow';
+obj.settings.keyboard.nextSample         = 'rightarrow';
+obj.settings.keyboard.selectPeakOverride = 'o';
 
 end
 

@@ -74,32 +74,42 @@ function getNN(obj, x, y, peakCenter)
 
 row = obj.view.index;
 col = obj.controls.peakList.Value;
-pad = 2.5;
+pad = 1.5;
 
-% Select Peak
-px = peakfindNN(x, y,...
-    'xmin', peakCenter - pad,...
-    'xmax', peakCenter + pad,...
-    'sensitivity', 200);
-
-if ~isempty(px)
-
-    [~, ii] = min(abs(peakCenter - px(:,1)));
-    xc = px(ii,1);
+% Peak Center
+if isfield(obj.settings, 'peakOverride')
     
-    xtol = 0.03;
-    xf = x(x >= xc-xtol & x <= xc+xtol);
-    yf = y(x >= xc-xtol & x <= xc+xtol);
+    if ~obj.settings.peakOverride
+        
+        px = peakfindNN(x, y,...
+            'xmin', peakCenter - pad,...
+            'xmax', peakCenter + pad,...
+            'sensitivity', 350);
+
+        if ~isempty(px)
+
+            [~, ii] = min(abs(peakCenter - px(:,1)));
+            xc = px(ii,1);
     
-    if ~isempty(yf)
-        [~,xi] = max(yf);
-        peakCenter = xf(xi);
+            xtol = 0.02;
+            xf = x(x >= xc-xtol & x <= xc+xtol);
+            yf = y(x >= xc-xtol & x <= xc+xtol);
+    
+            if ~isempty(yf)
+                [~,xi] = max(yf);
+                peakCenter = xf(xi);
+            else
+                peakCenter = px(ii,1);
+            end
+    
+        else
+            peakCenter = findPeakCenter(x, y, peakCenter);
+        end
+       
     else
-        peakCenter = px(ii,1);
+        obj.settings.peakOverride = 0;
     end
     
-else
-    peakCenter = findPeakCenter(x, y, peakCenter);
 end
 
 xi = find(x >= peakCenter, 1);
@@ -146,17 +156,35 @@ else
 end
     
 % Baseline
-b = getBaselineFit(obj,x,y,0);
+[b,x,y] = getBaselineFit(obj,x,y,0);
 
 % Peak Fit
-peak = peakfitNN(x, y, peakCenter,...
-    'area', obj.settings.peakArea,...
-    'model', nnVersion,...
-    'baseline', b,...
-    'frequency', f);
+peak = [];
 
-if peak.error >= 200
-    peak.fit = [];
+for i = f-50:50:f+50
+    
+    if i <= 0
+        continue
+    end
+    
+    p = peakfitNN(x, y, peakCenter,...
+        'area', obj.settings.peakArea,...
+        'model', nnVersion,...
+        'baseline', b,...
+        'frequency', i);
+
+    if isempty(peak)
+        peak = p;
+    end
+    
+    if isempty(p.error) || isnan(p.error)
+        continue
+    end
+    
+    if p.error < peak.error
+        peak = p;
+    end
+
 end
 
 % Update
@@ -167,7 +195,6 @@ if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
     obj.plotPeakLabels(col);
     obj.updatePeakArea(col);
     obj.updatePeakBaseline(col);
-    
 else
     obj.clearPeakData(row, col);
     obj.clearPeakTable(row, col);
@@ -190,7 +217,7 @@ xf = x >= peakCenter - xpad & x <= peakCenter + xpad;
 x = x(xf);
 y = y(xf);
 
-baseline = getBaselineFit(obj,x,y,0);
+[baseline,x,y] = getBaselineFit(obj,x,y,0);
 
 peak = peakfitEGH(...
     x, y-baseline,...
@@ -324,14 +351,18 @@ end
 
 end
 
-function b = getBaselineFit(obj,x,y,varargin)
+function [b,x,y] = getBaselineFit(obj,x,y,varargin)
 
 row = obj.view.index;
 b = [];
 
 xmin = min(x);
 xmax = max(x);
-    
+
+if isempty(obj.data(row).baseline)
+    obj.getBaseline();
+end
+
 if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
     
     b = obj.data(row).baseline;
@@ -342,7 +373,14 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
         b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
     end
     
-    if min(b(:,1)) > xmin && max(b(:,1)) >= xmax
+    if ~isempty(b)
+        bmin = min(b(:,1));
+        bmax = max(b(:,1));
+    else
+        return
+    end
+    
+    if bmin > xmin && bmax >= xmax
     
         if size(b,1) ~= size(y,1)            
             n = numel(x) - size(b,1);
@@ -352,7 +390,7 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
             end
         end
 
-    elseif min(b(:,1)) <= xmin && max(b(:,1)) < xmax
+    elseif bmin <= xmin && bmax < xmax
        
         if size(b,1) ~= size(y,1)    
             n = numel(x) - size(b,1);
@@ -360,6 +398,15 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
             if abs(x(end-n) - b(end,1)) <= 0.01
                 b = [b; x(end-n+1:end), repmat(b(end,2),n,1)];
             end
+        end
+        
+    elseif bmin > xmin && bmax < xmax
+        
+        xf = x >= bmin & x <= bmax;
+        
+        if nnz(xf) == size(b,1)
+            x = x(xf);
+            y = y(xf);
         end
         
     end

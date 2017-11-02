@@ -2276,12 +2276,21 @@ classdef ChromatographyGUI < handle
             obj.peaks.area{row,col}   = peak.area;
             obj.peaks.error{row,col}  = peak.error;
             obj.peaks.fit{row,col}    = peak.fit;
-            obj.peaks.areaOf{row,col} = obj.settings.peakArea;
+            
+            if isfield(peak, 'areaOf')
+                obj.peaks.areaOf{row,col} = peak.areaOf;
+            else
+                obj.peaks.areaOf{row,col} = obj.settings.peakArea;
+            end
             
             if isfield(peak, 'model')
                 obj.peaks.model{row,col} = peak.model;
             else
                 obj.peaks.model{row,col} = [];
+            end
+            
+            if isfield(peak, 'revision')
+                obj.peaks.model{row,col} = [obj.peaks.model{row,col}, '_', peak.revision];
             end
             
             if isfield(peak, 'xmin') && isfield(peak, 'xmax')
@@ -2564,6 +2573,7 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{i,10} = obj.data(i).seqindex;
                 obj.table.main.Data{i,11} = obj.data(i).vial;
                 obj.table.main.Data{i,12} = obj.data(i).replicate;
+                obj.table.main.Data{i,13} = obj.data(i).injvol;
                 
                 for j = 1:nCol
                     
@@ -2654,7 +2664,15 @@ classdef ChromatographyGUI < handle
                             obj.userZoom(0);
                         end
                         
-                        set(obj.figure, 'pointer', 'circle');
+                        cursorType = 'circle';
+                        
+                        if isfield(obj.settings, 'peakOverride')
+                            if obj.settings.peakOverride
+                                cursorType = 'crosshair';
+                            end
+                        end
+                        
+                        set(obj.figure, 'pointer', cursorType);
                         set(obj.axes.main, 'buttondownfcn', @obj.peakTimeSelectCallback);
                         
                     end
@@ -2733,6 +2751,21 @@ classdef ChromatographyGUI < handle
                     
                     if isempty(evt.Modifier)
                         obj.selectSample(1);
+                    end
+                    
+                case obj.settings.keyboard.selectPeakOverride % 'o'
+                    
+                    if isempty(evt.Modifier)
+                        
+                        obj.settings.peakOverride = ~obj.settings.peakOverride;
+                        
+                        if obj.view.selectPeak
+                            obj.userPeak(0);
+                        end
+                        
+                        obj.userPeak(1);
+                        obj.figure.CurrentObject = obj.controls.peakList;
+                            
                     end
                     
                 case 'tab'

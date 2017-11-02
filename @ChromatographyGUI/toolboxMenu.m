@@ -123,12 +123,12 @@ obj.menu.view.zoom.Separator = 'on';
 % ---------------------------------------
 obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Sample');
 obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
-obj.menu.tableOptions = newMenu(obj.menu.options.main, 'Table');
 obj.menu.otherOptions = newMenu(obj.menu.options.main, 'Other');
 
 % ---------------------------------------
-% Options --> Table
+% Options --> Other --> Table
 % ---------------------------------------
+obj.menu.tableOptions = newMenu(obj.menu.otherOptions, 'Table');
 obj.menu.tableColumns = newMenu(obj.menu.tableOptions, 'Columns');
 
 obj.menu.tableColumns.Tag = 'table';
@@ -1243,6 +1243,8 @@ switch src.Parent.Tag
         updateTableColumns(src, obj)
         
 end
+
+src.Checked = 'off';
 
 end
 
