@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171101-dev';
+        version     = '0.0.8.20171102-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1399,6 +1399,182 @@ classdef ChromatographyGUI < handle
         
     end
     
+    methods (Hidden = true)
+       
+        function selectSample(obj, varargin)
+            
+            currentIndex = obj.view.index;
+            
+            if ~isempty(currentIndex) && currentIndex ~= 0
+                
+                obj.removeTableHighlightText();
+                
+                if length(varargin) == 1
+                    n = varargin{1};
+                elseif length(varargin) == 3
+                    n = varargin{3};
+                end
+                
+                newIndex = currentIndex + n;
+                maxIndex = length(obj.data);
+                
+                if maxIndex == 1
+                    return
+                elseif newIndex <= maxIndex && newIndex >= 1
+                    obj.view.index = newIndex;
+                    obj.view.id    = num2str(newIndex);
+                    obj.view.name  = obj.data(newIndex).sample_name;
+                elseif newIndex > maxIndex
+                    obj.view.index = 1;
+                    obj.view.id    = '1';
+                    obj.view.name  = obj.data(1).sample_name;
+                elseif newIndex < 1
+                    obj.view.index = maxIndex;
+                    obj.view.id    = num2str(maxIndex);
+                    obj.view.name  = obj.data(maxIndex).sample_name;
+                end
+                
+                obj.figure.CurrentObject = obj.axes.main;
+                
+                obj.updateSampleText();
+                obj.updateAllPeakListText();
+                obj.updatePeakText();
+                obj.updatePlot();
+                obj.addTableHighlightText();
+                obj.userPeak(0);
+                obj.peakAutoDetectionCallback();
+                
+            end
+            
+        end
+        
+        function clearPeak(obj, varargin)
+            
+            row = obj.view.index;
+            col = obj.controls.peakList.Value;
+            
+            if isempty(col) || row == 0
+                return
+            end
+            
+            if row ~= 0 && col ~= 0
+                obj.clearPeakText(col);
+                obj.clearPeakLine(col);
+                obj.clearPeakLabel(col);
+                obj.clearPeakArea(col);
+                obj.clearPeakBaseline(col);
+                obj.clearPeakData(row,col);
+                obj.clearPeakTable(row,col);
+                obj.updatePeakListText();
+            end
+            
+        end
+        
+        function peakAutoDetection(obj, varargin)
+           
+            if isempty(obj.peaks.name) || isempty(obj.data)
+                return
+            end
+            
+            row = obj.view.index;
+            col = obj.controls.peakList.Value;
+            
+            if ~isempty(obj.peaks.time{row,col})
+                if isempty(varargin)
+                    return
+                elseif isnumeric(varargin{1}) && ~varargin{1} == 1
+                    return
+                end
+            elseif isempty([obj.peaks.time{:,col}])
+                return
+            end
+            
+            % Method group
+            str = obj.data(row).method_name;
+            method = strcmpi(str, {obj.data.method_name});
+            
+            % Channel group
+            str = obj.data(row).channel;
+            channel = {obj.data.channel};
+            channel(cellfun(@isempty, channel)) = {''};
+            channel(~cellfun(@ischar, channel)) = {''};
+            channel = strcmpi(str, channel);
+            
+            % Group filter
+            if length(method) == length(channel)
+                group = method & channel;
+            else
+                return
+            end
+            
+            % Median retention time
+            if length(group) == size(obj.peaks.time,1)
+                x = median([obj.peaks.time{group,col}]);                
+            else
+                return
+            end
+            
+            % Get peak
+            if ~isnan(x)
+                evt.EventName = 'Hit';
+                evt.IntersectionPoint = x;
+                obj.peakTimeSelectCallback([], evt);
+            else
+                return
+            end
+            
+            % Check peak
+            minArea   = 0.5;
+            minHeight = 0.3;
+            minError  = 100;
+            
+            if ~isempty(obj.peaks.area{row,col})
+                if obj.peaks.area{row,col} <= minArea
+                    obj.clearPeak();
+                elseif obj.peaks.height{row,col} <= minHeight
+                    obj.clearPeak();
+                elseif obj.peaks.error{row,col} >= minError
+                    obj.clearPeak();
+                else
+                    drawnow();
+                end
+            end
+            
+        end
+        
+        function peakAutoDetectionCallback(obj, varargin)
+        
+            if isempty(obj.peaks.name) || isempty(obj.data)
+                return
+            elseif ~obj.settings.peakAutoDetect
+                return
+            end
+            
+            row = obj.view.index;
+            col = obj.controls.peakList.Value;
+            
+            if ~isempty([obj.peaks.time{row,:}])
+                return
+            end
+   
+            for i = 1:length(obj.peaks.name)
+                
+                obj.peakAutoDetection();
+                
+                if col + 1 > length(obj.peaks.name)
+                    obj.controls.peakList.Value = 1;
+                else
+                    obj.controls.peakList.Value = col + 1;
+                end
+                
+                col = obj.controls.peakList.Value;
+                
+            end
+            
+        end
+        
+    end
+    
     methods (Access = private)
         
         function initializeGUI(obj, varargin)
@@ -1451,53 +1627,7 @@ classdef ChromatographyGUI < handle
             end
             
         end
-        
-        function selectSample(obj, varargin)
-            
-            currentIndex = obj.view.index;
-            
-            if ~isempty(currentIndex) && currentIndex ~= 0
-                
-                obj.removeTableHighlightText();
-                
-                if length(varargin) == 1
-                    n = varargin{1};
-                elseif length(varargin) == 3
-                    n = varargin{3};
-                end
-                
-                newIndex = currentIndex + n;
-                maxIndex = length(obj.data);
-                
-                if maxIndex == 1
-                    return
-                elseif newIndex <= maxIndex && newIndex >= 1
-                    obj.view.index = newIndex;
-                    obj.view.id    = num2str(newIndex);
-                    obj.view.name  = obj.data(newIndex).sample_name;
-                elseif newIndex > maxIndex
-                    obj.view.index = 1;
-                    obj.view.id    = '1';
-                    obj.view.name  = obj.data(1).sample_name;
-                elseif newIndex < 1
-                    obj.view.index = maxIndex;
-                    obj.view.id    = num2str(maxIndex);
-                    obj.view.name  = obj.data(maxIndex).sample_name;
-                end
-                
-                obj.figure.CurrentObject = obj.axes.main;
-                
-                obj.updateSampleText();
-                obj.updateAllPeakListText();
-                obj.updatePeakText();
-                obj.updatePlot();
-                obj.addTableHighlightText();
-                obj.userPeak(0);
-                
-            end
-            
-        end
-        
+       
         function selectPeak(obj, varargin)
             
             currentIndex = obj.controls.peakList.Value;
@@ -2210,28 +2340,6 @@ classdef ChromatographyGUI < handle
         function clearTableData(obj, varargin)
             
             obj.table.main.Data = [];
-            
-        end
-        
-        function clearPeak(obj, varargin)
-            
-            row = obj.view.index;
-            col = obj.controls.peakList.Value;
-            
-            if isempty(col) || row == 0
-                return
-            end
-            
-            if row ~= 0 && col ~= 0
-                obj.clearPeakText(col);
-                obj.clearPeakLine(col);
-                obj.clearPeakLabel(col);
-                obj.clearPeakArea(col);
-                obj.clearPeakBaseline(col);
-                obj.clearPeakData(row,col);
-                obj.clearPeakTable(row,col);
-                obj.updatePeakListText();
-            end
             
         end
         

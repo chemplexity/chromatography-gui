@@ -103,12 +103,6 @@ obj.menu.view.peakLine.Tag     = 'showPeakLine';
 obj.menu.view.peakArea.Tag     = 'showPeakArea';
 obj.menu.view.peakBaseline.Tag = 'showPeakBaseline';
 
-obj.menu.view.plotLabel.Checked    = 'on';
-obj.menu.view.peakLabel.Checked    = 'on';
-obj.menu.view.peakLine.Checked     = 'on';
-obj.menu.view.peakArea.Checked     = 'on';
-obj.menu.view.peakBaseline.Checked = 'on';
-
 obj.menu.view.plotLabel.Callback    = {@plotViewMenuCallback, obj};
 obj.menu.view.peakLabel.Callback    = {@peakViewMenuCallback, obj};
 obj.menu.view.peakLine.Callback     = {@peakViewMenuCallback, obj};
@@ -210,28 +204,21 @@ obj.menu.labelSelectNone.Callback = {@plotLabelQuickSelectCallback, obj};
 
 obj.menu.labelSelectAll.Separator = 'on';
 
-labelName = obj.settings.labels.data;
-
-for i = 1:length(obj.menu.labelData.Children)
-    if any(ishandle(obj.menu.labelData.Children(i)))
-        if any(strcmpi(obj.menu.labelData.Children(i).Tag, labelName))
-            obj.menu.labelData.Children(i).Checked = 'on';
-        else
-            obj.menu.labelData.Children(i).Checked = 'off';
-        end
-    end
-end
-
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
-obj.menu.peakOptionsLabel = newMenu(obj.menu.peakOptions, 'Label');
-obj.menu.peakOptionsModel = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea  = newMenu(obj.menu.peakOptions, 'AreaOf');
+obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
+obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
+obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'AreaOf');
+obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detection');
 
 obj.menu.peakOptionsLabel.Tag = 'peak';
+obj.menu.peakOptionsAutoDetect.Tag = 'autoDetect';
 
 obj.menu.peakOptionsModel.Separator = 'on';
+obj.menu.peakOptionsAutoDetect.Separator = 'on';
+
+obj.menu.peakOptionsAutoDetect.Callback = {@menuOptionCheckedCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -262,18 +249,6 @@ obj.menu.labelPeakNone.Callback   = {@plotLabelQuickSelectCallback, obj};
 
 obj.menu.labelPeakAll.Separator = 'on';
 
-labelName = obj.settings.labels.peak;
-
-for i = 1:length(obj.menu.peakOptionsLabel.Children)
-    if any(ishandle(obj.menu.peakOptionsLabel.Children(i)))
-        if any(strcmpi(obj.menu.peakOptionsLabel.Children(i).Tag, labelName))
-            obj.menu.peakOptionsLabel.Children(i).Checked = 'on';
-        else
-            obj.menu.peakOptionsLabel.Children(i).Checked = 'off';
-        end
-    end
-end
-
 % ---------------------------------------
 % Options --> Peak --> Model
 % ---------------------------------------
@@ -284,10 +259,6 @@ obj.menu.peakEGH = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybr
 obj.menu.peakNN1.Tag = 'nn1';
 obj.menu.peakNN2.Tag = 'nn2';
 obj.menu.peakEGH.Tag = 'egh';
-
-obj.menu.peakNN1.Checked = 'off';
-obj.menu.peakNN2.Checked = 'on';
-obj.menu.peakEGH.Checked = 'off';
 
 obj.menu.peakNN1.Callback = {@peakModelMenuCallback, obj};
 obj.menu.peakNN2.Callback = {@peakModelMenuCallback, obj};
@@ -301,9 +272,6 @@ obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
 
 obj.menu.peakOptionsAreaActual.Tag = 'rawdata';
 obj.menu.peakOptionsAreaFit.Tag    = 'fitdata';
-
-obj.menu.peakOptionsAreaActual.Checked = 'on';
-obj.menu.peakOptionsAreaFit.Checked    = 'off';
 
 obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
 obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
@@ -1074,6 +1042,10 @@ if strcmpi(evt.EventName, 'Action')
        
         case 'asyncMode'
             obj.settings.other.asyncMode = src.UserData;
+            
+        case 'autoDetect'
+            obj.settings.peakAutoDetect = src.UserData;
+            obj.peakAutoDetectionCallback();
             
     end
     

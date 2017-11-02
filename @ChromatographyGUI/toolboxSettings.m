@@ -146,6 +146,7 @@ obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
 
 % Other Peak Settings
 obj.settings.peakOverride = 0;
+obj.settings.peakAutoDetect = 1;
 
 % Peak Data Fields
 obj.settings.peakFields = {...
@@ -245,7 +246,21 @@ end
 
 function applySettings(obj, varargin)
 
-% Baseline Settings
+% UIControl --> Show Baseline
+if obj.settings.showPlotBaseline
+    obj.controls.showBaseline.Value = 1;
+else
+    obj.controls.showBaseline.Value = 0;
+end
+
+% UIControl --> Show Peaks
+if obj.settings.showPeaks
+    obj.controls.showPeak.Value = 1;
+else
+    obj.controls.showPeak.Value = 0;
+end
+
+% UIControl --> Baseline Settings
 if isfield(obj.settings.baseline, 'asymmetry')
     obj.controls.asymSlider.Value = obj.settings.baseline.asymmetry;
 elseif isfield(obj.settings, 'baselineAsymmetry')
@@ -258,7 +273,7 @@ elseif isfield(obj.settings, 'baselineSmoothness')
     obj.controls.smoothSlider.Value = obj.settings.baselineSmoothness;
 end
 
-% Plot Label
+% Menu --> Options --> Sample --> Label
 if isfield(obj.settings.labels, 'data')
     labelName = obj.settings.labels.data;
 elseif isfield(obj.settings.labels, 'legend')
@@ -277,7 +292,7 @@ for i = 1:length(obj.menu.labelData.Children)
     end
 end
 
-% Peak Label
+% Menu --> Options --> Peak --> Label
 labelName = obj.settings.labels.peak;
 
 for i = 1:length(obj.menu.peakOptionsLabel.Children)
@@ -290,89 +305,69 @@ for i = 1:length(obj.menu.peakOptionsLabel.Children)
     end
 end
 
-% Peak Integration Model
+% Menu --> Options --> Peak --> Model
 switch lower(obj.settings.peakModel)
-    
     case {'nn1'}
         obj.menu.peakNN1.Checked = 'on';
-        obj.menu.peakNN2.Checked = 'off';
-        obj.menu.peakEGH.Checked = 'off';
-        
     case {'nn', 'nn2'}
-        obj.menu.peakNN1.Checked = 'off';
         obj.menu.peakNN2.Checked = 'on';
-        obj.menu.peakEGH.Checked = 'off';
-        
     case {'egh'}
-        obj.menu.peakNN1.Checked = 'off';
-        obj.menu.peakNN2.Checked = 'off';
         obj.menu.peakEGH.Checked = 'on';
-        
 end
 
-% Peak Integration Target
+% Menu --> Options --> Peak --> AreaOf
 switch lower(obj.settings.peakArea)
-    
     case {'rawdata'}
         obj.menu.peakOptionsAreaActual.Checked = 'on';
-        obj.menu.peakOptionsAreaFit.Checked = 'off';
-        
     case {'fitdata'}
-        obj.menu.peakOptionsAreaActual.Checked = 'off';
         obj.menu.peakOptionsAreaFit.Checked = 'on';
-        
 end
 
-% Menu --> Show Plot Label
+% Menu --> Options --> Peak --> Auto-Detection
+if isfield(obj.settings, 'peakAutoDetect')
+    if obj.settings.peakAutoDetect
+        obj.menu.peakOptionsAutoDetect.Checked = 'on';
+    else
+        obj.menu.peakOptionsAutoDetect.Checked = 'off';
+    end
+end
+
+% Menu --> View --> Sample --> Show Plot Label
 if obj.settings.showPlotLabel
     obj.menu.view.plotLabel.Checked = 'on';
 else
     obj.menu.view.plotLabel.Checked = 'off';
 end
 
-% UIControl --> Show Baseline
-if obj.settings.showPlotBaseline
-    obj.controls.showBaseline.Value = 1;
-else
-    obj.controls.showBaseline.Value = 0;
-end
-
-% UIControl --> Show Peaks
-if obj.settings.showPeaks
-    obj.controls.showPeak.Value = 1;
-else
-    obj.controls.showPeak.Value = 0;
-end
-
-% Menu --> Show Peak Label
+% Menu --> View --> Peak --> Show Peak Label
 if obj.settings.showPeakLabel
     obj.menu.view.peakLabel.Checked = 'on';
 else
     obj.menu.view.peakLabel.Checked = 'off';
 end
 
-% Menu --> Show Peak Fit (line)
+% Menu --> View --> Peak --> Show Peak Fit (line)
 if obj.settings.showPeakLine
     obj.menu.view.peakLine.Checked = 'on';
 else
     obj.menu.view.peakLine.Checked = 'off';
 end
 
-% Menu --> Show Peak Area (fill)
+% Menu --> View --> Peak --> Show Peak Area (fill)
 if obj.settings.showPeakArea
     obj.menu.view.peakArea.Checked = 'on';
 else
     obj.menu.view.peakArea.Checked = 'off';
 end
 
-% Menu --> Show Peak Baseline (line)
+% Menu --> View --> Peak --> Show Peak Baseline (line)
 if obj.settings.showPeakBaseline
     obj.menu.view.peakBaseline.Checked = 'on';
 else
     obj.menu.view.peakBaseline.Checked = 'off';
 end
 
-% Menu --> Table --> Show Peak Columns
+% Menu --> Other --> Table --> Show Peak Columns
 str = obj.settings.table.labelNames;
 
 for i = 1:length(str)
@@ -404,7 +399,7 @@ if isfield(obj.settings, 'other')
     end
 end
 
-% Menu --> Zoom
+% Menu --> View --> Zoom
 if strcmpi(obj.settings.showZoom, 'on')
     obj.menu.view.zoom.Checked = 'on';
     obj.settings.selectZoom = 1;
