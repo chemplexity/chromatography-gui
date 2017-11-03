@@ -333,6 +333,15 @@ if isfield(obj.settings, 'peakAutoDetect')
     end
 end
 
+% Menu --> Options --> Peak --> Auto-Step
+if isfield(obj.settings, 'peakAutoStep')
+    if obj.settings.peakAutoStep
+        obj.menu.peakOptionsAutoStep.Checked = 'on';
+    else
+        obj.menu.peakOptionsAutoStep.Checked = 'off';
+    end
+end
+
 % Menu --> View --> Sample --> Show Plot Label
 if obj.settings.showPlotLabel
     obj.menu.view.plotLabel.Checked = 'on';

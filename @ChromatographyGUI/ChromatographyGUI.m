@@ -1443,6 +1443,9 @@ classdef ChromatographyGUI < handle
                 obj.updatePlot();
                 obj.addTableHighlightText();
                 obj.userPeak(0);
+                
+                drawnow();
+                
                 obj.peakAutoDetectionCallback();
                 
             end
@@ -1514,7 +1517,7 @@ classdef ChromatographyGUI < handle
             if ~any(group)
                 return
             elseif length(group) == size(obj.peaks.time,1)
-                x = median([obj.peaks.time{group,col}]);                
+                x = median([obj.peaks.time{group,col}]);
             else
                 return
             end
@@ -1541,6 +1544,52 @@ classdef ChromatographyGUI < handle
                     obj.clearPeak();
                 elseif obj.peaks.error{row,col} >= minError
                     obj.clearPeak();
+                elseif length([obj.peaks.time{row,:}]) > 1
+                
+                    dx = cellfun(@(x) x - obj.peaks.time{row,col},...
+                        obj.peaks.time(row,:), 'uniformoutput', 0);
+                
+                    dx = cellfun(@(x) abs(x) <= 1E-2,...
+                        dx, 'uniformoutput', 0);
+                
+                    if sum([dx{:}]) > 1
+                    
+                        for i = 1:length(dx)
+                    
+                            if i == col
+                                continue
+                            end
+                        
+                            if dx{i}
+                                
+                                a0 = obj.peaks.area{row,col};
+                                a1 = obj.peaks.area{row,i};
+                                
+                                if abs(a0-a1) <= mean([a0,a1]) * 1E-2
+                                
+                                    t0 = obj.peaks.time{row,col};
+                                    t1 = obj.peaks.time{row,i};
+                                    
+                                    y = median([obj.peaks.time{group,i}]);
+                                
+                                    if abs(t0-x) >= abs(t1-y)
+                                        obj.clearPeak();
+                                    else
+                                        obj.controls.peakList.Value = i;
+                                        obj.clearPeak();
+                                        obj.controls.peakList.Value = col;
+                                    end
+                            
+                                    break
+                                
+                                end
+                            end
+                        end
+                        
+                    end
+                    
+                    drawnow();
+                    
                 else
                     drawnow();
                 end
@@ -1557,30 +1606,27 @@ classdef ChromatographyGUI < handle
                 return
             elseif ~obj.settings.peakAutoDetect
                 return
+            elseif ~isempty([obj.peaks.time{obj.view.index,:}])
+                return
             end
-            
+   
             m = length(obj.data);
             n = length(obj.peaks.name);
             
             row = obj.view.index;
             col = obj.controls.peakList.Value;
             
-            if ~isempty([obj.peaks.time{row,:}])
-                return
-            end
-            
-            % Set interrupt callback
-            set(obj.figure, 'windowkeypressfcn',...
-                'set(obj.menu.peakOptionsAutoStep, ''userdata'', 2)');
-   
             status = 0;
             
+            % Set interrupt callback
+            set(obj.figure, 'windowkeypressfcn', @obj.keyboardInterruptCallback);
+   
             % Peak auto-detection
             for i = 1:n
                 
-                if obj.menu.peakOptionsAutoStep.UserData == 2
-                    obj.menu.peakOptionsAutoStep.UserData = obj.settings.peakAutoStep;
-                    break
+                if obj.menu.peakOptionsAutoDetect.UserData == 2
+                    obj.menu.peakOptionsAutoDetect.UserData = obj.settings.peakAutoDetect;
+                    return
                 end
                 
                 status = status + obj.peakAutoDetection();
@@ -1593,22 +1639,24 @@ classdef ChromatographyGUI < handle
                 
                 col = obj.controls.peakList.Value;
             
-                if i == n && obj.settings.peakAutoStep
-                    
-                    if status == n
-                        break
-                    elseif row < m
-                        if isempty([obj.peaks.time{row+1,:}])
-                            obj.selectSample(1);
-                        end
-                    end
+                if status == n
+                    obj.keyboardInterruptCallback();
+                    return
                 end
                 
             end
             
-            % Reset WindowKeyPressFcn callback
-            set(obj.figure, 'windowkeypressfcn', @obj.keyboardCallback);
+            % Refresh peak textbox
+            obj.updatePeakText();
+            obj.keyboardInterruptCallback();
             
+            % Auto-step sample selection
+            if obj.settings.peakAutoStep && row < m
+                if isempty([obj.peaks.time{row+1,:}])
+                    obj.selectSample(1);
+                end
+            end
+                
         end
         
     end
@@ -1635,6 +1683,15 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function keyboardInterruptCallback(obj, varargin)
+            
+            obj.figure.WindowKeyPressFcn = @obj.keyboardCallback;
+
+            if ~isempty(varargin)
+                obj.menu.peakOptionsAutoDetect.UserData = 2;
+            end
+            
+        end
         
         function selectTab(obj, varargin)
             
