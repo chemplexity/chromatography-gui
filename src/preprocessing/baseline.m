@@ -26,7 +26,7 @@ function b = baseline(varargin)
 %       1E-4 (default) | number
 %
 %   'iterations' -- maximum number of baseline iterations
-%       20 (default) | number
+%       10 (default) | number
 %       
 %   'gradient' -- minimum change required for continued iterations
 %       1E-4 (default) | number
@@ -49,7 +49,7 @@ function b = baseline(varargin)
 % ---------------------------------------
 default.smoothness = 1E6;
 default.asymmetry  = 1E-4;
-default.iterations = 20;
+default.iterations = 10;
 default.gradient   = 1E-4;
 
 % ---------------------------------------
@@ -88,9 +88,9 @@ end
 
 % Parameter: 'asymmetry'
 if a <= 0
-    a = 1E-9;
+    a = 1E-10;
 elseif a >= 1
-    a = 1 - 1E-9;
+    a = 1 - 1E-10;
 end
 
 % Parameter: 'smoothness'
