@@ -17,11 +17,9 @@ obj.menu.file.save   = newMenu(obj.menu.file.main, 'Save');
 obj.menu.file.saveAs = newMenu(obj.menu.file.main, 'Save As...');
 obj.menu.file.exit   = newMenu(obj.menu.file.main, 'Exit');
 
-obj.menu.file.import.Separator = 'on';
-obj.menu.file.exit.Separator   = 'on';
+obj.menu.file.exit.Separator = 'on';
 
 obj.menu.file.save.Callback = {@saveCheckpoint, obj};
-
 obj.menu.file.exit.Callback = @obj.closeRequest;
 
 % ---------------------------------------
@@ -49,7 +47,7 @@ obj.menu.saveImg.Callback       = {@saveImageCallback, obj};
 obj.menu.saveTable.Callback     = {@saveCsvCallback, obj};
 
 if ispc
-    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLS, *.XLSX)');
+    obj.menu.saveXls = newMenu(obj.menu.file.saveAs, 'Table (*.XLSX, *.XLS)');
     obj.menu.saveXls.Callback = {@saveXlsCallback, obj};
 end
 
@@ -71,24 +69,31 @@ obj.menu.edit.copyTable.Callback  = @obj.copyTable;
 % ---------------------------------------
 % Edit Menu --> Delete
 % ---------------------------------------
-obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.delete, 'Selected table rows...');
-obj.menu.edit.tableDeleteAll = newMenu(obj.menu.edit.delete, 'All table rows...');
+obj.menu.edit.tableDelete    = newMenu(obj.menu.edit.delete, 'Table');
+obj.menu.edit.peaklistDelete = newMenu(obj.menu.edit.delete, 'Peak List');
+
+obj.menu.edit.tableDeleteSelected = newMenu(obj.menu.edit.tableDelete, 'Selected table rows...');
+obj.menu.edit.tableDeleteAll      = newMenu(obj.menu.edit.tableDelete, 'All table rows...');
+obj.menu.edit.peaklistDeleteAll   = newMenu(obj.menu.edit.peaklistDelete, 'All peaks...');
 
 obj.menu.edit.tableDeleteSelected.Callback = {@tableDeleteRowMenu, obj};
-obj.menu.edit.tableDeleteAll.Callback = {@tableDeleteRowMenu, obj};
+obj.menu.edit.tableDeleteAll.Callback      = {@tableDeleteRowMenu, obj};
+obj.menu.edit.peaklistDeleteAll.Callback   = {@peaklistDeleteMenu, obj};
 
 obj.menu.edit.tableDeleteSelected.Tag = 'selected';
-obj.menu.edit.tableDeleteAll.Tag = 'all';
+obj.menu.edit.tableDeleteAll.Tag      = 'all';
+obj.menu.edit.peaklistDeleteAll.Tag   = 'all';
 
 % ---------------------------------------
 % View Menu
 % ---------------------------------------
-obj.menu.view.data         = newMenu(obj.menu.view.main, 'Sample');
-obj.menu.view.peak         = newMenu(obj.menu.view.main, 'Peak');
-obj.menu.view.zoom         = newMenu(obj.menu.view.main, 'Zoom');
+obj.menu.view.data = newMenu(obj.menu.view.main, 'Sample');
+obj.menu.view.peak = newMenu(obj.menu.view.main, 'Peak');
+obj.menu.view.zoom = newMenu(obj.menu.view.main, 'Zoom');
+
 obj.menu.view.plotLabel    = newMenu(obj.menu.view.data, 'Show Label');
 obj.menu.view.peakLabel    = newMenu(obj.menu.view.peak, 'Show Label');
-obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Line');
+obj.menu.view.peakLine     = newMenu(obj.menu.view.peak, 'Show Fit');
 obj.menu.view.peakArea     = newMenu(obj.menu.view.peak, 'Show Area');
 obj.menu.view.peakBaseline = newMenu(obj.menu.view.peak, 'Show Baseline');
 
@@ -97,12 +102,6 @@ obj.menu.view.peakLabel.Tag    = 'showPeakLabel';
 obj.menu.view.peakLine.Tag     = 'showPeakLine';
 obj.menu.view.peakArea.Tag     = 'showPeakArea';
 obj.menu.view.peakBaseline.Tag = 'showPeakBaseline';
-
-obj.menu.view.plotLabel.Checked    = 'on';
-obj.menu.view.peakLabel.Checked    = 'on';
-obj.menu.view.peakLine.Checked     = 'on';
-obj.menu.view.peakArea.Checked     = 'on';
-obj.menu.view.peakBaseline.Checked = 'on';
 
 obj.menu.view.plotLabel.Callback    = {@plotViewMenuCallback, obj};
 obj.menu.view.peakLabel.Callback    = {@peakViewMenuCallback, obj};
@@ -116,18 +115,53 @@ obj.menu.view.zoom.Separator = 'on';
 % ---------------------------------------
 % Options Menu
 % ---------------------------------------
-obj.menu.dataOptions = newMenu(obj.menu.options.main, 'Sample');
-obj.menu.peakOptions = newMenu(obj.menu.options.main, 'Peak');
+obj.menu.dataOptions  = newMenu(obj.menu.options.main, 'Sample');
+obj.menu.peakOptions  = newMenu(obj.menu.options.main, 'Peak');
+obj.menu.otherOptions = newMenu(obj.menu.options.main, 'Other');
 
 % ---------------------------------------
-% Options --> Data
+% Options --> Other --> Table
+% ---------------------------------------
+obj.menu.tableOptions = newMenu(obj.menu.otherOptions, 'Table');
+obj.menu.tableColumns = newMenu(obj.menu.tableOptions, 'Columns');
+
+obj.menu.tableColumns.Tag = 'table';
+
+obj.menu.tablePeakArea   = newMenu(obj.menu.tableColumns, 'Peak Area');
+obj.menu.tablePeakHeight = newMenu(obj.menu.tableColumns, 'Peak Height');
+obj.menu.tablePeakTime   = newMenu(obj.menu.tableColumns, 'Peak Time');
+obj.menu.tablePeakWidth  = newMenu(obj.menu.tableColumns, 'Peak Width');
+obj.menu.tablePeakModel  = newMenu(obj.menu.tableColumns, 'Peak Model');
+obj.menu.tablePeakAll    = newMenu(obj.menu.tableColumns, 'Select All');
+obj.menu.tablePeakNone   = newMenu(obj.menu.tableColumns, 'Select None');
+
+obj.menu.tablePeakArea.Tag   = 'showPeakArea';
+obj.menu.tablePeakHeight.Tag = 'showPeakHeight';
+obj.menu.tablePeakTime.Tag   = 'showPeakTime';
+obj.menu.tablePeakWidth.Tag  = 'showPeakWidth';
+obj.menu.tablePeakModel.Tag  = 'showPeakModel';
+obj.menu.tablePeakAll.Tag    = 'selectAll';
+obj.menu.tablePeakNone.Tag   = 'selectNone';
+
+obj.menu.tablePeakArea.Callback   = {@plotLabelCallback, obj};
+obj.menu.tablePeakHeight.Callback = {@plotLabelCallback, obj};
+obj.menu.tablePeakTime.Callback   = {@plotLabelCallback, obj};
+obj.menu.tablePeakWidth.Callback  = {@plotLabelCallback, obj};
+obj.menu.tablePeakModel.Callback  = {@plotLabelCallback, obj};
+obj.menu.tablePeakAll.Callback    = {@plotLabelQuickSelectCallback, obj};
+obj.menu.tablePeakNone.Callback   = {@plotLabelQuickSelectCallback, obj};
+
+obj.menu.tablePeakAll.Separator = 'on';
+
+% ---------------------------------------
+% Options --> Sample
 % ---------------------------------------
 obj.menu.labelData = newMenu(obj.menu.dataOptions, 'Label');
 
 obj.menu.labelData.Tag = 'data';
 
 % ---------------------------------------
-% Options --> Data --> Label
+% Options --> Sample --> Label
 % ---------------------------------------
 obj.menu.labelRowNum     = newMenu(obj.menu.labelData, 'ID');
 obj.menu.labelFilePath   = newMenu(obj.menu.labelData, 'File Path');
@@ -170,32 +204,24 @@ obj.menu.labelSelectNone.Callback = {@plotLabelQuickSelectCallback, obj};
 
 obj.menu.labelSelectAll.Separator = 'on';
 
-labelName = obj.settings.labels.data;
-
-for i = 1:length(obj.menu.labelData.Children)
-    if any(ishandle(obj.menu.labelData.Children(i)))
-        if any(strcmpi(obj.menu.labelData.Children(i).Tag, labelName))
-            obj.menu.labelData.Children(i).Checked = 'on';
-        else
-            obj.menu.labelData.Children(i).Checked = 'off';
-        end
-    end
-end
-
 % ---------------------------------------
 % Options --> Peak
 % ---------------------------------------
 obj.menu.peakOptionsLabel      = newMenu(obj.menu.peakOptions, 'Label');
 obj.menu.peakOptionsModel      = newMenu(obj.menu.peakOptions, 'Model');
-obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'Area');
-%obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detect');
+obj.menu.peakOptionsArea       = newMenu(obj.menu.peakOptions, 'AreaOf');
+obj.menu.peakOptionsAutoDetect = newMenu(obj.menu.peakOptions, 'Auto-Detection');
+obj.menu.peakOptionsAutoStep   = newMenu(obj.menu.peakOptions, 'Auto-Step');
 
-obj.menu.peakOptionsLabel.Tag = 'peak';
+obj.menu.peakOptionsLabel.Tag      = 'peak';
+obj.menu.peakOptionsAutoDetect.Tag = 'autoDetect';
+obj.menu.peakOptionsAutoStep.Tag   = 'autoStep';
 
-obj.menu.peakOptionsModel.Separator = 'on';
-%obj.menu.peakOptionsAutoDetect.Separator = 'on';
+obj.menu.peakOptionsModel.Separator      = 'on';
+obj.menu.peakOptionsAutoDetect.Separator = 'on';
 
-%obj.menu.peakOptionsAutoDetect.Callback = {@peakAutodetectCallback, obj};
+obj.menu.peakOptionsAutoDetect.Callback = {@menuOptionCheckedCallback, obj};
+obj.menu.peakOptionsAutoStep.Callback   = {@menuOptionCheckedCallback, obj};
 
 % ---------------------------------------
 % Options --> Peak --> Label
@@ -226,18 +252,6 @@ obj.menu.labelPeakNone.Callback   = {@plotLabelQuickSelectCallback, obj};
 
 obj.menu.labelPeakAll.Separator = 'on';
 
-labelName = obj.settings.labels.peak;
-
-for i = 1:length(obj.menu.peakOptionsLabel.Children)
-    if any(ishandle(obj.menu.peakOptionsLabel.Children(i)))
-        if any(strcmpi(obj.menu.peakOptionsLabel.Children(i).Tag, labelName))
-            obj.menu.peakOptionsLabel.Children(i).Checked = 'on';
-        else
-            obj.menu.peakOptionsLabel.Children(i).Checked = 'off';
-        end
-    end
-end
-
 % ---------------------------------------
 % Options --> Peak --> Model
 % ---------------------------------------
@@ -248,10 +262,6 @@ obj.menu.peakEGH = newMenu(obj.menu.peakOptionsModel, 'Exponential Gaussian Hybr
 obj.menu.peakNN1.Tag = 'nn1';
 obj.menu.peakNN2.Tag = 'nn2';
 obj.menu.peakEGH.Tag = 'egh';
-
-obj.menu.peakNN1.Checked = 'off';
-obj.menu.peakNN2.Checked = 'on';
-obj.menu.peakEGH.Checked = 'off';
 
 obj.menu.peakNN1.Callback = {@peakModelMenuCallback, obj};
 obj.menu.peakNN2.Callback = {@peakModelMenuCallback, obj};
@@ -266,20 +276,27 @@ obj.menu.peakOptionsAreaFit    = newMenu(obj.menu.peakOptionsArea, 'Curve Fit');
 obj.menu.peakOptionsAreaActual.Tag = 'rawdata';
 obj.menu.peakOptionsAreaFit.Tag    = 'fitdata';
 
-obj.menu.peakOptionsAreaActual.Checked = 'on';
-obj.menu.peakOptionsAreaFit.Checked    = 'off';
-
 obj.menu.peakOptionsAreaActual.Callback = {@peakAreaMenuCallback, obj};
 obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
+
+% ---------------------------------------
+% Options --> Other
+% ---------------------------------------
+obj.menu.optionsImport = newMenu(obj.menu.otherOptions, 'Import');
+obj.menu.optionsAsyncLoad = newMenu(obj.menu.optionsImport, 'Asynchronous Mode');
+
+obj.menu.optionsAsyncLoad.Tag = 'asyncMode';
+
+obj.menu.optionsAsyncLoad.Callback = {@menuOptionCheckedCallback, obj};
 
 % ---------------------------------------
 % Help Menu
 % ---------------------------------------
 obj.menu.help.website = newMenu(obj.menu.help.main, 'Project Website');
-obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
+%obj.menu.help.update  = newMenu(obj.menu.help.main, 'Check for updates...');
 
 obj.menu.help.website.Callback = @obj.toolboxWebsite;
-obj.menu.help.update.Callback  = @obj.toolboxUpdate;
+%obj.menu.help.update.Callback  = @obj.toolboxUpdate;
 
 end
 
@@ -288,23 +305,39 @@ end
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
-% importAgilent 
-isVerbose = 'off';
-searchDepth = 3;
+% Options
+options.depth = 3;
+options.verbose = 'waitbar';
+options.content = 'all';
 
+if isfield(obj.settings, 'other')
+    if isfield(obj.settings.other, 'asyncMode')
+        
+        if obj.settings.other.asyncMode
+            options.content = 'header';
+        else
+            options.content = 'all';
+        end
+        
+    end
+end
+
+% Load
 try
-    data = importAgilent('verbose', isVerbose, 'depth', searchDepth); 
+    data = importAgilent(...
+        'depth', options.depth,...
+        'verbose', options.verbose,...
+        'content', options.content);
 catch
-    disp('Error importing data...'); 
+    disp('Error importing data...');
 end
 
 if ~isempty(data) && isstruct(data)
     
-    % Check file path
+    % Check data files
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
-    data(cellfun(@isempty, {data.time}))      = [];
-    data(cellfun(@isempty, {data.intensity})) = [];
+    data([data.file_size] == 0) = [];
     
     if isempty(data)
         return
@@ -321,7 +354,7 @@ if ~isempty(data) && isstruct(data)
     if all(cellfun(@length, {data.channel}) == 1)
         
         [~, idx] = sort({data.channel});
-    
+        
         if length(idx) == length(data)
             data = data(idx);
         end
@@ -337,11 +370,44 @@ if ~isempty(data) && isstruct(data)
     
     % Sort by file path
     if length(unique({data.file_path})) > 1
-    
+        
         [~, idx] = sort({data.file_path});
-    
+        
         if length(idx) == length(data)
             data = data(idx);
+        end
+        
+    end
+    
+    % Check structure fields
+    if isstruct(obj.data)
+        
+        a = fieldnames(obj.data);
+        b = fieldnames(data);
+        n = length(obj.data);
+        
+        if any(~ismember(a,b))
+            
+            idx = a(~ismember(a,b));
+            
+            for i = 1:length(idx)
+                data = setfield(data, {1}, idx{i}, []);
+            end
+            
+        end
+        
+        if any(~ismember(b,a))
+            
+            idx = b(~ismember(b,a));
+            
+            for i = 1:length(idx)
+                obj.data = setfield(obj.data, {1}, idx{i}, []);
+            end
+            
+            if n == 0
+                obj.data(:) = [];
+            end
+            
         end
         
     end
@@ -372,17 +438,11 @@ if ~isempty(data) && isstruct(data)
         x = fields(data);
         data = data.(x{1});
     end
-        
+    
     if isstruct(data) && isfield(data, 'sample_name') && length(data) >= 1
         
-        if ~isfield(data, 'time') && ~isfield(data, 'intensity')
+        if ~isfield(data, 'time') || ~isfield(data, 'intensity')
             return
-        end
-        
-        if ~isfield(data, 'visited')
-            for i = 1:length(data)
-                data(i).visited = 0;
-            end
         end
         
         if ~isfield(data, 'baseline')
@@ -396,6 +456,7 @@ if ~isempty(data) && isstruct(data)
         
         obj.data = data;
         obj.peaks = obj.data(1).peaks;
+        obj.validatePeakFields();
         
         if ~isempty(obj.peaks.name)
             nRow = length(obj.data);
@@ -406,6 +467,9 @@ if ~isempty(data) && isstruct(data)
         obj.checkpoint = file;
         
         obj.clearTableData();
+        obj.updateTableHeader();
+        obj.updateTableProperties();
+        
         obj.resetTableHeader();
         obj.resetTableData();
         
@@ -697,66 +761,96 @@ if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
+% Get table data
 obj.removeTableHighlightText();
 
 tableHeader = obj.table.main.ColumnName;
 tableData   = obj.table.main.Data;
+tableFormat = obj.table.main.ColumnFormat;
 
+obj.addTableHighlightText();
+
+% Check table data
 if length(tableData(1,:)) ~= length(tableHeader)
     tableData{end, length(tableHeader)} = ' ';
 end
 
-obj.addTableHighlightText();
+if length(tableFormat) ~= length(tableHeader)
+    obj.updateTableProperties();
+end
 
-filterExtensions  = '*.csv';
-filterDescription = 'CSV file (*.csv)';
-filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+% Waitbar
+h = waitbar(0, 'Saving CSV file...');
+    
+% File options
+defaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
 [fileName, filePath] = uiputfile(...
-    {filterExtensions, filterDescription},...
+    {'*.csv', 'CSV file (*.csv)'},...
     'Save As...',...
-    filterDefaultName);
+    defaultName);
 
+% Format table as CSV
 if ischar(fileName) && ischar(filePath)
-    
+
+    % Set path
     currentPath = pwd;
     cd(filePath);
-    
-    for i = 1:length(tableData(:,1))
+
+    [m,n] = size(tableData);
+
+    for i = 1:m
         
-        for j = 1:length(tableData(1,:))
+        if ishandle(h)
+            waitbar(i/(m+1), h);
+        end
+            
+        for j = 1:n
+            
+            if j <= length(tableFormat)
+                x = tableFormat{j};
+            else
+                x = 'char';
+            end
             
             if isempty(tableData{i,j})
                 tableData{i,j} = ' ';
                 
-            elseif isnumeric(tableData{i,j}) && j >= 14
+            elseif strcmpi(x, 'numeric')
                 tableData{i,j} = num2str(tableData{i,j});
                 
-            elseif isnumeric(tableData{i,j})
-                tableData{i,j} = num2str(tableData{i,j});
-                
-            elseif ischar(tableData{i,j})
+            elseif strcmpi(x, 'char')
                 tableData{i,j} = regexprep(tableData{i,j}, '([,]|\t)', ' ');
                 tableData{i,j} = deblank(strtrim(tableData{i,j}));
             end
             
         end
+        
     end
     
-    tableHeader{1,1} = ['''', tableHeader{1,1}];
-    tableFmt = [repmat('%s, ', 1, length(tableHeader)), '\n'];
-    
+    if ishandle(h)
+        waitbar(0.99, h);
+    end
+        
+    % Write CSV file
     f = fopen(fileName, 'w');
+    fmt = [repmat('%s,', 1, n-1), '%s' '\n'];
     
-    fprintf(f, tableFmt, tableHeader{:});
+    fprintf(f, fmt, tableHeader{:});
     
-    for i = 1:length(tableData(:,1))
-        fprintf(f, tableFmt, tableData{i,:});
+    for i = 1:m
+        fprintf(f, fmt, tableData{i,:});
     end
     
     fclose(f);
+    
+    % Reset path
     cd(currentPath);
     
+end
+
+if ishandle(h)
+    close(h);
 end
 
 end
@@ -856,11 +950,48 @@ msg = questdlg(...
     'Yes', 'No', 'Yes');
 
 switch msg
+    
     case 'Yes'
         obj.tableDeleteRow();
+        
     case 'No'
         obj.table.selection = previousSelection;
         return
+        
+    otherwise
+        return
+        
+end
+
+end
+
+% ---------------------------------------
+% Delete Peak List
+% ---------------------------------------
+function peaklistDeleteMenu(~, ~, obj)
+
+if isempty(obj.peaks.name)
+    return
+end
+
+msg = questdlg('Delete entire peak list?', 'Delete', 'Yes', 'No', 'Yes');
+
+switch msg
+    
+    case 'Yes'
+        
+        n = length(obj.peaks.name);
+
+        for i = n:-1:1
+            obj.tableDeletePeakColumn(i)
+        end
+
+    case 'No'
+        return
+        
+    otherwise
+        return
+        
 end
 
 end
@@ -882,6 +1013,45 @@ if strcmpi(evt.EventName, 'Action')
             src.Checked = 'on';
             obj.userZoom(1);
             obj.userPeak(0);
+            
+    end
+    
+    obj.settings.showZoom = src.Checked;
+    
+end
+
+end
+
+% ---------------------------------------
+% Enable/Disable Menu Option
+% ---------------------------------------
+function menuOptionCheckedCallback(src, evt, obj)
+
+if strcmpi(evt.EventName, 'Action')
+    
+    switch src.Checked
+        
+        case 'on'
+            src.Checked = 'off';
+            src.UserData = 0;
+            
+        case 'off'
+            src.Checked = 'on';
+            src.UserData = 1;
+            
+    end
+    
+    switch src.Tag
+       
+        case 'asyncMode'
+            obj.settings.other.asyncMode = src.UserData;
+            
+        case 'autoDetect'
+            obj.settings.peakAutoDetect = src.UserData;
+            obj.peakAutoDetectionCallback();
+            
+        case 'autoStep'
+            obj.settings.peakAutoStep = src.UserData;
             
     end
     
@@ -915,7 +1085,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.plotPeakLabels();
             else
                 obj.settings.showPeakLabel = 0;
-                obj.clearAllPeakLabel();
+                obj.clearLabel('peakLabel');
             end
             
         case 'showPeakLine'
@@ -925,7 +1095,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakLine();
             else
                 obj.settings.showPeakLine = 0;
-                obj.clearAllPeakLine();
+                obj.clearLine('peakLine');
             end
             
         case 'showPeakArea'
@@ -935,7 +1105,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakArea();
             else
                 obj.settings.showPeakArea = 0;
-                obj.clearAllPeakArea();
+                obj.clearLine('peakArea');
             end
             
         case 'showPeakBaseline'
@@ -945,7 +1115,7 @@ if strcmpi(evt.EventName, 'Action')
                 obj.updatePeakBaseline();
             else
                 obj.settings.showPeakBaseline = 0;
-                obj.clearAllPeakBaseline();
+                obj.clearLine('peakBaseline');
             end
             
     end
@@ -996,9 +1166,6 @@ function plotLabelCallback(src, ~, obj)
 
 switch src.Checked
     
-    case 'on'
-        src.Checked = 'off';
-        
     case 'off'
         src.Checked = 'on';
         
@@ -1007,37 +1174,61 @@ switch src.Checked
         
 end
 
-updatePlotLabel(src, obj);
+switch src.Parent.Tag
+    
+    case {'data', 'peak'}
+        updatePlotLabel(src, obj);
+        
+    case {'table'}
+        updateTableColumns(src, obj)
+        
+end
 
 end
 
+% ---------------------------------------
+% Select All / None Menu
+% ---------------------------------------
 function plotLabelQuickSelectCallback(src, ~, obj)
 
 switch src.Tag
     
     case 'selectAll'
-        labelState = 'on';
+        src.Checked = 'on';
         
     case 'selectNone'
-        labelState = 'off';
+        src.Checked = 'off';
         
     otherwise
-        labelState = 'off';
+        src.Checked = 'off';
         
 end
 
 for i = 1:length(src.Parent.Children)
     
     if ~any(strcmpi(src.Parent.Children(i).Tag, {'selectAll', 'selectNone'}))
-        src.Parent.Children(i).Checked = labelState;
+        src.Parent.Children(i).Checked = src.Checked;
     end
     
 end
 
-updatePlotLabel(src, obj);
+switch src.Parent.Tag
+    
+    case {'data', 'peak'}
+        updatePlotLabel(src, obj);
+        
+    case {'table'}
+        updateTableColumns(src, obj)
+        
+end
+
+src.Checked = 'off';
 
 end
 
+% ---------------------------------------
+% Set Plot Labels
+% ---------------------------------------
 function updatePlotLabel(src, obj)
 
 plotLabel = {};
@@ -1093,25 +1284,72 @@ switch src.Parent.Tag
     case 'data'
         
         obj.settings.labels.data = plotLabel;
-
+        
         if obj.settings.showPlotLabel
             obj.updatePlotLabel();
         end
-
+        
     case 'peak'
         
         obj.settings.labels.peak = plotLabel;
-
+        
         if obj.settings.showPeakLabel
             obj.plotPeakLabels();
         end
         
-end  
+end
 
 end
 
 % ---------------------------------------
-% Set Peak Model
+% Set Table Columns
+% ---------------------------------------
+function updateTableColumns(src, obj)
+
+for i = 1:length(src.Parent.Children)
+    
+    if strcmpi(src.Parent.Children(i).Checked, 'on')
+        
+        switch src.Parent.Children(i).Tag
+            case 'showPeakArea'
+                obj.settings.table.showArea = 1;
+            case 'showPeakHeight'
+                obj.settings.table.showHeight = 1;
+            case 'showPeakTime'
+                obj.settings.table.showTime = 1;
+            case 'showPeakWidth'
+                obj.settings.table.showWidth = 1;
+            case 'showPeakModel'
+                obj.settings.table.showModel = 1;
+        end
+        
+    else
+        
+        switch src.Parent.Children(i).Tag
+            case 'showPeakArea'
+                obj.settings.table.showArea = 0;
+            case 'showPeakHeight'
+                obj.settings.table.showHeight = 0;
+            case 'showPeakTime'
+                obj.settings.table.showTime = 0;
+            case 'showPeakWidth'
+                obj.settings.table.showWidth = 0;
+            case 'showPeakModel'
+                obj.settings.table.showModel = 0;
+        end
+        
+    end
+    
+end
+
+obj.updateTableHeader();
+obj.updateTableProperties();
+obj.updateTablePeakData();
+
+end
+
+% ---------------------------------------
+% Set Peak Model/Area
 % ---------------------------------------
 function peakModelMenuCallback(src, ~, obj)
 
@@ -1139,20 +1377,6 @@ src.Checked = 'on';
 obj.settings.peakArea = src.Tag;
 
 end
-
-% ---------------------------------------
-% Set Peak Auto-Detection
-% ---------------------------------------
-%function peakAutodetectCallback(src, ~, obj)
-
-%switch src.Checked
-%    case 'on'
-%        obj.settings.peakAutoDetect = 1;
-%    case 'off'
-%        obj.settings.peakAutoDetect = 0;
-%end
-%
-%end
 
 % ---------------------------------------
 % Menu

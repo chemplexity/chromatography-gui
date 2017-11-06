@@ -314,16 +314,22 @@ s2(3) = s1(3);
 s2(4) = s1(4);
 
 obj.controls.smoothSlider = newSlider(...
-    obj, obj.panel.baseline, 's', 'smoothslider', s1);
+    obj, obj.panel.baseline, 's', 'baselineSmoothness', s1);
 
 obj.controls.asymSlider = newSlider(...
-    obj, obj.panel.baseline, 'a', 'asymslider', s2);
+    obj, obj.panel.baseline, 'a', 'baselineAsymmetry', s2);
 
-s = obj.settings.baselineSmoothness;
-a = obj.settings.baselineAsymmetry;
+set(obj.controls.smoothSlider,...
+    'min', obj.settings.baseline.minSmoothness,...
+    'max', obj.settings.baseline.maxSmoothness,...
+    'value', obj.settings.baseline.smoothness,...
+    'tooltipstring', sprintf('%.3f', obj.settings.baseline.smoothness));
 
-set(obj.controls.smoothSlider, 'min', 1,   'max', 10, 'value', s);
-set(obj.controls.asymSlider,   'min', -10, 'max', -1, 'value', a);
+set(obj.controls.asymSlider,...
+    'min', obj.settings.baseline.minAsymmetry,...
+    'max', obj.settings.baseline.maxAsymmetry,...
+    'value', obj.settings.baseline.asymmetry,...
+    'tooltipstring', sprintf('%.3f', obj.settings.baseline.asymmetry));
 
 % ---------------------------------------
 % Selection Callback
@@ -357,6 +363,8 @@ set(obj.controls.yMax,  'callback', {@axesLimitCallback, obj});
 set(obj.controls.applyBaseline, 'callback', {@baselineCallback, obj});
 set(obj.controls.clearBaseline, 'callback', {@baselineCallback, obj});
 set(obj.controls.showBaseline,  'callback', {@baselineCallback, obj});
+set(obj.controls.smoothSlider,  'callback', {@baselineSliderCallback, obj});
+set(obj.controls.asymSlider,    'callback', {@baselineSliderCallback, obj});
 
 % ---------------------------------------
 % Peak Callback
@@ -404,14 +412,14 @@ switch src.String
         x = inputdlg(dlgMsg, dlgTop, 1, dlgAns);
         
         if ~isempty(x) && ~isempty(x{1,1})
-            obj.peakAddColumn(x(1,1));
+            obj.tableAddPeakColumn(x(1,1));
         end
         
     case 'Edit'
         
         col = obj.controls.peakList.Value;
         
-        if col < 1 || col > length(obj.peaks.name)
+        if isempty(col) || col < 1 || col > length(obj.peaks.name)
             return
         end
         
@@ -425,7 +433,7 @@ switch src.String
             if ~strcmp(obj.peaks.name(col,1), x{1,1})
                 
                 x = {strtrim(deblank(x{1,1}))};
-                obj.peakEditColumn(col,x);
+                obj.tableEditPeakColumn(col,x);
                 
             end
         end
@@ -445,12 +453,7 @@ switch src.String
         
         if strcmpi(x, 'Yes')
             
-            obj.peakDeleteColumn(col);
-            
-            if col > length(obj.peaks.name)
-                obj.controls.peakList.Value = length(obj.peaks.name);
-            end
-            
+            obj.tableDeletePeakColumn(col);
             obj.updatePeakText();
             
         end
@@ -707,7 +710,7 @@ switch src.Tag
             obj.updatePlotBaseline();
         else
             obj.settings.showPlotBaseline = 0;
-            obj.clearAllPlotBaseline();
+            obj.clearLine('plotBaseline');
         end
         
     case 'applybaseline'
@@ -717,13 +720,32 @@ switch src.Tag
         
     case 'clearbaseline'
         
-        obj.clearAllPlotBaseline();
+        obj.clearLine('plotBaseline');
         
         if ~isempty(obj.data(row).baseline)
             obj.data(row).baseline = [];
         end
         
 end
+
+end
+
+% ---------------------------------------
+% Baseline Sliders
+% ---------------------------------------
+function baselineSliderCallback(src, ~, obj)
+
+switch src.Tag
+    
+    case {'baselineSmoothness'}
+        obj.settings.baseline.smoothness = src.Value;
+        
+    case {'baselineAsymmetry'}
+        obj.settings.baseline.asymmetry = src.Value;
+        
+end
+
+src.TooltipString = sprintf('%.2f', src.Value);
 
 end
 

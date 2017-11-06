@@ -88,9 +88,9 @@ end
 
 % Parameter: 'asymmetry'
 if a <= 0
-    a = 1E-9;
+    a = 1E-10;
 elseif a >= 1
-    a = 1 - 1E-9;
+    a = 1 - 1E-10;
 end
 
 % Parameter: 'smoothness'

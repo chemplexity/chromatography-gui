@@ -46,10 +46,11 @@ function peak = peakfitEGH(varargin)
 % ---------------------------------------
 % Defaults
 % ---------------------------------------
-default.center  = 0;
-default.width   = 1;
-default.minArea = 1E-5;
-default.area    = 'rawdata';
+default.center   = 0;
+default.width    = 1;
+default.minArea  = 1E-5;
+default.area     = 'rawdata';
+default.override = 0;
 
 % ---------------------------------------
 % Variables
@@ -70,10 +71,11 @@ p = inputParser;
 addRequired(p, 'x', @ismatrix);
 addRequired(p, 'y', @ismatrix);
 
-addParameter(p, 'center',  default.center);
-addParameter(p, 'width',   default.width);
-addParameter(p, 'minarea', default.minArea);
-addParameter(p, 'area',    default.area);
+addParameter(p, 'center',   default.center);
+addParameter(p, 'width',    default.width);
+addParameter(p, 'minarea',  default.minArea);
+addParameter(p, 'area',     default.area);
+addParameter(p, 'override', default.override);
 
 parse(p, varargin{:});
 
@@ -86,6 +88,7 @@ center     = p.Results.center;
 width      = p.Results.width;
 minArea    = p.Results.minarea;
 targetArea = p.Results.area;
+override   = p.Results.override;
 
 % ---------------------------------------
 % Validate
@@ -139,10 +142,12 @@ elseif center - width/2 < min(x)
     width = (center - min(x)) * 2;
 end
 
-center = findPeakCenter(x,y,center);
+if ~override
+    center = findPeakCenter(x,y,center);
+end
 
-if width ~= 0.10
-    width = 0.10;
+if width ~= 0.05
+    width = 0.05;
 end
 
 % Parameter: 'minarea'
@@ -439,21 +444,7 @@ end
 yFrontFilter = find(dyt(1:dyi) < 5E-3);
 
 if ~isempty(yFrontFilter)
-    
-    %if length(yFrontFilter) > 1
-    %    yFilterMean = mean(x0(yFrontFilter));
-    %    yFilterIndex = find(x0 >= yFilterMean, 1);
-        
-    %    if ~isempty(yFilterIndex)
-    %        yFrontFilter = yFilterIndex;
-    %    else
-    %        yFrontFilter = yFrontFilter(end-1);
-    %    end
-        
-    %else
-    %    yFrontFilter = yFrontFilter(end);
-    %end
-
+   
     yFrontFilter = yFrontFilter(end);
     
     if yFrontFilter <= length(yt)
@@ -483,7 +474,7 @@ else
     yi = yt;
 end
 
-if length(xi) == length(yi)
+if length(xi) == length(yi) && length(xi) >= 3
     
     peak.xmin        = min(xi);
     peak.xmax        = max(xi);
@@ -710,119 +701,6 @@ xi = find(x >= peakCenter, 1);
 
 if ~isempty(xi)
     peakCenter = x(xi);    
-end
-
-end
-
-function peakCenter = findPeakCenter2(x,y,peakCenter)
-
-y = movingAverage(y, 10);
-
-pIndex = find(x >= peakCenter, 1);
-
-pSlope = '';
-pLimit = 0.3;
-pStop  = 10;
-
-pLX = x(pIndex,1);
-pRX = x(pIndex,1);
-pLY = y(pIndex,1);
-pRY = y(pIndex,1);
-
-pDown = 0;
-pUp   = 0;
-
-for i = pIndex:length(x)
-    
-    if y(i,1) >= pRY
-        
-        pRX = x(i);
-        pRY = y(i,1);
-        pUp = pUp + 1;
-    
-        if pUp > 2
-            pDown = 0;
-        end
-        
-    elseif y(i,1) < pRY
-        
-        pDown = pDown + 1;
-        
-        if pDown > 2
-            pUp = 0;
-        end
-        
-    end
-    
-    if pUp == pStop
-        pSlope = [pSlope, 'u'];
-    end
-    
-    if pDown == pStop
-        pSlope = [pSlope, 'd'];
-    end
-    
-    if x(i) > peakCenter + pLimit
-        break
-    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
-        break
-    end
-    
-end
-
-pSlope = '';
-pDown  = 0;
-pUp    = 0;
-
-for i = pIndex:-1:1
-    
-    if y(i,1) > pLY
-        
-        pLX = x(i);
-        pLY = y(i,1);
-        pUp = pUp + 1;
-        
-        if pUp > 2
-            pDown = 0;
-        end
-        
-    elseif y(i,1) < pLY 
-        
-        pDown = pDown + 1;
-        
-        if pDown > 2
-            pUp = 0;
-        end
-        
-    end
-    
-    if pUp == pStop
-        pSlope = [pSlope, 'u'];
-    end
-    
-    if pDown == pStop
-        pSlope = [pSlope, 'd'];
-    end
-    
-    if x(i) < peakCenter - pLimit
-        break
-    elseif strcmpi(pSlope, 'ud') || strcmpi(pSlope, 'dud')
-        break
-    end
-    
-end
-
-pLCount = pIndex - find(x >= pLX, 1);
-pRCount = find(x >= pRX, 1) - pIndex;
-
-if pRCount == 0 && pLCount == 0
-    peakCenter = x(pIndex);
-    
-elseif pRCount ~= 0 && (pRCount < pLCount || pLCount == 0)
-    peakCenter = pRX;
-    
-elseif pLCount ~= 0 && (pLCount < pRCount || pRCount == 0)
-    peakCenter = pLX;
 end
 
 end
