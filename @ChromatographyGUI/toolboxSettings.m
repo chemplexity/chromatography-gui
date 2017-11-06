@@ -132,12 +132,12 @@ obj.settings.labels.peak = {
 
 % Baseline Parameters
 obj.settings.baseline.minSmoothness = 1;
-obj.settings.baseline.maxSmoothness = 12;
+obj.settings.baseline.maxSmoothness = 10;
 
 obj.settings.baseline.minAsymmetry = -10;
 obj.settings.baseline.maxAsymmetry = -1;
 
-obj.settings.baseline.smoothness = 6.5;
+obj.settings.baseline.smoothness = 5.5;
 obj.settings.baseline.asymmetry  = -5.5;
 
 % Peak Integration Settings
