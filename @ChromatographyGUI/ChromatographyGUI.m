@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171106-dev';
+        version     = '0.0.9.20171107-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -214,7 +214,7 @@ classdef ChromatographyGUI < handle
                     end
                 end
             end
-
+            
         end
         
         % ---------------------------------------
@@ -1314,44 +1314,6 @@ classdef ChromatographyGUI < handle
             end
             
             clipboard('copy', str);
-            
-        end
-        
-        % ---------------------------------------
-        % Callback - mouse movement
-        % ---------------------------------------
-        function figureMotionCallback(obj, src, ~)
-            
-            if isprop(src, 'CurrentObject')
-                
-                if isprop(src.CurrentObject, 'Tag')
-                    
-                    switch src.CurrentObject.Tag
-                        
-                        case 'peaklist'
-                            obj.userPeak(1);
-                            
-                        case 'selectpeak'
-                            
-                            if isprop(src.CurrentObject, 'Value')
-                                if src.CurrentObject.Value
-                                    obj.userPeak(1);
-                                end
-                            else
-                                obj.userPeak(0);
-                            end
-                            
-                        otherwise
-                            obj.userPeak(0);
-                    end
-                    
-                else
-                    obj.userPeak(0);
-                end
-                
-            else
-                obj.userPeak(0);
-            end
             
         end
         
@@ -2919,6 +2881,74 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - mouse double click
+        % ---------------------------------------
+        function tableButtonDownCallback(obj, ~, evt)
+            
+            if ~ismethod(evt, 'getButton')
+                return
+            elseif ~ismethod(evt, 'getClickCount')
+                return
+            end
+            
+            if evt.getButton == 1 && evt.getClickCount == 2
+                
+                if isempty(obj.table.selection)
+                    return
+                end
+                
+                idx = obj.view.index;
+                row = obj.table.selection(1,1);
+                
+                if row == idx
+                    return
+                elseif row >= 1 && row <= length(obj.data)
+                    obj.selectSample(row-idx);
+                end
+                
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - mouse movement
+        % ---------------------------------------
+        function figureMotionCallback(obj, src, ~)
+            
+            if isprop(src, 'CurrentObject')
+                
+                if isprop(src.CurrentObject, 'Tag')
+                    
+                    switch src.CurrentObject.Tag
+                        
+                        case 'peaklist'
+                            obj.userPeak(1);
+                            
+                        case 'selectpeak'
+                            
+                            if isprop(src.CurrentObject, 'Value')
+                                if src.CurrentObject.Value
+                                    obj.userPeak(1);
+                                end
+                            else
+                                obj.userPeak(0);
+                            end
+                            
+                        otherwise
+                            obj.userPeak(0);
+                    end
+                    
+                else
+                    obj.userPeak(0);
+                end
+                
+            else
+                obj.userPeak(0);
             end
             
         end

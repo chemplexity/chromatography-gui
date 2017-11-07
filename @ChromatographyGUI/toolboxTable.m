@@ -46,6 +46,17 @@ obj.updateTableHeader();
 obj.updateTableProperties();
 obj.updateTablePeakData();
 
+% ---------------------------------------
+% Table Callback (double click)
+% ---------------------------------------
+try
+    jscrollpane = findjobj(obj.table.main);
+    jviewport = jscrollpane.getViewport;
+    jtable = jviewport.getView;
+    set(jtable, 'mouseclickedcallback', @obj.tableButtonDownCallback);
+catch
+end
+
 end
 
 % ---------------------------------------
@@ -124,7 +135,16 @@ if strcmpi(evt.EventName, 'KeyPress')
             if size(obj.table.selection,2) <= 1
                 return
             elseif ~any(obj.table.selection(1,2) == [9,13])
-                obj.selectSample(obj.table.selection(1,1)-obj.view.index);
+                
+                idx = obj.view.index;
+                row = obj.table.selection(1,1);
+                
+                if row == idx
+                    return
+                elseif row >= 1 && row <= length(obj.data)
+                    obj.selectSample(row-idx);
+                end
+                
             end
             
         case 'delete'
