@@ -41,8 +41,10 @@ obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
 % Table
-obj.settings.table.backgroundColor = '#0950D0';
-obj.settings.table.textColor       = '#FFFFFF';
+obj.settings.table.backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
+obj.settings.table.foregroundColor = [0.00, 0.00, 0.00];
+obj.settings.table.highlightColor  = '#0950D0';
+obj.settings.table.highlightText   = '#FFFFFF';
 obj.settings.table.columnWidth     = 110;
 obj.settings.table.minColumns      = 13;
 obj.settings.table.showArea        = 1;
@@ -72,13 +74,13 @@ obj.settings.labels.fontsize = 11;
 
 % Line Width
 obj.settings.plot.linewidth         = 1.25;
-obj.settings.baseline.linewidth     = 1.25;
+obj.settings.baseline.linewidth     = 1.00;
 obj.settings.peaks.linewidth        = 1.25;
 obj.settings.peakBaseline.linewidth = 1.00;
 
 % Line Color
 obj.settings.plot.color         = [0.10, 0.10, 0.10];
-obj.settings.baseline.color     = [0.99, 0.22, 0.17];
+obj.settings.baseline.color     = [0.91, 0.27, 0.30];
 obj.settings.peaks.color        = [0.00, 0.30, 0.53];
 obj.settings.peakFill.color     = [0.00, 0.30, 0.53];
 obj.settings.peakBaseline.color = [0.95, 0.49, 0.69];

@@ -1,13 +1,7 @@
 function toolboxTable(obj, varargin)
 
 % ---------------------------------------
-% Table Properties
-% ---------------------------------------
-backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
-foregroundColor = [0.00, 0.00, 0.00];
-
-% ---------------------------------------
-% Table Columns (metadata)
+% Table Columns
 % ---------------------------------------
 columnParameters = {...
     'Filepath',   125,   false,   'char';...
@@ -38,8 +32,8 @@ obj.table.main = uitable(...
     'columnwidth',           columnParameters(:,2)',...
     'columneditable',        [columnParameters{:,3}],...
     'columnformat',          columnParameters(:,4)',...
-    'backgroundcolor',       backgroundColor,....
-    'foregroundcolor',       foregroundColor,...
+    'backgroundcolor',       obj.settings.table.backgroundColor,....
+    'foregroundcolor',       obj.settings.table.foregroundColor,...
     'fontname',              obj.settings.table.fontname,...
     'fontsize',              obj.settings.table.fontsize,...
     'rearrangeablecolumns',  'off',....
@@ -64,7 +58,7 @@ if isempty(src.Data)
 end
 
 switch evt.Indices(2)
-
+    
     case 9
         
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
@@ -77,15 +71,13 @@ switch evt.Indices(2)
         if isempty(x) || ~isnumeric(x) || isnan(x)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
-            return
             
         elseif ~isinf(x) && isreal(x) && ~isnan(x)
             obj.data(evt.Indices(1)).injvol = x;
-
+            
         else
             obj.data(evt.Indices(1)).injvol = evt.PreviousData;
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
-            return
         end
         
 end
@@ -100,7 +92,7 @@ function tableSelectCallback(src, evt, obj)
 obj.table.selection = evt.Indices;
 
 if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.index
-
+    
     row = evt.Indices(1,1);
     col = evt.Indices(1,2);
     
@@ -129,7 +121,9 @@ if strcmpi(evt.EventName, 'KeyPress')
         
         case 'return'
             
-            if ~any(obj.table.selection(1,2) == [9,13])
+            if size(obj.table.selection,2) <= 1
+                return
+            elseif ~any(obj.table.selection(1,2) == [9,13])
                 obj.selectSample(obj.table.selection(1,1)-obj.view.index);
             end
             
@@ -169,11 +163,11 @@ if strcmpi(evt.EventName, 'KeyPress')
                     if obj.table.selection(i,2) == 9
                         row = obj.table.selection(i,1);
                         obj.data(row).sample_info = [];
-                        obj.table.main.Data{row,9} = []; 
+                        obj.table.main.Data{row,9} = [];
                     elseif obj.table.selection(i,2) == 13
                         row = obj.table.selection(i,1);
                         obj.data(row).injvol = [];
-                        obj.table.main.Data{row,13} = []; 
+                        obj.table.main.Data{row,13} = [];
                     end
                     
                 end

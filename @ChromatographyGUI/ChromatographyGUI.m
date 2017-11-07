@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.8.20171106';
+        version     = '0.0.9.20171106-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -205,10 +205,16 @@ classdef ChromatographyGUI < handle
                 return
             end
             
-            obj.data(i).time = x.time;
-            obj.data(i).intensity = x.intensity;
-            obj.data(i).sampling_rate = x.sampling_rate;
+            str = fields(x);
             
+            for j = 1:length(str)
+                if isfield(obj.data, str{j})
+                    if ~isempty(x.(str{j})) && isempty(obj.data(i).(str{j}))
+                        obj.data(i).(str{j}) = x.(str{j});
+                    end
+                end
+            end
+
         end
         
         % ---------------------------------------
@@ -1495,26 +1501,59 @@ classdef ChromatographyGUI < handle
                 return
             end
             
-            % Method group
+            % Method filter
             str = obj.data(row).method_name;
             method = strcmpi(str, {obj.data.method_name});
             
-            % Channel group
+            % Channel filter
             str = obj.data(row).channel;
             channel = {obj.data.channel};
             channel(cellfun(@isempty, channel)) = {''};
             channel(~cellfun(@ischar, channel)) = {''};
             channel = strcmpi(str, channel);
             
+            % Sequence filter
+            sequence = [];
+            
+            if isfield(obj.data, 'sequence_name')
+                str = obj.data(row).sequence_name;
+                
+                if ~isempty(str)
+                    sequence = {obj.data.sequence_name};
+                    sequence(cellfun(@isempty, sequence)) = {''};
+                    sequence = strcmpi(str, sequence);
+                end
+                
+            end
+            
+            if isempty(sequence) && isfield(obj.data, 'sequence_path')
+                str = obj.data(row).sequence_path;
+                
+                if ~isempty(str)
+                    sequence = {obj.data.sequence_path};
+                    sequence(cellfun(@isempty, sequence)) = {''};
+                    sequence = strcmpi(str, sequence);
+                end
+                
+            end
+            
+            if isempty(sequence)
+                sequence = true(1, length(obj.data));
+            end
+            
             % Group filter
             if length(method) == length(channel)
-                group = method & channel;
+                if length(method) == length(sequence)
+                    group = method & channel & sequence;
+                else
+                    group = method & channel;
+                end
             else
                 return
             end
             
             % Median retention time
-            if ~any(group)
+            if isempty(group) || ~any(group)
                 return
             elseif length(group) == size(obj.peaks.time,1)
                 x = median([obj.peaks.time{group,col}]);
@@ -1769,8 +1808,8 @@ classdef ChromatographyGUI < handle
             x = obj.table.main.Data(row,:);
             
             str = ['<html><body ',...
-                'bgcolor="', obj.settings.table.backgroundColor, '" ',...
-                'text="',    obj.settings.table.textColor, '" ',...
+                'bgcolor="', obj.settings.table.highlightColor, '" ',...
+                'text="',    obj.settings.table.highlightText, '" ',...
                 'width="'];
             
             for i = 1:length(x)
@@ -1811,8 +1850,8 @@ classdef ChromatographyGUI < handle
             x = obj.table.main.Data{row,col};
             
             str = ['<html><body ',...
-                'bgcolor="', obj.settings.table.backgroundColor, '" ',...
-                'text="',    obj.settings.table.textColor, '" ',...
+                'bgcolor="', obj.settings.table.highlightColor, '" ',...
+                'text="',    obj.settings.table.highlightText, '" ',...
                 'width="',   num2str(width), '"'];
             
             if ~strcmpi(format, 'numeric')

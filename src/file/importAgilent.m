@@ -38,36 +38,42 @@ function data = importAgilent(varargin)
 % ---------------------------------------
 % Data
 % ---------------------------------------
-data.file_path       = [];
-data.file_name       = [];
-data.file_size       = [];
-data.file_info       = [];
-data.file_version    = [];
-data.sample_name     = [];
-data.sample_info     = [];
-data.operator        = [];
-data.datetime        = [];
-data.instrument      = [];
-data.instmodel       = [];
-data.inlet           = [];
-data.method_name     = [];
-data.seqindex        = [];
-data.vial            = [];
-data.replicate       = [];
-data.injvol          = [];
-data.glp_flag        = [];
-data.data_source     = [];
-data.firmware_rev    = [];
-data.software_rev    = [];
-data.sampling_rate   = [];
-data.time            = [];
-data.intensity       = [];
-data.channel         = [];
-data.time_units      = [];
-data.intensity_units = [];
-data.channel_units   = [];
-data.baseline        = [];
-data.peaks           = [];
+data = struct(...
+    'file_path',       [],...
+    'file_name',       [],...
+    'file_size',       [],...
+    'file_info',       [],...
+    'file_version',    [],...
+    'sample_name',     [],...
+    'sample_info',     [],...
+    'operator',        [],...
+    'datetime',        [],...
+    'datevalue',       [],...
+    'instrument',      [],...
+    'instmodel',       [],...
+    'inlet',           [],...
+    'method_name',     [],...
+    'sequence_name',   [],...
+    'sequence_path',   [],...
+    'seqindex',        [],...
+    'vial',            [],...
+    'replicate',       [],...
+    'injvol',          [],...
+    'glp_flag',        [],...
+    'data_source',     [],...
+    'firmware_rev',    [],...
+    'software_rev',    [],...
+    'start_time',      [],...
+    'end_time',        [],...
+    'sampling_rate',   [],...
+    'time',            [],...
+    'intensity',       [],...
+    'channel',         [],...
+    'time_units',      [],...
+    'intensity_units', [],...
+    'channel_units',   [],...
+    'baseline',        [],...
+    'peaks',           []);
 
 % ---------------------------------------
 % Defaults
@@ -246,8 +252,7 @@ for i = 1:length(file)
     end
     
     data(i,1).file_size = subsref(dir(file(i).Name), substruct('.', 'bytes'));
-
-
+    
     % ---------------------------------------
     % Waitbar
     % ---------------------------------------
@@ -265,7 +270,7 @@ for i = 1:length(file)
         break
     elseif option.waitbar
         updateWaitbar(h, i, length(file), data(i,1).file_name);
-    end    
+    end
     
     % ---------------------------------------
     % Status
@@ -295,7 +300,7 @@ for i = 1:length(file)
                 
             case {'data'}
                 data(i,1) = parsedata(f, data(i,1));
-                   
+                
         end
         
         fclose(f);
@@ -324,7 +329,7 @@ function h = initializeWaitbar(n, filename)
 m = num2str('0');
 n = num2str(n);
 msg = ['(', repmat('0', 1, length(n) - 1), m, '/', n, ')'];
-           
+
 x = fileparts(filename);
 
 if isempty(x)
@@ -332,7 +337,16 @@ if isempty(x)
 end
 
 h = waitbar(0, ['Loading ../', x, msg], 'name', 'Loading...');
-            
+
+% Set text interpreter
+if isprop(h, 'Children')
+    if ~isempty(h.Children) && isprop(h.Children(1), 'Title')
+        if isprop(h.Children(1).Title, 'Interpreter')
+            h.Children(1).Title.Interpreter = 'none';
+        end
+    end
+end
+
 end
 
 % ---------------------------------------
@@ -437,11 +451,12 @@ fc.setAcceptAllFileFilterUsed(false);
 % Filter: Agilent (.D, .MS, .CH, .UV)
 agilent = com.mathworks.hg.util.dFilter;
 
-agilent.setDescription('Agilent files (*.D, *.MS, *.CH, *.UV)');
+agilent.setDescription('Agilent files (*.D, *.MS, *.CH)');
+%agilent.setDescription('Agilent files (*.D, *.MS, *.CH, *.UV)');
 agilent.addExtension('d');
 agilent.addExtension('ms');
 agilent.addExtension('ch');
-agilent.addExtension('uv');
+%agilent.addExtension('uv');
 
 fc.addChoosableFileFilter(agilent);
 
@@ -584,6 +599,7 @@ if isempty(data.file_version)
     return
 end
 
+% Sample Information
 switch data.file_version
     
     case {'2', '8', '81', '30', '31'}
@@ -616,15 +632,16 @@ switch data.file_version
         
 end
 
+% Extra Information
 switch data.file_version
-   
+    
     case {'30'}
         
         data.glp_flag     = fnumeric(f, 318,  'int32');
         data.data_source  = fpascal(f,  322,  'uint8');
         data.firmware_rev = fpascal(f,  355,  'uint8');
         data.software_rev = fpascal(f,  405,  'uint8');
-    
+        
     case {'130', '179'}
         
         data.glp_flag     = fnumeric(f, 3085, 'int32');
@@ -669,11 +686,11 @@ switch data.file_version
         
 end
 
-% Channel
+% Parse channel name (GC/FID)
 switch data.file_version
-
+    
     case {'8', '81', '179', '181'}
-           
+        
         if ~isempty(regexpi(data.file_name, '(FID1A)', 'tokens', 'once'))
             data.channel = 'A';
         elseif ~isempty(regexpi(data.file_name, '(FID2B)', 'tokens', 'once'))
@@ -681,12 +698,15 @@ switch data.file_version
         else
             data.channel = '';
         end
-                
+        
 end
+
+% Parse sequence name
+data = parsesequence(data);
 
 % Parse datetime
 if ~isempty(data.datetime)
-    data.datetime = parsedate(data.datetime);
+    [data.datetime, data.datevalue] = parsedate(data.datetime, data.datevalue);
 end
 
 % Parse instrument
@@ -736,19 +756,27 @@ switch data.file_version
     
     case {'81', '179', '181'}
         
-        t0 = fnumeric(f, 282, 'float32') / 60000;
-        t1 = fnumeric(f, 286, 'float32') / 60000;
+        data.start_time = fnumeric(f, 282, 'float32');
+        data.end_time = fnumeric(f, 286, 'float32');
         
     case {'2', '8', '30', '130'}
         
-        t0 = fnumeric(f, 282, 'int32') / 60000;
-        t1 = fnumeric(f, 286, 'int32') / 60000;
+        data.start_time = fnumeric(f, 282, 'int32');
+        data.end_time = fnumeric(f, 286, 'int32');
         
     otherwise
         
-        t0 = [];
-        t1 = [];
+        data.start_time = [];
+        data.end_time = [];
         
+end
+
+if ~isempty(data.start_time)
+    data.start_time = data.start_time ./ 6E4;
+end
+
+if ~isempty(data.end_time)
+    data.end_time = data.end_time ./ 6E4;
 end
 
 % Intensity values
@@ -757,9 +785,12 @@ switch data.file_version
     case {'2'}
         
         data.intensity = farray(f, offset + 8, 'int32', scans, 8);
-        data.time      = farray(f, offset + 4, 'int32', scans, 8) ./ 60000;
-         
-        % Prevent import of full mass spectra scans
+        data.time = farray(f, offset + 4, 'int32', scans, 8);
+        
+        if ~isempty(data.time)
+            data.time = data.time ./ 6E4;
+        end
+        
         %offset = farray(f, offset, 'int32', scans, 8) * 2 - 2;
         %data   = fpacket(f, data, offset);
         
@@ -785,9 +816,11 @@ end
 switch data.file_version
     
     case {'8', '81', '179', '181', '30', '130'}
-
-        if ~isempty(t0) && ~isempty(t1) && t1 > t0
-            data.time = ftime(t0, t1, numel(data.intensity));
+        
+        if ~isempty(data.start_time) && ~isempty(data.end_time)
+            if data.end_time > data.start_time
+                data.time = ftime(data.start_time, data.end_time, numel(data.intensity));
+            end
         end
         
 end
@@ -856,7 +889,7 @@ end
 
 % Sampling Rate
 if ~isempty(data.time)
-    data.sampling_rate = round(1./mean(diff(data.time.*60)), 2);
+    data.sampling_rate = round(1 ./ mean(diff(data.time .* 60)), 2);
 end
 
 end
@@ -864,7 +897,7 @@ end
 % ---------------------------------------
 % Data = datetime
 % ---------------------------------------
-function str = parsedate(str)
+function [str, val] = parsedate(str, val)
 
 % Platform
 if exist('OCTAVE_VERSION', 'builtin')
@@ -903,11 +936,42 @@ if ~isempty(str)
     dateIndex = find(~cellfun(@isempty, dateMatch), 1);
     
     if ~isempty(dateIndex)
-        dateNum = datenum(str, dateFormat{dateIndex});
-        str = datestr(dateNum, formatOut);
+        val = datenum(str, dateFormat{dateIndex});
+        str = datestr(val, formatOut);
     end
     
 end
+
+end
+
+% ---------------------------------------
+% Data = sequence info
+% ---------------------------------------
+function data = parsesequence(data)
+
+if isempty(data.file_path) || ~exist(data.file_path, 'dir')
+    return
+end
+
+f = dir(data.file_path);
+f = f(~[f.isdir]);
+
+if isempty(f)
+    return
+end
+
+for i = 1:length(f)
+    
+    [~, str, ext] = fileparts(f(i).name);
+    
+    if strcmpi(ext, '.S')
+        data.sequence_name = str;
+        break
+    end
+    
+end
+
+[~, data.sequence_path] = fileparts(data.file_path);
 
 end
 
@@ -971,7 +1035,7 @@ switch data.file_version
         else
             str = 'LC';
         end
-
+        
 end
 
 end
@@ -1077,12 +1141,12 @@ spectrum = struct(...
     'additional_info',        [],...
     'data_points',            [],...
     'intensity_values',       []...
-);
+    );
 
 for i = 1:scans
     
     fseek(f, offset, 'bof');
-
+    
     spectrum(i).offset                 = ftell(f);
     spectrum(i).identifier            = fread(f, 1, 'int16', 'l');
     spectrum(i).record_length          = fread(f, 1, 'int16', 'l');
@@ -1092,7 +1156,7 @@ for i = 1:scans
     spectrum(i).wavelength_step        = fread(f, 1, 'int16', 'l');
     spectrum(i).spectrum_attribute     = fread(f, 1, 'int16', 'l');
     spectrum(i).additional_info_length = fread(f, 1, 'int16', 'l');
-
+    
     switch detector
         
         case 1
@@ -1112,34 +1176,34 @@ for i = 1:scans
     spectrum(i).data_points = floor(...
         (spectrum(i).wavelength_end - spectrum(i).wavelength_start) / ...
         spectrum(i).wavelength_step + 1);
- 
+    
     if spectrum(i).identifier == 65
         
         spectrum(i).intensity_values = fread(f, spectrum(i).data_points, 'int32', 'l');
-     
-    else  
+        
+    else
         
         spectrum(i).intensity_values = zeros(spectrum(i).data_points, 1);
         x = [0,0];
-    
-        for j = 1:spectrum(i).data_points
-    
-            x(1) = fread(f, 1, 'int16', 'l');
         
+        for j = 1:spectrum(i).data_points
+            
+            x(1) = fread(f, 1, 'int16', 'l');
+            
             if x(1) ~= -32768
                 x(2) = x(1) + x(2);
             else
                 x(2) = fread(f, 1, 'int32', 'l');
             end
-        
+            
             spectrum(i).intensity_values(j, 1) = x(2);
-        
+            
         end
         
     end
 end
- 
- 
+
+
 end
 
 % ---------------------------------------
