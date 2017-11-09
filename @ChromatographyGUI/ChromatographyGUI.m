@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171107-dev';
+        version     = '0.0.9.20171109-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -31,23 +31,25 @@ classdef ChromatographyGUI < handle
     
     properties (Hidden = true)
         
-        checkpoint
-        font = ChromatographyGUI.getFont();
-        
-        % /path/to/chromatography-gui
+        % Paths
         toolbox_path = fileparts(fileparts(mfilename('fullpath')));
-        
-        % /path/to/chromatography-gui/@ChromatographyGUI
         toolbox_file = fileparts(mfilename('fullpath'));
         
-        % Toolbox Paths
         toolbox_config = 'config';
         toolbox_data   = 'data';
         toolbox_src    = 'src';
         
-        % Toolbox Defaults
+        checkpoint
+        
+        % Defaults
         default_settings = 'default_settings.mat';
         default_peaklist = 'default_peaklist.mat';
+        
+        % Java Objects
+        java
+        
+        % Font
+        font = ChromatographyGUI.getFont();
         
     end
     
@@ -103,7 +105,7 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
-        % Update figure after loading data
+        % Figure - update all
         % ---------------------------------------
         function updateFigure(obj, varargin)
             
@@ -791,11 +793,11 @@ classdef ChromatographyGUI < handle
                 x(x < obj.settings.xlim(1) | x > obj.settings.xlim(2)) = [];
             end
             
-            a = 10 ^ obj.controls.asymSlider.Value;
-            s = 10 ^ obj.controls.smoothSlider.Value;
-            
             y = movingAverage(y);
-            b = baseline(y, 'asymmetry', a, 'smoothness', s);
+            
+            b = baseline(y,...
+                'asymmetry',  10 ^ obj.settings.baseline.asymmetry,...
+                'smoothness', 10 ^ obj.settings.baseline.smoothness);
             
             if length(x) == length(b)
                 
@@ -1318,51 +1320,11 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
-        % Callback - peak selection
+        % Exit
         % ---------------------------------------
-        function peakTimeSelectCallback(obj, ~, evt)
+        function exit(obj, varargin)
             
-            switch evt.EventName
-                
-                case 'Hit'
-                    
-                    x = evt.IntersectionPoint(1);
-                    
-                    if obj.view.index == 0 || isempty(obj.peaks.name)
-                        obj.clearPeak();
-                    elseif x > obj.settings.xlim(1) && x < obj.settings.xlim(2)
-                        obj.toolboxPeakFit(x);
-                        obj.updatePeakListText();
-                    end
-                    
-                    obj.userPeak(0);
-                    
-                otherwise
-                    
-                    obj.userPeak(0);
-                    
-            end
-            
-        end
-        
-        % ---------------------------------------
-        % Callback - zoom event
-        % ---------------------------------------
-        function zoomCallback(obj, varargin)
-            
-            if obj.view.index ~= 0
-                obj.settings.xmode = 'manual';
-                obj.settings.ymode = 'manual';
-                obj.settings.xlim = varargin{1,2}.Axes.XLim;
-                obj.settings.ylim = varargin{1,2}.Axes.YLim;
-                obj.updateAxesLimitToggle();
-                obj.updateAxesLimitEditText();
-                obj.updateAxesLimits();
-                obj.updatePlotLabelPosition();
-            else
-                obj.axes.main.XLim = obj.settings.xlim;
-                obj.axes.main.YLim = obj.settings.ylim;
-            end
+            obj.closeRequest();
             
         end
         
@@ -1535,7 +1497,7 @@ classdef ChromatographyGUI < handle
             % Check peak
             minArea   = 0.5;
             minHeight = 0.25;
-            minError  = 100;
+            minError  = 150;
             
             if ~isempty(obj.peaks.area{row,col})
                 
@@ -1881,7 +1843,7 @@ classdef ChromatographyGUI < handle
         
         function updateSampleText(obj, varargin)
             
-            obj.controls.editID.String   = obj.view.id;
+            obj.controls.editID.String = obj.view.id;
             obj.controls.editName.String = obj.view.name;
             
         end
@@ -2412,23 +2374,30 @@ classdef ChromatographyGUI < handle
         
         function appendTableData(obj, varargin)
             
-            if ~isempty(obj.data)
-                
-                row = size(obj.table.main.Data,1) + 1;
-                
-                obj.table.main.Data{row,1}  = obj.data(end).file_path;
-                obj.table.main.Data{row,2}  = obj.data(end).file_name;
-                obj.table.main.Data{row,3}  = obj.data(end).datetime;
-                obj.table.main.Data{row,4}  = obj.data(end).instrument;
-                obj.table.main.Data{row,5}  = obj.data(end).instmodel;
-                obj.table.main.Data{row,6}  = obj.data(end).method_name;
-                obj.table.main.Data{row,7}  = obj.data(end).operator;
-                obj.table.main.Data{row,8}  = obj.data(end).sample_name;
-                obj.table.main.Data{row,9}  = obj.data(end).sample_info;
-                obj.table.main.Data{row,10} = obj.data(end).seqindex;
-                obj.table.main.Data{row,11} = obj.data(end).vial;
-                obj.table.main.Data{row,12} = obj.data(end).replicate;
-                
+            if isempty(obj.data)
+                return
+            end
+            
+            row = size(obj.table.main.Data, 1) + 1;
+            
+            obj.table.main.Data{row,1}  = obj.data(end).file_path;
+            obj.table.main.Data{row,2}  = obj.data(end).file_name;
+            obj.table.main.Data{row,3}  = obj.data(end).datetime;
+            obj.table.main.Data{row,4}  = obj.data(end).instrument;
+            obj.table.main.Data{row,6}  = obj.data(end).method_name;
+            obj.table.main.Data{row,7}  = obj.data(end).operator;
+            obj.table.main.Data{row,8}  = obj.data(end).sample_name;
+            obj.table.main.Data{row,9}  = obj.data(end).sample_info;
+            obj.table.main.Data{row,10} = obj.data(end).seqindex;
+            obj.table.main.Data{row,11} = obj.data(end).vial;
+            obj.table.main.Data{row,12} = obj.data(end).replicate;
+            
+            if isfield(obj.data, 'sequence_name')
+                obj.table.main.Data{row,5} = obj.data(end).sequence_name;
+            end
+            
+            if isfield(obj.data, 'injvol')
+                obj.table.main.Data{row,13} = obj.data(end).injvol;
             end
             
         end
@@ -2529,7 +2498,11 @@ classdef ChromatographyGUI < handle
                     
                     idx = (col+m) + (n*xi);
                     
-                    obj.table.main.Data{row, idx} = [];
+                    if obj.settings.other.useJavaTable
+                        obj.java.table.setValueAt('', row-1, idx-1);
+                    else
+                        obj.table.main.Data{row, idx} = [];
+                    end
                     
                     if obj.view.index == row
                         obj.addCellHighlightText(row, idx);
@@ -2560,7 +2533,19 @@ classdef ChromatographyGUI < handle
                     str = obj.peaks.(lower(x{i})){row,col};
                     idx = (col+m) + (n*xi);
                     
-                    obj.table.main.Data{row, idx} = str;
+                    if obj.settings.other.useJavaTable
+                        
+                        if isnumeric(str)
+                            str = sprintf(obj.settings.table.precision, str);
+                        elseif isempty(str) || ~ischar(str)
+                            str = [];
+                        end
+                        
+                        obj.java.table.setValueAt(str, row-1, idx-1);
+                        
+                    else
+                        obj.table.main.Data{row, idx} = str;
+                    end
                     
                     if obj.view.index == row
                         obj.addCellHighlightText(row, idx);
@@ -2570,6 +2555,7 @@ classdef ChromatographyGUI < handle
                     
                 end
             end
+            
         end
         
         function clearPeakLine(obj, col)
@@ -2626,13 +2612,16 @@ classdef ChromatographyGUI < handle
                                     isReset = 0;
                                 end
                             end
+                            
                         end
                         
                         if isReset
                             obj.updateAxesYLim();
                             obj.updatePlotLabelPosition();
                         end
+                        
                     end
+                    
                 end
                 
                 delete(obj.view.peakLabel{col});
@@ -2765,11 +2754,11 @@ classdef ChromatographyGUI < handle
             
             for i = 1:nRow
                 
+                % Sample information
                 obj.table.main.Data{i,1}  = obj.data(i).file_path;
                 obj.table.main.Data{i,2}  = obj.data(i).file_name;
                 obj.table.main.Data{i,3}  = obj.data(i).datetime;
                 obj.table.main.Data{i,4}  = obj.data(i).instrument;
-                obj.table.main.Data{i,5}  = obj.data(i).instmodel;
                 obj.table.main.Data{i,6}  = obj.data(i).method_name;
                 obj.table.main.Data{i,7}  = obj.data(i).operator;
                 obj.table.main.Data{i,8}  = obj.data(i).sample_name;
@@ -2777,8 +2766,16 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{i,10} = obj.data(i).seqindex;
                 obj.table.main.Data{i,11} = obj.data(i).vial;
                 obj.table.main.Data{i,12} = obj.data(i).replicate;
-                obj.table.main.Data{i,13} = obj.data(i).injvol;
                 
+                if isfield(obj.data, 'sequence_name')
+                    obj.table.main.Data{i,5} = obj.data(i).sequence_name;
+                end
+                
+                if isfield(obj.data, 'injvol')
+                    obj.table.main.Data{i,13} = obj.data(i).injvol;
+                end
+                
+                % Peak data
                 for j = 1:nCol
                     
                     xi = 0;
@@ -2801,6 +2798,7 @@ classdef ChromatographyGUI < handle
                         end
                     end
                 end
+                
             end
             
         end
@@ -2880,6 +2878,55 @@ classdef ChromatographyGUI < handle
                         set(obj.axes.main, 'buttondownfcn', @obj.peakTimeSelectCallback);
                         
                     end
+                    
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - zoom event
+        % ---------------------------------------
+        function zoomCallback(obj, varargin)
+            
+            if obj.view.index ~= 0
+                obj.settings.xmode = 'manual';
+                obj.settings.ymode = 'manual';
+                obj.settings.xlim = varargin{1,2}.Axes.XLim;
+                obj.settings.ylim = varargin{1,2}.Axes.YLim;
+                obj.updateAxesLimitToggle();
+                obj.updateAxesLimitEditText();
+                obj.updateAxesLimits();
+                obj.updatePlotLabelPosition();
+            else
+                obj.axes.main.XLim = obj.settings.xlim;
+                obj.axes.main.YLim = obj.settings.ylim;
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - peak selection
+        % ---------------------------------------
+        function peakTimeSelectCallback(obj, ~, evt)
+            
+            switch evt.EventName
+                
+                case 'Hit'
+                    
+                    x = evt.IntersectionPoint(1);
+                    
+                    if obj.view.index == 0 || isempty(obj.peaks.name)
+                        obj.clearPeak();
+                    elseif x > obj.settings.xlim(1) && x < obj.settings.xlim(2)
+                        obj.toolboxPeakFit(x);
+                        obj.updatePeakListText();
+                    end
+                    
+                    obj.userPeak(0);
+                    
+                otherwise
+                    
+                    obj.userPeak(0);
                     
             end
             

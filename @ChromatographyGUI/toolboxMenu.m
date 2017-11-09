@@ -283,11 +283,35 @@ obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 % Options --> Other
 % ---------------------------------------
 obj.menu.optionsImport = newMenu(obj.menu.otherOptions, 'Import');
+obj.menu.options.export = newMenu(obj.menu.otherOptions, 'Export');
+
+% ---------------------------------------
+% Options --> Other --> Import
+% ---------------------------------------
 obj.menu.optionsAsyncLoad = newMenu(obj.menu.optionsImport, 'Asynchronous Mode');
 
 obj.menu.optionsAsyncLoad.Tag = 'asyncMode';
 
 obj.menu.optionsAsyncLoad.Callback = {@menuOptionCheckedCallback, obj};
+
+% ---------------------------------------
+% Options --> Other --> Export
+% ---------------------------------------
+obj.menu.export.figure = newMenu(obj.menu.options.export, 'Figure');
+
+% ---------------------------------------
+% Options --> Other --> Export --> Figure
+% ---------------------------------------
+obj.menu.export.dpi = newMenu(obj.menu.export.figure, 'DPI');
+
+obj.menu.export.dpi150 = newMenu(obj.menu.export.dpi, '150');
+obj.menu.export.dpi300 = newMenu(obj.menu.export.dpi, '300');
+obj.menu.export.dpi600 = newMenu(obj.menu.export.dpi, '600');
+
+for i = 1:length(obj.menu.export.dpi.Children)
+    obj.menu.export.dpi.Children(i).Tag = 'dpi';
+    obj.menu.export.dpi.Children(i).Callback = {@menuOptionCheckedCallback, obj};
+end
 
 % ---------------------------------------
 % Help Menu
@@ -322,7 +346,7 @@ if isfield(obj.settings, 'other')
     end
 end
 
-% Load
+% Load data
 try
     data = importAgilent(...
         'depth', options.depth,...
@@ -341,6 +365,17 @@ if ~isempty(data) && isstruct(data)
     
     if isempty(data)
         return
+    end
+    
+    % Check sequence name
+    if isfield(data, 'sequence_name') && isfield(data, 'sequence_path')
+        
+        for i = 1:length(data)
+            if isempty(data(i).sequence_name)
+                data(i).sequence_name = data(i).sequence_path;
+            end
+        end
+        
     end
     
     % Check sequence index
@@ -541,37 +576,19 @@ if isempty(obj.data) || obj.view.index == 0
     return
 end
 
-row = obj.view.index;
+% Suggested file name
+defaultType = {'*.jpg;*.jpeg;*.png;*.tif;*.tiff', 'Image file (*.jpg, *.png, *.tif)'};
+defaultName = getSuggestedFilename(obj, 'image');
 
-filterExtensions  = '*.jpg;*.jpeg;*.png;*.tif;*.tiff';
-filterDescription = 'Image file (*.jpg, *.png, *.tif)';
-filterDefaultName = '';
-
-if ~isempty(obj.data(row).datetime) && length(obj.data(row).datetime) >= 10
-    filterDefaultName = [obj.data(row).datetime(1:10), ' - '];
-end
-
-if ~isempty(obj.data(row).sample_name)
-    sampleName = obj.data(row).sample_name;
-    sampleName = regexprep(sampleName, '[/\*:?!%^#@"<>|.]', '_');
-    sampleName = deblank(strtrim(sampleName));
-    filterDefaultName = [filterDefaultName, sampleName];
-end
-
-if isempty(filterDefaultName)
-    filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
-end
-
-[fileName, filePath] = uiputfile(...
-    {filterExtensions, filterDescription},...
-    'Save As...',...
-    filterDefaultName);
+% Open uiputfile
+[fileName, filePath] = uiputfile(defaultType, 'Save As...', defaultName);
 
 if ischar(fileName) && ischar(filePath)
     
-    [~, ~, fileExtension] = fileparts(fileName);
+    % Get file type
+    [~, ~, ext] = fileparts(fileName);
     
-    switch fileExtension
+    switch ext
         case {'.png'}
             fileType = '-dpng';
         case {'.jpg', '.jpeg'}
@@ -582,117 +599,107 @@ if ischar(fileName) && ischar(filePath)
             fileType = [];
     end
     
-    if ~isempty(fileType)
+    if isempty(fileType)
+        return
+    end
+    
+    % Export options
+    width  = obj.settings.export.width;
+    height = obj.settings.export.height;
+    dpi = ['-r', num2str(floor(obj.settings.export.dpi))];
+    
+    % Figure
+    fig = figure;
+    fig.Color = 'white';
+    fig.Units = 'pixels';
+    fig.Position = [0, 0, width, height];
+    
+    % Panel
+    p = copy(obj.panel.axes);
+    p.Parent = fig;
+    p.BorderType = 'none';
+    p.BackgroundColor = 'white';
+    p.Position = [0, 0, 1, 1];
+    
+    % Axes
+    if isempty(p.Children)
+        ax = gca;
+    elseif any(strcmpi('axesplot', {p.Children.Tag}))
+        ax = p.Children(strcmpi('axesplot', {p.Children.Tag}));
+    else
+        ax = gca;
+    end
+    
+    % Axes position
+    if isprop(ax, 'OuterPosition')
+        p1 = ax.Position;
+        p2 = ax.OuterPosition;
+    else
+        p1 = ax.Position;
+        p2 = ax.Position;
+    end
+    
+    p0 = [p1(1)-p2(1), p1(2)-p2(2), p1(3)-(p2(3)-1), p1(4)-(p2(4)-1)];
+    
+    % Align axes
+    set(p.Children(strcmpi({p.Children.Type}, 'axes')), 'position', p0);
+    
+    % Label
+    l = [];
+    
+    for i = 1:length(ax.Children)
         
-        exportFigure = figure;
-        exportPanel = copy(obj.panel.axes);
-        
-        set(exportFigure,...
-            'color',    'white',...
-            'units',    'pixels',...
-            'position', [0, 0, 1200, 600]);
-        
-        set(exportPanel,....
-            'parent',   exportFigure,...
-            'position', [0, 0, 1, 1],....
-            'bordertype', 'none',...
-            'backgroundcolor', 'white');
-        
-        axesHandles = exportPanel.Children;
-        axesTags = get(axesHandles, 'tag');
-        axesPlot = strcmpi(axesTags, 'axesplot');
-        
-        p1 = [];
-        p2 = [];
-        
-        if any(axesPlot)
-            
-            uiProperties = properties(axesHandles(axesPlot));
-            
-            if any(strcmp(uiProperties, 'OuterPosition'))
-                p1 = get(axesHandles(axesPlot), 'position');
-                p2 = get(axesHandles(axesPlot), 'outerposition');
-            end
-            
-        else
-            
-            uiProperties = properties(axesHandles(axesPlot));
-            
-            if any(strcmp(uiProperties, 'OuterPosition'))
-                p1 = get(gca, 'position');
-                p2 = get(gca, 'outerposition');
-            end
-            
-        end
-        
-        if isempty(p1) || isempty(p2)
-            p1 = get(gca, 'position');
-            p2 = p1;
-        end
-        
-        axesPosition(1) = p1(1) - p2(1);
-        axesPosition(2) = p1(2) - p2(2);
-        axesPosition(3) = p1(3) - (p2(3)-1);
-        axesPosition(4) = p1(4) - (p2(4)-1);
-        
-        for i = 1:length(axesHandles)
-            if strcmpi(get(axesHandles(i), 'type'), 'axes')
-                set(axesHandles(i), 'position', axesPosition);
-            end
-        end
-        
-        if ~isempty(axesHandles(axesPlot))
-            
-            axesPlot = axesHandles(axesPlot);
-            axesChildren = axesPlot.Children;
-            axesTag = get(axesChildren(isprop(axesChildren, 'tag')), 'tag');
-            axesLabel = axesChildren(strcmp(axesTag, 'plotlabel'));
-            
-            if ~isempty(axesLabel)
-                
-                axesLabel = axesLabel(1);
-                
-                m = 0.01;
-                
-                a = axesLabel.Extent;
-                xlimit = axesPlot.XLim;
-                ylimit = axesPlot.YLim;
-                
-                b = axesLabel.Position(1);
-                b = b - (a(1)+a(3) - (xlimit(2) - diff(xlimit)*m));
-                axesLabel.Position(1) = b;
-                
-                b = axesLabel.Position(2);
-                b = b - (a(2)+a(4) - (ylimit(2) - diff(ylimit)*m));
-                axesLabel.Position(2) = b;
-                
-            end
-            
-        end
-        
-        msg = ['Saving image... (', fileName, ')'];
-        h = waitbar(0, msg);
-        
-        waitbar(0.25, h, msg);
-        
-        currentPath = pwd;
-        cd(filePath);
-        
-        waitbar(0.75, h, msg);
-        print(exportFigure, fileName, fileType, '-r150')
-        waitbar(1.0, h, msg);
-        
-        cd(currentPath);
-        
-        if ishandle(h)
-            close(h);
-        end
-        
-        if ishandle(exportFigure)
-            close(exportFigure);
+        if ~isprop(ax.Children(i), 'tag')
+            continue
+        elseif strcmpi(ax.Children(i).Tag, 'plotlabel')
+            l = ax.Children(i);
+            break
         end
         
     end
+    
+    % Align label
+    if ~isempty(l)
+        
+        x = ax.XLim;
+        y = ax.YLim;
+        
+        p1 = l.Extent;
+        p2 = l.Position;
+        
+        l.Position(1) = p2(1) - (p1(1) + p1(3) - (x(2) - diff(x) * 0.01));
+        l.Position(2) = p2(2) - (p1(2) + p1(4) - (y(2) - diff(y) * 0.01));
+        
+    end
+    
+    % Waitbar
+    h = waitbar(0, 'Saving image file...');
+    
+    % Set path
+    currentPath = pwd;
+    cd(filePath);
+    
+    if ishandle(h)
+        waitbar(0.75, h);
+    end
+    
+    % Save image file
+    if ishandle(fig)
+        print(fig, fileName, fileType, dpi);
+        close(fig);
+    end
+    
+    if ishandle(h)
+        waitbar(0.99, h);
+    end
+    
+    % Reset path
+    cd(currentPath);
+    
+end
+
+if ishandle(h)
+    close(h);
 end
 
 end
@@ -702,52 +709,64 @@ end
 % ---------------------------------------
 function saveXlsCallback(~, ~, obj)
 
-if isempty(obj.data)
+if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 end
 
-if size(obj.table.main.Data,2) ~= length(obj.table.main.ColumnName)
-    obj.table.main.Data{end, length(obj.table.main.ColumnName)} = [];
-end
-
+% Get table data
 obj.removeTableHighlightText();
 
-try
-    excelData = [obj.table.main.ColumnName'; obj.table.main.Data];
-catch
-    excelData = obj.table.main.Data;
-end
+tableHeader = obj.table.main.ColumnName;
+tableData   = obj.table.main.Data;
 
 obj.addTableHighlightText();
 
-if isempty(excelData)
-    return
+% Check table data
+if length(tableData(1,:)) ~= length(tableHeader)
+    tableData{end, length(tableHeader)} = ' ';
 end
 
-if length(excelData(1,:)) >= 14
-    for i = 1:length(excelData(:,1))
-        for j = 14:length(excelData(1,:))
-            if ~isempty(excelData{i,j}) && isnumeric(excelData{i,j})
-                excelData{i,j} = excelData{i,j};
-            end
-        end
-    end
-end
+% Waitbar
+h = waitbar(0, 'Saving Excel file...');
 
-filterExtensions  = '*.xlsx;*.xls';
-filterDescription = 'Excel spreadsheet (*.xlsx, *.xls)';
-filterDefaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
+% Suggested file name
+defaultType = {'*.xlsx;*.xls', 'Excel spreadsheet (*.xlsx, *.xls)'};
+defaultName = getSuggestedFilename(obj, 'table');
 
-[fileName, filePath] = uiputfile(...
-    {filterExtensions, filterDescription},...
-    'Save As...',...
-    filterDefaultName);
+% Open uiputfile
+[fileName, filePath] = uiputfile(defaultType, 'Save As...', defaultName);
 
 if ischar(fileName) && ischar(filePath)
+    
+    % Set path
     currentPath = pwd;
     cd(filePath);
+    
+    if ishandle(h)
+        waitbar(0.5, h);
+    end
+    
+    % Format table
+    if length(tableHeader) == size(tableData,2)
+        excelData = [tableHeader', tableData];
+    else
+        excelData = tableData;
+    end
+    
+    % Write Excel file
     xlswrite(fileName, excelData)
+    
+    if ishandle(h)
+        waitbar(0.99, h);
+    end
+    
+    % Reset path
     cd(currentPath);
+    
+end
+
+if ishandle(h)
+    close(h);
 end
 
 end
@@ -781,30 +800,29 @@ end
 
 % Waitbar
 h = waitbar(0, 'Saving CSV file...');
-    
-% File options
-defaultName = [datestr(date, 'yyyymmdd'),'-chromatography-data'];
 
-[fileName, filePath] = uiputfile(...
-    {'*.csv', 'CSV file (*.csv)'},...
-    'Save As...',...
-    defaultName);
+% Suggested file name
+defaultType = {'*.csv', 'CSV file (*.csv)'};
+defaultName = getSuggestedFilename(obj, 'table');
+
+% Open uiputfile
+[fileName, filePath] = uiputfile(defaultType, 'Save As...', defaultName);
 
 % Format table as CSV
 if ischar(fileName) && ischar(filePath)
-
+    
     % Set path
     currentPath = pwd;
     cd(filePath);
-
+    
     [m,n] = size(tableData);
-
+    
     for i = 1:m
         
         if ishandle(h)
             waitbar(i/(m+1), h);
         end
-            
+        
         for j = 1:n
             
             if j <= length(tableFormat)
@@ -831,7 +849,7 @@ if ischar(fileName) && ischar(filePath)
     if ishandle(h)
         waitbar(0.99, h);
     end
-        
+    
     % Write CSV file
     f = fopen(fileName, 'w');
     fmt = [repmat('%s,', 1, n-1), '%s' '\n'];
@@ -851,6 +869,73 @@ end
 
 if ishandle(h)
     close(h);
+end
+
+end
+
+% ---------------------------------------
+% Suggested Filename
+% ---------------------------------------
+function str = getSuggestedFilename(obj, option)
+
+switch option
+    
+    case {'table'}
+        
+        str = [datestr(date, 'yyyymmdd'), '-chromatography-data'];
+        
+        if isfield(obj.data, 'sequence_name')
+            x = {obj.data.sequence_name};
+            x(cellfun(@isempty, x)) = [];
+        else
+            x = [];
+        end
+        
+        if isempty(x) && isfield(obj.data, 'sequence_path')
+            x = {obj.data.sequence_path};
+            x(cellfun(@isempty, x)) = [];
+        end
+        
+        if ~isempty(x)
+            x = unique(x);
+        end
+        
+        for i = 1:length(x)
+            if length(str) + length(x) + 1 <= 255
+                str = [str, '-', x{i}];
+            end
+        end
+        
+    case {'image'}
+        
+        row = obj.view.index;
+        str = '';
+        
+        if ~isempty(obj.data(row).instrument)
+            str = obj.data(row).instrument;
+            str = strrep(str, '/', '');
+        end
+        
+        if length(obj.data(row).datetime) >= 10
+            
+            if ~isempty(str)
+                str = [str, ' - '];
+            end
+            
+            str = [str, strrep(obj.data(row).datetime(1:10), '-', '')];
+            
+        end
+        
+        if ~isempty(obj.data(row).sample_name)
+            str = [str, ' - ', obj.data(row).sample_name];
+            str = regexprep(str, '[/\*:?!%^#@"<>|.]', '_');
+            str = deblank(strtrim(str));
+        end
+        
+    otherwise
+        
+        str = '';
+        
 end
 
 end
@@ -981,11 +1066,11 @@ switch msg
     case 'Yes'
         
         n = length(obj.peaks.name);
-
+        
         for i = n:-1:1
             obj.tableDeletePeakColumn(i)
         end
-
+        
     case 'No'
         return
         
@@ -1042,7 +1127,7 @@ if strcmpi(evt.EventName, 'Action')
     end
     
     switch src.Tag
-       
+        
         case 'asyncMode'
             obj.settings.other.asyncMode = src.UserData;
             
@@ -1052,6 +1137,11 @@ if strcmpi(evt.EventName, 'Action')
             
         case 'autoStep'
             obj.settings.peakAutoStep = src.UserData;
+            
+        case 'dpi'
+            obj.settings.export.dpi = str2double(src.Label);
+            x = src.Parent.Children;
+            set(x(~strcmpi(src.Label, {x.Label})), 'checked', 'off');
             
     end
     

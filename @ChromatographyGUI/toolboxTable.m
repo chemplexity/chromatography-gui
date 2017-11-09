@@ -8,7 +8,7 @@ columnParameters = {...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
     'Instrument', 100,   false,   'char';...
-    'Detector',   100,   false,   'char';...
+    'Sequence',   100,   false,   'char';...
     'Method',     125,   false,   'char';...
     'Operator',   75,    false,   'char';...
     'SampleName', 100,   false,   'char';
@@ -42,20 +42,30 @@ obj.table.main = uitable(...
     'cellselectioncallback', {@tableSelectCallback, obj},...
     'keypressfcn',           {@tableKeyDownCallback, obj});
 
-obj.updateTableHeader();
-obj.updateTableProperties();
-obj.updateTablePeakData();
-
 % ---------------------------------------
-% Table Callback (double click)
+% Java Table
 % ---------------------------------------
 try
     jscrollpane = findjobj(obj.table.main);
     jviewport = jscrollpane.getViewport;
-    jtable = jviewport.getView;
-    set(jtable, 'mouseclickedcallback', @obj.tableButtonDownCallback);
+    obj.java.table = jviewport.getView;
+    set(obj.java.table, 'mouseclickedcallback', @obj.tableButtonDownCallback);
 catch
+    obj.java.table = [];
 end
+
+if ~isempty(obj.java.table) && ismethod(obj.java.table, 'setValueAt')
+    obj.settings.other.useJavaTable = 1;
+end
+
+obj.settings.other.useJavaTable = 0;
+
+% ---------------------------------------
+% Update Table
+% ---------------------------------------
+obj.updateTableHeader();
+obj.updateTableProperties();
+obj.updateTablePeakData();
 
 end
 

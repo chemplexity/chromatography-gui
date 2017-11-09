@@ -36,7 +36,7 @@ end
 
 function initalizeSettings(obj, varargin)
 
-% Figure
+% GUI
 obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
@@ -45,6 +45,7 @@ obj.settings.table.backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 obj.settings.table.foregroundColor = [0.00, 0.00, 0.00];
 obj.settings.table.highlightColor  = '#0950D0';
 obj.settings.table.highlightText   = '#FFFFFF';
+obj.settings.table.precision       = '%.3f';
 obj.settings.table.columnWidth     = 110;
 obj.settings.table.minColumns      = 13;
 obj.settings.table.showArea        = 1;
@@ -105,17 +106,14 @@ obj.settings.selectZoom = 0;
 % Axes Settings
 obj.settings.xmode = 'auto';
 obj.settings.ymode = 'auto';
-
 obj.settings.xlim  = [0,1];
 obj.settings.ylim  = [0,1];
-
 obj.settings.xpad  = 0.02;
 obj.settings.ypad  = 0.02;
 
 % Plot Settings
 obj.settings.showPlotLabel    = 1;
 obj.settings.showPlotBaseline = 1;
-
 obj.settings.showPeaks        = 1;
 obj.settings.showPeakLine     = 0;
 obj.settings.showPeakLabel    = 1;
@@ -133,14 +131,13 @@ obj.settings.labels.peak = {
     'peakName'};
 
 % Baseline Parameters
-obj.settings.baseline.minSmoothness = 1;
-obj.settings.baseline.maxSmoothness = 10;
+obj.settings.baseline.smoothness    = 5.5;
+obj.settings.baseline.minSmoothness = 1.0;
+obj.settings.baseline.maxSmoothness = 10.0;
 
-obj.settings.baseline.minAsymmetry = -10;
-obj.settings.baseline.maxAsymmetry = -1;
-
-obj.settings.baseline.smoothness = 5.5;
-obj.settings.baseline.asymmetry  = -5.5;
+obj.settings.baseline.asymmetry    = -5.5;
+obj.settings.baseline.minAsymmetry = -10.0;
+obj.settings.baseline.maxAsymmetry = -1.0;
 
 % Peak Integration Settings
 obj.settings.peakModel = 'nn2';     % 'egh', 'nn1', 'nn2'
@@ -165,9 +162,6 @@ obj.settings.peakFields = {...
     'xlim',...
     'ylim'};
 
-% Other Options
-obj.settings.other.asyncMode = 1;
-
 % Keyboard Shortcuts
 obj.settings.keyboard.selectPeak         = 'space';
 obj.settings.keyboard.clearPeak          = 'backspace';
@@ -176,6 +170,15 @@ obj.settings.keyboard.nextPeak           = 'downarrow';
 obj.settings.keyboard.previousSample     = 'leftarrow';
 obj.settings.keyboard.nextSample         = 'rightarrow';
 obj.settings.keyboard.selectPeakOverride = 'o';
+
+% Export Options
+obj.settings.export.dpi    = 150;
+obj.settings.export.width  = 1200;
+obj.settings.export.height = 600;
+
+% Other Options
+obj.settings.other.asyncMode = 1;
+obj.settings.other.useJavaTable = 0;
 
 end
 
@@ -409,6 +412,20 @@ if isfield(obj.settings, 'other')
         end
         
     end
+end
+
+% Menu --> Options --> Other --> Export --> Figure --> DPI
+if isfield(obj.settings, 'export') && isfield(obj.settings.export, 'dpi')
+    x = obj.settings.export.dpi;
+    
+    for i = 1:length(obj.menu.export.dpi.Children)
+        if str2double(obj.menu.export.dpi.Children(i).Label) == x
+            obj.menu.export.dpi.Children(i).Checked = 'on';
+        else
+            obj.menu.export.dpi.Children(i).Checked = 'off';
+        end
+    end
+    
 end
 
 % Menu --> View --> Zoom
