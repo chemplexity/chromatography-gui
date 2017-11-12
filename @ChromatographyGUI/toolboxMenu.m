@@ -696,10 +696,10 @@ if ischar(fileName) && ischar(filePath)
     % Reset path
     cd(currentPath);
     
-end
+    if ishandle(h)
+        close(h);
+    end
 
-if ishandle(h)
-    close(h);
 end
 
 end
@@ -743,12 +743,12 @@ if ischar(fileName) && ischar(filePath)
     cd(filePath);
     
     if ishandle(h)
-        waitbar(0.5, h);
+        waitbar(0.6, h);
     end
     
     % Format table
     if length(tableHeader) == size(tableData,2)
-        excelData = [tableHeader', tableData];
+        excelData = [tableHeader'; tableData];
     else
         excelData = tableData;
     end
@@ -832,10 +832,10 @@ if ischar(fileName) && ischar(filePath)
             end
             
             if isempty(tableData{i,j})
-                tableData{i,j} = ' ';
+                tableData{i,j} = '';
                 
             elseif strcmpi(x, 'numeric')
-                tableData{i,j} = num2str(tableData{i,j});
+                tableData{i,j} = sprintf('%f', tableData{i,j});
                 
             elseif strcmpi(x, 'char')
                 tableData{i,j} = regexprep(tableData{i,j}, '([,]|\t)', ' ');

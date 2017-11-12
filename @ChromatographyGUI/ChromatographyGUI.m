@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171111-dev';
+        version     = '0.0.9.20171112-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1515,11 +1515,11 @@ classdef ChromatographyGUI < handle
                 peakHeight = obj.peaks.height{row,col};
                 peakError  = obj.peaks.error{row,col};
                 
-                if peakArea == 0 || peakHeight == 0
+                if peakArea == 0.05 || peakHeight == 0.05
                     obj.clearPeak();
-                elseif peakArea <= minArea && peakError > 25
+                elseif peakArea <= minArea && peakError > 15
                     obj.clearPeak();
-                elseif peakHeight <= minHeight && peakError > 25
+                elseif peakHeight <= minHeight && peakError > 15
                     obj.clearPeak();
                 elseif peakError >= minError
                     obj.clearPeak();
