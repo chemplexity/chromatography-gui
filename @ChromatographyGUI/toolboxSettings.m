@@ -226,27 +226,41 @@ end
 
 function autosaveSettings(obj, varargin)
 
-user_settings.version = obj.version;
-user_settings.name = 'global_settings';
-user_settings.data = obj.settings;
+% Settings data
+settings.version = obj.version;
+settings.name = 'global_settings';
+settings.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
+settings.data = obj.settings;
 
-exportMAT(user_settings,...
-    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
-    'file', obj.default_settings,...
+% File info
+filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
+fileName = obj.default_settings;
+
+% Save MAT file
+exportMAT(settings,...
+    'path', filePath,...
+    'file', fileName,...
     'varname', 'user_settings');
 
 end
 
 function saveSettings(obj, varargin)
 
-user_settings.version = obj.version;
-user_settings.name = 'global_settings';
-user_settings.data = obj.settings;
+% Settings data
+settings.version = obj.version;
+settings.name = 'global_settings';
+settings.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
+settings.data = obj.settings;
 
-exportMAT(user_settings,...
-    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
-    'varname', 'user_settings',...
-    'suggest', obj.default_settings);
+% File info
+filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
+fileName = obj.default_settings;
+
+% Save MAT file
+exportMAT(settings,...
+    'path', filePath,...
+    'suggest', fileName,...
+    'varname', 'user_settings');
 
 end
 
@@ -386,7 +400,6 @@ end
 str = obj.settings.table.labelNames;
 
 for i = 1:length(str)
-    
     if isfield(obj.settings.table, ['show', str{i}])
         if isfield(obj.menu, ['tablePeak', str{i}])
             
@@ -398,19 +411,16 @@ for i = 1:length(str)
             
         end
     end
-    
 end
 
 % Menu --> Options --> Other --> Import --> Async Mode
 if isfield(obj.settings, 'other')
     if isfield(obj.settings.other, 'asyncMode')
-        
         if obj.settings.other.asyncMode
             obj.menu.optionsAsyncLoad.Checked = 'on';
         else
             obj.menu.optionsAsyncLoad.Checked = 'off';
         end
-        
     end
 end
 

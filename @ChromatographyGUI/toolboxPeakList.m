@@ -67,9 +67,18 @@ switch mode
         
     case 'load_custom'
         
-        data = importMAT('path', obj.toolbox_path);
+        filePath = [obj.toolbox_path, filesep, obj.toolbox_data];
+        
+        if exist([filePath, filesep, 'peaklists'], 'dir')
+            filePath = [filePath, filesep, 'peaklists'];
+        elseif ~exist(filePath, 'dir')
+            filePath = pwd;
+        end
+            
+        data = importMAT('path', filePath);
         
     otherwise
+        
         return
         
 end
@@ -96,44 +105,88 @@ switch mode
         
     case 'load_custom'
 
-        for i = 1:length(data)
-    
-            if ~ischar(data{i})
-                continue
-            end
-    
-            if ~any(strcmpi(data{i}, obj.peaks.name))
-                obj.tableAddPeakColumn(data{i})
-            end
+        str = 'Overwrite existing peak list?';
+        msg = questdlg(str, 'Import', 'OK', 'Cancel', 'OK');
+        
+        switch msg
             
+            case {'OK'}
+        
+                if ~isempty(obj.peaks.name)
+                    for i = length(obj.peaks.name):-1:1
+                        obj.tableDeletePeakColumn(i);
+                    end
+                end
+                
+                for i = 1:length(data)
+                    
+                    if ~ischar(data{i})
+                        continue
+                    end
+                    
+                    if ~any(strcmpi(data{i}, obj.peaks.name))
+                        obj.tableAddPeakColumn(data{i})
+                    end
+                    
+                end
+                
+                obj.updatePeakText();
+                
+            case {'Cancel'}
+                
+                return
+                
         end
-    
+        
 end
 
 end
 
 function savePeakList(obj, varargin)
 
-user_peaks.version = obj.version;
-user_peaks.name = 'peaklist';
-user_peaks.data = obj.peaks.name(:);
+% Peaklist data
+peaklist.version = obj.version;
+peaklist.name = 'peaklist';
+peaklist.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
+peaklist.data = obj.peaks.name(:);
 
-exportMAT(user_peaks,...
-    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
-    'varname', 'user_peaks',...
-    'suggest', obj.default_peaklist);
+% Suggested path
+filePath = [obj.toolbox_path, filesep, obj.toolbox_data];
+
+if exist([filePath, filesep, 'peaklists'], 'dir')
+    filePath = [filePath, filesep, 'peaklists'];
+elseif ~exist(filePath, 'dir')
+    filePath = pwd;
+end
+
+% Suggested file
+fileName = [datestr(now(), 'yyyymmdd'), '-peaklist'];
+fileName = [fileName, '-', num2str(length(obj.peaks.name)), '-peaks'];
+
+% Save MAT file
+exportMAT(peaklist,...
+    'path', filePath,...
+    'suggest', fileName,...
+    'varname', 'user_peaks');
 
 end
 
 function autosavePeakList(obj, varargin)
 
-user_peaks.version = obj.version;
-user_peaks.name = 'peaklist';
-user_peaks.data = obj.peaks.name(:);
+% Peaklist data
+peaklist.version = obj.version;
+peaklist.name = 'peaklist';
+peaklist.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
+peaklist.data = obj.peaks.name(:);
 
-exportMAT(user_peaks,...
-    'path', [obj.toolbox_path, filesep, obj.toolbox_config],...
-    'file', obj.default_peaklist,...
+% File info
+filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
+fileName = obj.default_peaklist;
+
+% Save MAT file
+exportMAT(peaklist,...
+    'path', filePath,...
+    'file', fileName,...
     'varname', 'user_peaks');
 
 end

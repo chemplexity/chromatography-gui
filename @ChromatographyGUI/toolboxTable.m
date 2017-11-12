@@ -46,11 +46,13 @@ obj.table.main = uitable(...
 % Java Table
 % ---------------------------------------
 try
-    jscrollpane = findjobj(obj.table.main);
-    jviewport = jscrollpane.getViewport;
-    obj.java.table = jviewport.getView;
+    obj.java.scrollpane = findjobj(obj.table.main);
+    obj.java.viewport = obj.java.scrollpane.getViewport;
+    obj.java.table = obj.java.viewport.getView;
     set(obj.java.table, 'mouseclickedcallback', @obj.tableButtonDownCallback);
 catch
+    obj.java.scrollpane = [];
+    obj.java.viewport = [];
     obj.java.table = [];
 end
 
@@ -58,6 +60,7 @@ if ~isempty(obj.java.table) && ismethod(obj.java.table, 'setValueAt')
     obj.settings.other.useJavaTable = 1;
 end
 
+% Disable setting
 obj.settings.other.useJavaTable = 0;
 
 % ---------------------------------------
@@ -74,7 +77,7 @@ end
 % ---------------------------------------
 function tableEditCallback(src, evt, obj)
 
-if isempty(src.Data)
+if isempty(src.Data) || length(evt.Indices) < 2
     return
 end
 
@@ -85,20 +88,30 @@ switch evt.Indices(2)
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
         src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
         
+        if evt.Indices(1) == obj.view.index
+            obj.addCellHighlightText(obj.view.index, 9)
+        end
+        
     case 13
         
         x = src.Data{evt.Indices(1), evt.Indices(2)};
         
+        if ischar(x)
+            x = str2double(x);
+        end
+        
         if isempty(x) || ~isnumeric(x) || isnan(x)
             obj.data(evt.Indices(1)).injvol = [];
             src.Data{evt.Indices(1), evt.Indices(2)} = [];
-            
         elseif ~isinf(x) && isreal(x) && ~isnan(x)
             obj.data(evt.Indices(1)).injvol = x;
-            
         else
             obj.data(evt.Indices(1)).injvol = evt.PreviousData;
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
+        end
+        
+        if evt.Indices(1) == obj.view.index
+            obj.addCellHighlightText(obj.view.index, 13)
         end
         
 end
@@ -132,80 +145,81 @@ end
 % ---------------------------------------
 function tableKeyDownCallback(~, evt, obj)
 
-if isempty(obj.table.selection) || isempty(obj.data)
+if ~strcmp(evt.EventName, 'KeyPress')
+    return
+elseif isempty(obj.table.selection) || isempty(obj.data)
     return
 end
 
-if strcmpi(evt.EventName, 'KeyPress')
+switch evt.Key
     
-    switch evt.Key
+    case 'return'
         
-        case 'return'
+        if size(obj.table.selection,2) <= 1
+            return
             
-            if size(obj.table.selection,2) <= 1
+        elseif ~any(obj.table.selection(1,2) == [9,13])
+            
+            idx = obj.view.index;
+            row = obj.table.selection(1,1);
+            
+            if row == idx
                 return
-            elseif ~any(obj.table.selection(1,2) == [9,13])
+            elseif row >= 1 && row <= length(obj.data)
+                obj.selectSample(row-idx);
+            end
+            
+        end
+        
+    case 'delete'
+        
+        if isempty(obj.table.selection) || isempty(obj.data)
+            return
+        end
+        
+        previousSelection = obj.table.selection;
+        
+        msgPrompt = tableDeleteMessage(obj);
+        
+        msg = questdlg(...
+            msgPrompt,...
+            'Delete',...
+            'Yes', 'No', 'Yes');
+        
+        switch msg
+            case 'Yes'
+                obj.tableDeleteRow();
+            case 'No'
+                obj.table.selection = previousSelection;
+                return
+        end
+        
+    case 'backspace'
+        
+        if isempty(obj.table.selection) || isempty(obj.data)
+            return
+        elseif size(obj.table.selection,2) < 2
+            return
+        end
+        
+        if any(any(obj.table.selection(:,2) == [9,13]))
+            
+            for i = 1:length(obj.table.selection(:,2))
                 
-                idx = obj.view.index;
-                row = obj.table.selection(1,1);
-                
-                if row == idx
-                    return
-                elseif row >= 1 && row <= length(obj.data)
-                    obj.selectSample(row-idx);
+                if obj.table.selection(i,2) == 9
+                    row = obj.table.selection(i,1);
+                    obj.data(row).sample_info = [];
+                    obj.table.main.Data{row,9} = [];
+                elseif obj.table.selection(i,2) == 13
+                    row = obj.table.selection(i,1);
+                    obj.data(row).injvol = [];
+                    obj.table.main.Data{row,13} = [];
                 end
                 
             end
             
-        case 'delete'
-            
-            if isempty(obj.table.selection) || isempty(obj.data)
-                return
-            end
-            
-            previousSelection = obj.table.selection;
-            
-            msgPrompt = tableDeleteMessage(obj);
-            
-            msg = questdlg(...
-                msgPrompt,...
-                'Delete',...
-                'Yes', 'No', 'Yes');
-            
-            switch msg
-                case 'Yes'
-                    obj.tableDeleteRow();
-                case 'No'
-                    obj.table.selection = previousSelection;
-                    return
-            end
-            
-        case 'backspace'
-            
-            if isempty(obj.table.selection) || isempty(obj.data)
-                return
-            end
-            
-            if any(any(obj.table.selection(:,2) == 13))
-                
-                for i = 1:length(obj.table.selection(:,2))
-                    
-                    if obj.table.selection(i,2) == 9
-                        row = obj.table.selection(i,1);
-                        obj.data(row).sample_info = [];
-                        obj.table.main.Data{row,9} = [];
-                    elseif obj.table.selection(i,2) == 13
-                        row = obj.table.selection(i,1);
-                        obj.data(row).injvol = [];
-                        obj.table.main.Data{row,13} = [];
-                    end
-                    
-                end
-                
-            end
-            
-    end
-    
+        end
+        
 end
 
 end
@@ -257,6 +271,7 @@ for i = 1:nRows
         end
         
     end
+    
 end
 
 if isempty(row)

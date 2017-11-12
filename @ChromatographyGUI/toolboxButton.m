@@ -448,14 +448,12 @@ switch src.String
         
         peakName = obj.peaks.name{col};
         
-        x = questdlg(['Delete "', peakName, '" from the peak list?'],...
-            'Delete', 'Yes', 'No', 'Yes');
+        str = ['Delete "', peakName, '" from the peak list?'];
+        msg = questdlg(str, 'Delete', 'Yes', 'No', 'Yes');
         
-        if strcmpi(x, 'Yes')
-            
+        if strcmpi(msg, 'Yes')
             obj.tableDeletePeakColumn(col);
             obj.updatePeakText();
-            
         end
         
 end

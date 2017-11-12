@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171109-dev';
+        version     = '0.0.9.20171111-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1338,6 +1338,12 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(currentIndex) && currentIndex ~= 0
                 
+                if obj.settings.other.useJavaTable && ~isempty(obj.java.viewport)
+                    viewPosition = obj.java.viewport.getViewPosition;
+                else
+                    viewPosition = [];
+                end
+                
                 obj.removeTableHighlightText();
                 
                 if length(varargin) == 1
@@ -1377,6 +1383,10 @@ classdef ChromatographyGUI < handle
                 drawnow();
                 
                 obj.peakAutoDetectionCallback();
+                
+                if ~isempty(viewPosition)
+                    obj.java.viewport.setViewPosition(viewPosition);
+                end
                 
             end
             
@@ -1485,7 +1495,7 @@ classdef ChromatographyGUI < handle
                 return
             end
             
-            % Get peak
+            % Get peak data
             if ~isnan(x)
                 evt.EventName = 'Hit';
                 evt.IntersectionPoint = x;
@@ -1494,18 +1504,24 @@ classdef ChromatographyGUI < handle
                 return
             end
             
-            % Check peak
+            % Check peak data
             minArea   = 0.5;
             minHeight = 0.25;
             minError  = 150;
             
             if ~isempty(obj.peaks.area{row,col})
                 
-                if obj.peaks.area{row,col} <= minArea
+                peakArea   = obj.peaks.area{row,col};
+                peakHeight = obj.peaks.height{row,col};
+                peakError  = obj.peaks.error{row,col};
+                
+                if peakArea == 0 || peakHeight == 0
                     obj.clearPeak();
-                elseif obj.peaks.height{row,col} <= minHeight
+                elseif peakArea <= minArea && peakError > 25
                     obj.clearPeak();
-                elseif obj.peaks.error{row,col} >= minError
+                elseif peakHeight <= minHeight && peakError > 25
+                    obj.clearPeak();
+                elseif peakError >= minError
                     obj.clearPeak();
                 elseif length([obj.peaks.time{row,:}]) > 1
                     
@@ -1646,16 +1662,6 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function keyboardInterruptCallback(obj, varargin)
-            
-            obj.figure.WindowKeyPressFcn = @obj.keyboardCallback;
-            
-            if ~isempty(varargin)
-                obj.menu.peakOptionsAutoDetect.UserData = 2;
-            end
-            
-        end
-        
         function selectTab(obj, varargin)
             
             if isprop(obj.figure, 'CurrentObject')
@@ -1715,17 +1721,14 @@ classdef ChromatographyGUI < handle
         
         function addTableHighlightText(obj, varargin)
             
-            format = obj.table.main.ColumnFormat;
-            width  = cell2mat(obj.table.main.ColumnWidth);
-            
+            width = cell2mat(obj.table.main.ColumnWidth);
+            fmt = obj.table.main.ColumnFormat;
             row = obj.view.index;
-            col = length(format);
+            col = length(fmt);
             
             if row < 1 || isempty(obj.table.main.Data)
                 return
-            end
-            
-            if col > size(obj.table.main.Data,2)
+            elseif col > size(obj.table.main.Data,2)
                 obj.table.main.Data{end,col} = [];
             end
             
@@ -1738,9 +1741,9 @@ classdef ChromatographyGUI < handle
             
             for i = 1:length(x)
                 
-                if ~strcmpi(format{i}, 'numeric')
-                    x{i} = [str, num2str(1000), '">', x{i}, '&nbsp</html>'];
-                elseif i > 13
+                if ~strcmpi(fmt{i}, 'numeric')
+                    x{i} = [str, '1000">', x{i}, '&nbsp</html>'];
+                elseif i > obj.settings.table.minColumns
                     x{i} = [str, num2str(width(i)), '" align="right">',...
                         sprintf('%.4f', x{i}), '&nbsp</html>'];
                 else
@@ -1771,7 +1774,11 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{end,col} = [];
             end
             
-            x = obj.table.main.Data{row,col};
+            if obj.settings.other.useJavaTable
+                x = obj.java.table.getValueAt(row-1, col-1);
+            else
+                x = obj.table.main.Data{row,col};
+            end
             
             str = ['<html><body ',...
                 'bgcolor="', obj.settings.table.highlightColor, '" ',...
@@ -1786,22 +1793,23 @@ classdef ChromatographyGUI < handle
                 x = [str, ' align="right">', num2str(x), '&nbsp</html>'];
             end
             
-            obj.table.main.Data{row,col} = x;
+            if obj.settings.other.useJavaTable
+                obj.java.table.setValueAt(x, row-1, col-1);
+            else
+                obj.table.main.Data{row, col} = x;
+            end
             
         end
         
         function removeTableHighlightText(obj, varargin)
             
-            format = obj.table.main.ColumnFormat;
-            
+            fmt = obj.table.main.ColumnFormat;
             row = obj.view.index;
-            col = length(format);
+            col = length(fmt);
             
             if row < 1 || isempty(obj.table.main.Data)
                 return
-            end
-            
-            if col > size(obj.table.main.Data,2)
+            elseif col > size(obj.table.main.Data,2)
                 obj.table.main.Data{end,col} = [];
             end
             
@@ -1826,7 +1834,7 @@ classdef ChromatographyGUI < handle
                     str = x{i};
                 end
                 
-                if ~isempty(str) && strcmpi(format{i}, 'numeric')
+                if ~isempty(str) && strcmpi(fmt{i}, 'numeric')
                     str = str2double(str);
                     if isnan(str)
                         str = [];
@@ -2499,7 +2507,7 @@ classdef ChromatographyGUI < handle
                     idx = (col+m) + (n*xi);
                     
                     if obj.settings.other.useJavaTable
-                        obj.java.table.setValueAt('', row-1, idx-1);
+                        obj.java.table.setValueAt(' ', row-1, idx-1);
                     else
                         obj.table.main.Data{row, idx} = [];
                     end
@@ -2803,6 +2811,30 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Callback - zoom event
+        % ---------------------------------------
+        function zoomCallback(obj, varargin)
+            
+            if obj.view.index ~= 0
+                obj.settings.xmode = 'manual';
+                obj.settings.ymode = 'manual';
+                obj.settings.xlim = varargin{1,2}.Axes.XLim;
+                obj.settings.ylim = varargin{1,2}.Axes.YLim;
+                obj.updateAxesLimitToggle();
+                obj.updateAxesLimitEditText();
+                obj.updateAxesLimits();
+                obj.updatePlotLabelPosition();
+            else
+                obj.axes.main.XLim = obj.settings.xlim;
+                obj.axes.main.YLim = obj.settings.ylim;
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - user zoom selection
+        % ---------------------------------------
         function userZoom(obj, state, varargin)
             
             if ~isempty(varargin)
@@ -2833,6 +2865,9 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Callback - user peak selection
+        % ---------------------------------------
         function userPeak(obj, state, varargin)
             
             if ~isempty(varargin)
@@ -2884,28 +2919,7 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
-        % Callback - zoom event
-        % ---------------------------------------
-        function zoomCallback(obj, varargin)
-            
-            if obj.view.index ~= 0
-                obj.settings.xmode = 'manual';
-                obj.settings.ymode = 'manual';
-                obj.settings.xlim = varargin{1,2}.Axes.XLim;
-                obj.settings.ylim = varargin{1,2}.Axes.YLim;
-                obj.updateAxesLimitToggle();
-                obj.updateAxesLimitEditText();
-                obj.updateAxesLimits();
-                obj.updatePlotLabelPosition();
-            else
-                obj.axes.main.XLim = obj.settings.xlim;
-                obj.axes.main.YLim = obj.settings.ylim;
-            end
-            
-        end
-        
-        % ---------------------------------------
-        % Callback - peak selection
+        % Callback - mouse selection
         % ---------------------------------------
         function peakTimeSelectCallback(obj, ~, evt)
             
@@ -3000,6 +3014,22 @@ classdef ChromatographyGUI < handle
             
         end
         
+        % ---------------------------------------
+        % Callback - keyboard interrupt
+        % ---------------------------------------
+        function keyboardInterruptCallback(obj, varargin)
+            
+            obj.figure.WindowKeyPressFcn = @obj.keyboardCallback;
+            
+            if ~isempty(varargin)
+                obj.menu.peakOptionsAutoDetect.UserData = 2;
+            end
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - keyboard shortcut
+        % ---------------------------------------
         function keyboardCallback(obj, ~, evt)
             
             if any(isprop(obj.figure.CurrentObject, 'tag'))
