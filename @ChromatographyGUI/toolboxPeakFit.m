@@ -6,7 +6,7 @@ elseif obj.view.index == 0 || obj.controls.peakList.Value == 0
     return
 else
     row = obj.view.index;
-    col = obj.controls.peakList.Value;    
+    col = obj.controls.peakList.Value;
 end
 
 if length(obj.data) < row || length(obj.peaks.name) < col
@@ -22,7 +22,7 @@ end
 if isnan(userX) || isinf(userX)
     return
 else
-    [x,y] = getXY(obj);
+    [x,y] = getXY(obj, userX);
 end
 
 if isempty(x) || isempty(y) || userX > max(x) || userX < min(x)
@@ -44,29 +44,41 @@ obj.userPeak(0);
 
 end
 
-function [x,y] = getXY(obj)
+function [x,y] = getXY(obj, c)
 
 row = obj.view.index;
 pad = 3;
 
-if isempty(obj.data(row).intensity)
-    x = [];
-    y = [];
-else
+x = [];
+y = [];
+
+if ~isempty(obj.data(row).intensity)
     x = obj.data(row).time;
     y = obj.data(row).intensity(:,1);
-end
-
-if diff(obj.settings.xlim) < 6
-    pad = (6 - diff(obj.settings.xlim)) / 2;
-end
-
-if isempty(x) || isempty(y)
-    return
 else
-    y(x < obj.settings.xlim(1)-pad | x > obj.settings.xlim(2)+pad) = [];
-    x(x < obj.settings.xlim(1)-pad | x > obj.settings.xlim(2)+pad) = [];
+    return
 end
+
+if c < obj.settings.xlim(1) - pad
+    xmin = c - pad;
+else
+    xmin = obj.settings.xlim(1) - pad;
+end
+
+if c > obj.settings.xlim(2) + pad
+    xmax = c + pad;
+else
+    xmax = obj.settings.xlim(2) + pad;
+end
+
+if xmax - xmin < 6
+    pad = (6 - (xmax-xmin)) / 2;
+    xmin = xmin - pad;
+    xmax = xmax + pad;
+end
+
+y(x < xmin | x > xmax) = [];
+x(x < xmin | x > xmax) = [];
 
 end
 
@@ -85,27 +97,27 @@ if isfield(obj.settings, 'peakOverride')
             'xmin', peakCenter - pad,...
             'xmax', peakCenter + pad,...
             'sensitivity', 350);
-
+        
         if ~isempty(px)
-
+            
             [~, ii] = min(abs(peakCenter - px(:,1)));
             xc = px(ii,1);
-    
+            
             xtol = 0.02;
             xf = x(x >= xc-xtol & x <= xc+xtol);
             yf = y(x >= xc-xtol & x <= xc+xtol);
-    
+            
             if ~isempty(yf)
                 [~,xi] = max(yf);
                 peakCenter = xf(xi);
             else
                 peakCenter = px(ii,1);
             end
-    
+            
         else
             peakCenter = findPeakCenter(x, y, peakCenter);
         end
-       
+        
     else
         obj.settings.peakOverride = 0;
     end
@@ -115,7 +127,7 @@ end
 xi = find(x >= peakCenter, 1);
 
 if ~isempty(xi)
-    peakCenter = x(xi);    
+    peakCenter = x(xi);
 end
 
 % Crop XY
@@ -131,7 +143,7 @@ switch obj.settings.peakModel
     case {'nn2', 'nn'}
         nnVersion = 'nn_v2';
     otherwise
-        nnVersion = 'latest';  
+        nnVersion = 'latest';
 end
 
 % Sampling Rate
@@ -154,7 +166,7 @@ if ~isempty(xi)
 else
     f = 500;
 end
-    
+
 % Baseline
 [b,x,y] = getBaselineFit(obj,x,y,0);
 
@@ -172,7 +184,7 @@ for i = f-50:50:f+50
         'model', nnVersion,...
         'baseline', b,...
         'frequency', i);
-
+    
     if isempty(peak)
         peak = p;
     end
@@ -184,7 +196,7 @@ for i = f-50:50:f+50
     if p.error < peak.error
         peak = p;
     end
-
+    
 end
 
 % Update
@@ -273,7 +285,7 @@ if ~isempty(peak.width) && ~isempty(peak.time) && peak.width > 0
         y(x < t-w & yf) = [];
         x(x < t-w & yf) = [];
     end
-        
+    
     if isfield(peak, 'xmax') && t+w > peak.xmax
         yf = y <= 0.02 * max(y) + min(y);
         y(x > t+w & yf) = [];
@@ -384,18 +396,18 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
     end
     
     if bmin > xmin && bmax >= xmax
-    
-        if size(b,1) ~= size(y,1)            
+        
+        if size(b,1) ~= size(y,1)
             n = numel(x) - size(b,1);
             
             if abs(x(n+1) - b(1,1)) <= 0.01
                 b = [x(1:n), repmat(b(1,2),n,1); b];
             end
         end
-
+        
     elseif bmin <= xmin && bmax < xmax
-       
-        if size(b,1) ~= size(y,1)    
+        
+        if size(b,1) ~= size(y,1)
             n = numel(x) - size(b,1);
             
             if abs(x(end-n) - b(end,1)) <= 0.01
@@ -418,7 +430,7 @@ if ~isempty(obj.data(row).baseline) && size(obj.data(row).baseline,2) == 2
         b = obj.getBaseline(varargin{:});
         b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);
     end
-        
+    
 elseif isempty(obj.data(row).baseline)
     b = obj.getBaseline();
     b = b(b(:,1) >= xmin & b(:,1) <= xmax, :);

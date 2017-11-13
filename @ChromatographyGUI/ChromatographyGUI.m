@@ -4,11 +4,12 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171112-dev';
+        version     = '0.0.9.20171113-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
         screensize  = ChromatographyGUI.getScreenSize();
+        datetime    = ChromatographyGUI.getDatetime();
         
     end
     
@@ -16,16 +17,30 @@ classdef ChromatographyGUI < handle
         
         data
         peaks
-        
         figure
         menu
         panel
         table
         axes
         controls
-        view
-        
         settings
+        
+    end
+    
+    properties (Access = protected)
+        
+        view = struct(...
+            'index',        0,...
+            'id',           'N/A',...
+            'name',         'N/A',...
+            'selectPeak',   0,...
+            'plotLine',     [],...
+            'plotLabel',    [],...
+            'plotBaseline', [],...
+            'peakLine',     [],...
+            'peakLabel',    [],...
+            'peakBaseline', [],...
+            'peakArea',     []);
         
     end
     
@@ -56,35 +71,16 @@ classdef ChromatographyGUI < handle
             % ---------------------------------------
             % Path
             % ---------------------------------------
-            sourceFile = fileparts(mfilename('fullpath'));
-            [sourcePath, sourceFile] = fileparts(sourceFile);
-            
-            if ~strcmpi(sourceFile, '@ChromatographyGUI')
-                sourcePath = [sourcePath, filesep, sourceFile];
-            end
-            
-            addpath(sourcePath);
-            addpath(genpath([sourcePath, filesep, obj.toolbox_src]));
-            addpath(genpath([sourcePath, filesep, obj.toolbox_config]));
+            addpath(obj.toolbox_path);
+            addpath(genpath([obj.toolbox_path, filesep, obj.toolbox_src]));
+            addpath(genpath([obj.toolbox_path, filesep, obj.toolbox_config]));
             
             % ---------------------------------------
             % Settings
             % ---------------------------------------
             obj.toolboxSettings([], [], 'initialize');
             
-            obj.view.index = 0;
-            obj.view.id    = 'N/A';
-            obj.view.name  = 'N/A';
             
-            obj.view.plotLine     = [];
-            obj.view.plotLabel    = [];
-            obj.view.plotBaseline = [];
-            obj.view.peakLine     = [];
-            obj.view.peakLabel    = [];
-            obj.view.peakArea     = [];
-            obj.view.peakBaseline = [];
-            
-            obj.view.selectPeak = 0;
             obj.table.selection = [];
             
             for i = 1:length(obj.settings.peakFields)
@@ -1493,9 +1489,7 @@ classdef ChromatographyGUI < handle
             
             % Get peak data
             if ~isnan(x)
-                evt.EventName = 'Hit';
-                evt.IntersectionPoint = x;
-                obj.peakTimeSelectCallback([], evt);
+                obj.peakTimeSelectCallback([], x);
             else
                 return
             end
@@ -1585,6 +1579,10 @@ classdef ChromatographyGUI < handle
                 return
             end
             
+            if obj.settings.selectZoom
+                obj.userZoom(0);
+            end
+            
             m = length(obj.data);
             n = length(obj.peaks.name);
             
@@ -1593,8 +1591,7 @@ classdef ChromatographyGUI < handle
             
             status = 0;
             
-            % Set interrupt callback
-            set(obj.figure, 'windowkeypressfcn', @obj.keyboardInterruptCallback);
+            set(obj.figure, 'WindowKeyPressFcn', {@obj.keyboardInterruptCallback, 2});
             
             % Peak auto-detection
             for i = 1:n
@@ -1615,7 +1612,7 @@ classdef ChromatographyGUI < handle
                 col = obj.controls.peakList.Value;
                 
                 if status == n
-                    obj.keyboardInterruptCallback();
+                    obj.keyboardInterruptCallback(1);
                     return
                 end
                 
@@ -1623,7 +1620,8 @@ classdef ChromatographyGUI < handle
             
             % Refresh peak textbox
             obj.updatePeakText();
-            obj.keyboardInterruptCallback();
+            obj.keyboardInterruptCallback(1);
+            obj.userPeak(0);
             
             % Auto-step sample selection
             if obj.settings.peakAutoStep && row < m
@@ -2400,8 +2398,8 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{row,5} = obj.data(end).sequence_name;
             end
             
-            if isfield(obj.data, 'injvol')
-                obj.table.main.Data{row,13} = obj.data(end).injvol;
+            if isfield(obj.data, 'injvol') && ~isempty(obj.data(end).injvol)
+                obj.table.main.Data{row,13} = num2str(obj.data(end).injvol);
             end
             
         end
@@ -2516,6 +2514,7 @@ classdef ChromatographyGUI < handle
                     
                 end
             end
+            
         end
         
         function updatePeakTable(obj, row, col)
@@ -2775,8 +2774,8 @@ classdef ChromatographyGUI < handle
                     obj.table.main.Data{i,5} = obj.data(i).sequence_name;
                 end
                 
-                if isfield(obj.data, 'injvol')
-                    obj.table.main.Data{i,13} = obj.data(i).injvol;
+                if isfield(obj.data, 'injvol') && ~isempty(obj.data(i).injvol)
+                    obj.table.main.Data{i,13} = num2str(obj.data(i).injvol);
                 end
                 
                 % Peak data
@@ -2833,7 +2832,7 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function userZoom(obj, state, varargin)
             
-            if ~isempty(varargin)
+            if ~isempty(varargin) && isnumeric(varargin{1})
                 state = varargin{1};
             elseif obj.settings.selectZoom == state
                 return
@@ -2846,16 +2845,25 @@ classdef ChromatographyGUI < handle
                     obj.settings.selectZoom = 0;
                     obj.axes.zoom.Enable = 'off';
                     
-                    set(obj.figure, 'pointer', 'arrow');
-                    set(obj.figure, 'windowkeypressfcn', @obj.keyboardCallback);
-                    set(obj.figure, 'windowbuttonmotionfcn', @obj.figureMotionCallback);
+                    set(obj.figure, 'Pointer', 'arrow');
+                    set(obj.figure, 'WindowKeyPressFcn', @obj.keyboardCallback);
+                    set(obj.figure, 'WindowButtonMotionFcn', @obj.figureMotionCallback);
                     
                 case 1
                     
                     obj.settings.selectZoom = 1;
                     obj.axes.zoom.Enable = 'on';
                     
-                    set(obj.figure, 'windowbuttonmotionfcn', @obj.figureMotionCallback);
+                    x = uigetmodemanager(obj.figure);
+                    
+                    try
+                        set(x.WindowListenerHandles, 'Enable', 'off');
+                    catch
+                        [x.WindowListenerHandles.Enabled] = deal(false);
+                    end
+                    
+                    set(obj.figure, 'KeyPressFcn', []);
+                    set(obj.figure, 'WindowKeyPressFcn', @obj.keyboardCallback);
                     
             end
             
@@ -2866,7 +2874,7 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function userPeak(obj, state, varargin)
             
-            if ~isempty(varargin)
+            if ~isempty(varargin) && isnumeric(varargin{1})
                 state = varargin{1};
             elseif obj.view.selectPeak == state
                 return
@@ -2883,8 +2891,8 @@ classdef ChromatographyGUI < handle
                         obj.userZoom(1);
                     end
                     
-                    set(obj.figure, 'pointer', 'arrow');
-                    set(obj.axes.main, 'buttondownfcn', '');
+                    set(obj.figure, 'Pointer', 'arrow');
+                    set(obj.axes.main, 'ButtonDownFcn', '');
                     
                 case 1
                     
@@ -2901,12 +2909,12 @@ classdef ChromatographyGUI < handle
                         
                         if isfield(obj.settings, 'peakOverride')
                             if obj.settings.peakOverride
-                                cursorType = 'crosshair';
+                                cursorType = 'cross';
                             end
                         end
                         
-                        set(obj.figure, 'pointer', cursorType);
-                        set(obj.axes.main, 'buttondownfcn', @obj.peakTimeSelectCallback);
+                        set(obj.figure, 'Pointer', cursorType);
+                        set(obj.axes.main, 'ButtonDownFcn', @obj.peakTimeSelectCallback);
                         
                     end
                     
@@ -2919,9 +2927,9 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function peakTimeSelectCallback(obj, ~, evt)
             
-            switch evt.EventName
+            if isprop(evt, 'EventName')
                 
-                case 'Hit'
+                if strcmpi(evt.EventName, 'Hit')
                     
                     x = evt.IntersectionPoint(1);
                     
@@ -2932,12 +2940,21 @@ classdef ChromatographyGUI < handle
                         obj.updatePeakListText();
                     end
                     
+                    obj.userPeak([], 0);
+                    
+                else
                     obj.userPeak(0);
-                    
-                otherwise
-                    
-                    obj.userPeak(0);
-                    
+                end
+                
+            elseif isnumeric(evt)
+                
+                if obj.view.index == 0 || isempty(obj.peaks.name)
+                    obj.clearPeak();
+                else
+                    obj.toolboxPeakFit(evt);
+                    obj.updatePeakListText();
+                end
+                
             end
             
         end
@@ -3018,7 +3035,19 @@ classdef ChromatographyGUI < handle
             obj.figure.WindowKeyPressFcn = @obj.keyboardCallback;
             
             if ~isempty(varargin)
-                obj.menu.peakOptionsAutoDetect.UserData = 2;
+                
+                if length(varargin) == 3
+                    x = varargin{3};
+                elseif length(varargin) == 1
+                    x = varargin{1};
+                end
+                
+                obj.menu.peakOptionsAutoDetect.UserData = x;
+                
+            end
+            
+            if strcmpi(obj.menu.view.zoom.Checked, 'on') && ~obj.settings.selectZoom
+                obj.userZoom(1);
             end
             
         end
@@ -3200,12 +3229,32 @@ classdef ChromatographyGUI < handle
     methods (Static = true)
         
         function x = getPlatform()
+            
             x = computer;
+            
         end
         
         function x = getScreenSize()
             
-            x = get(0, 'screensize');
+            x = [];
+            
+            if isprop(0, 'Units')
+                str = get(0, 'Units');
+            else
+                return
+            end
+            
+            if ~strcmp(str, 'pixels')
+                set(0, 'pixels');
+            end
+            
+            if isprop(0, 'ScreenSize')
+                x = get(0, 'ScreenSize');
+            end
+            
+            if ~strcmp(str, 'pixels')
+                set(0, str);
+            end
             
             if length(x) == 4
                 x = x(3:4);
@@ -3228,23 +3277,29 @@ classdef ChromatographyGUI < handle
         
         function x = getFont()
             
-            sysFonts = listfonts;
-            x = 'FixedWidth';
+            str = listfonts;
             
-            fontPref = {...
-                'Avenir';...
-                'SansSerif';...
-                'Helvetica Neue';...
-                'Lucida Sans Unicode';...
-                'Microsoft Sans Serif';...
-                'Arial'};
+            if isprop(0, 'FixedWidthFontName')
+                x = get(0, 'FixedWidthFontName');
+            else
+                x = 'FixedWidth';
+            end
+            
+            fontPref = {'Avenir'; 'SansSerif'; 'Helvetica Neue';...
+                'Lucida Sans Unicode'; 'Microsoft Sans Serif'; 'Arial'};
             
             for i = 1:length(fontPref)
-                if any(strcmpi(fontPref{i}, sysFonts))
+                if any(strcmpi(fontPref{i}, str))
                     x = fontPref{i};
                     return
                 end
             end
+            
+        end
+        
+        function x = getDatetime()
+            
+            x = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
             
         end
         

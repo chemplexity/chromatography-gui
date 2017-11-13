@@ -16,7 +16,7 @@ columnParameters = {...
     'SeqLine',    75,    false,   'numeric';...
     'VialNum',    75,    false,   'numeric';...
     'InjNum',     75,    false,   'numeric';...
-    'InjVol',     75,    true,    'numeric'};
+    'InjVol',     75,    true,    'char'};
 
 % ---------------------------------------
 % Table
@@ -77,7 +77,7 @@ end
 % ---------------------------------------
 function tableEditCallback(src, evt, obj)
 
-if isempty(src.Data) || length(evt.Indices) < 2
+if isempty(src.Data) || size(evt.Indices,2) < 2
     return
 end
 
@@ -86,25 +86,41 @@ switch evt.Indices(2)
     case 9
         
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
-        src.Data(evt.Indices(1), evt.Indices(2)) = {evt.NewData};
+        src.Data{evt.Indices(1), evt.Indices(2)} = evt.NewData;
         
         if evt.Indices(1) == obj.view.index
             obj.addCellHighlightText(obj.view.index, 9)
         end
         
+        javaChangeSelection(obj, evt.Indices(1)-1, evt.Indices(2)-1);
+        
     case 13
         
-        x = src.Data{evt.Indices(1), evt.Indices(2)};
+        str = src.Data{evt.Indices(1), evt.Indices(2)};
         
-        if ischar(x)
-            x = str2double(x);
+        if ~isempty(str) && isnumeric(str)
+            str = sprintf('%.2f', str);
         end
         
-        if isempty(x) || ~isnumeric(x) || isnan(x)
-            obj.data(evt.Indices(1)).injvol = [];
-            src.Data{evt.Indices(1), evt.Indices(2)} = [];
-        elseif ~isinf(x) && isreal(x) && ~isnan(x)
-            obj.data(evt.Indices(1)).injvol = x;
+        if ~isempty(str) && ischar(str)
+            val = str2double(str);
+        else
+            val = [];
+        end
+        
+        if isempty(val) || ~isnumeric(val) || isnan(val)
+            
+            if isempty(evt.PreviousData)
+                obj.data(evt.Indices(1)).injvol = [];
+                src.Data{evt.Indices(1), evt.Indices(2)} = ' ';
+            else
+                src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
+            end
+            
+        elseif ~isinf(val) && isreal(val) && ~isnan(val)
+            obj.data(evt.Indices(1)).injvol = val;
+            src.Data{evt.Indices(1), evt.Indices(2)} = sprintf('%.2f', val);
+            
         else
             obj.data(evt.Indices(1)).injvol = evt.PreviousData;
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
@@ -113,6 +129,8 @@ switch evt.Indices(2)
         if evt.Indices(1) == obj.view.index
             obj.addCellHighlightText(obj.view.index, 13)
         end
+        
+        javaChangeSelection(obj, evt.Indices(1)-1, evt.Indices(2)-1);
         
 end
 
@@ -136,6 +154,8 @@ if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.index
         src.Data{row,col} = obj.data(row).injvol;
     end
     
+    javaChangeSelection(obj, row-1, col-1);
+    
 end
 
 end
@@ -145,76 +165,75 @@ end
 % ---------------------------------------
 function tableKeyDownCallback(~, evt, obj)
 
-if ~strcmp(evt.EventName, 'KeyPress')
+if isempty(obj.data)
     return
-elseif isempty(obj.table.selection) || isempty(obj.data)
+elseif isempty(obj.table.selection) || size(obj.table.selection,2) < 2
+    return
+elseif ~strcmp(evt.EventName, 'KeyPress')
     return
 end
-
+        
 switch evt.Key
     
     case 'return'
         
-        if size(obj.table.selection,2) <= 1
-            return
-            
-        elseif ~any(obj.table.selection(1,2) == [9,13])
+        if ~any(obj.table.selection(1,2) == [9,13])
             
             idx = obj.view.index;
             row = obj.table.selection(1,1);
+            col = obj.table.selection(1,2);
             
-            if row == idx
+            if idx == row
                 return
             elseif row >= 1 && row <= length(obj.data)
                 obj.selectSample(row-idx);
             end
             
+            javaChangeSelection(obj, row-1, col-1);
+            
         end
         
     case 'delete'
         
-        if isempty(obj.table.selection) || isempty(obj.data)
-            return
-        end
+        row = obj.table.selection(1,1);
+        col = obj.table.selection(1,2);
         
-        previousSelection = obj.table.selection;
-        
-        msgPrompt = tableDeleteMessage(obj);
-        
-        msg = questdlg(...
-            msgPrompt,...
-            'Delete',...
-            'Yes', 'No', 'Yes');
+        str = tableDeleteMessage(obj);
+        msg = questdlg(str, 'Delete', 'Yes', 'No', 'Yes');
         
         switch msg
             case 'Yes'
                 obj.tableDeleteRow();
             case 'No'
-                obj.table.selection = previousSelection;
-                return
+                obj.table.selection = [row,col];
         end
+        
+        javaChangeSelection(obj, row-1, col-1);
         
     case 'backspace'
-        
-        if isempty(obj.table.selection) || isempty(obj.data)
-            return
-        elseif size(obj.table.selection,2) < 2
-            return
-        end
         
         if any(any(obj.table.selection(:,2) == [9,13]))
             
             for i = 1:length(obj.table.selection(:,2))
                 
-                if obj.table.selection(i,2) == 9
-                    row = obj.table.selection(i,1);
-                    obj.data(row).sample_info = [];
-                    obj.table.main.Data{row,9} = [];
-                elseif obj.table.selection(i,2) == 13
-                    row = obj.table.selection(i,1);
-                    obj.data(row).injvol = [];
-                    obj.table.main.Data{row,13} = [];
+                if i > length(obj.table.selection)
+                    break
                 end
+                
+                row = obj.table.selection(i,1);
+                col = obj.table.selection(i,2);
+                
+                if strcmpi(obj.table.main.Data{row,col}, ' ')
+                    continue
+                elseif col == 9
+                    obj.data(row).sample_info = [];
+                    obj.table.main.Data{row,col} = ' ';
+                elseif col == 13
+                    obj.data(row).injvol = [];
+                    obj.table.main.Data{row,13} = ' ';
+                end
+                                
+                javaChangeSelection(obj, row-1, col-1);
                 
             end
             
@@ -279,5 +298,26 @@ if isempty(row)
 else
     message = ['Delete selected samples (', row, ')?'];
 end
+
+end
+
+% ---------------------------------------
+% Java Table Selection
+% ---------------------------------------
+function javaChangeSelection(obj, row, col)
+
+if isempty(obj.java.table) || isempty(obj.data)
+    return
+elseif ~ismethod(obj.java.table, 'changeSelection')
+    return
+elseif row < 0 || row > size(obj.data,1) - 1
+    return
+elseif col < 0 || col > size(obj.table.main.Data,2) - 1
+    return
+end
+
+drawnow();
+
+obj.java.table.changeSelection(row, col, 0, 0);
 
 end
