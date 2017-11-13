@@ -16,10 +16,10 @@ p2(3) = p1(3);
 p2(4) = p1(4);
 
 obj.controls.next = newPushButton(...
-    obj, obj.panel.selectTab, 'Next', 'nextsample', p1);
+    obj, obj.panel.sampleTab, 'Next', 'nextsample', p1);
 
 obj.controls.prev = newPushButton(...
-    obj, obj.panel.selectTab, 'Previous', 'prevsample', p2);
+    obj, obj.panel.sampleTab, 'Previous', 'prevsample', p2);
 
 % Integrate Tab --> Peak List --> Add, Edit, Delete
 pl1(1) = 0.6 + 0.01 * 2;
@@ -38,13 +38,13 @@ pl3(3) = pl1(3);
 pl3(4) = pl1(4);
 
 obj.controls.addPeak = newPushButton(...
-    obj, obj.panel.peakList, 'Add', 'addpeak', pl1);
+    obj, obj.panel.peaklist, 'Add', 'addpeak', pl1);
 
 obj.controls.editPeak = newPushButton(...
-    obj, obj.panel.peakList, 'Edit', 'editpeak', pl2);
+    obj, obj.panel.peaklist, 'Edit', 'editpeak', pl2);
 
 obj.controls.delPeak = newPushButton(...
-    obj, obj.panel.peakList, 'Delete', 'delpeak', pl3);
+    obj, obj.panel.peaklist, 'Delete', 'delpeak', pl3);
 
 % Integrate Tab --> Baseline --> Apply, Clear
 b2(1) = 0.50 - 0.15;
@@ -79,10 +79,10 @@ t2(3) = t1(3);
 t2(4) = t1(4);
 
 obj.controls.selectID = newStaticText(...
-    obj, obj.panel.selectTab, 'ID', 'idtext', t1);
+    obj, obj.panel.sampleTab, 'ID', 'idtext', t1);
 
 obj.controls.selectName = newStaticText(...
-    obj, obj.panel.selectTab, 'Sample', 'nametext', t2);
+    obj, obj.panel.sampleTab, 'Sample', 'nametext', t2);
 
 % View Tab --> X-Limits, Y-Limits
 t3(1) = 0.45;
@@ -153,10 +153,10 @@ e2(3) = 1.00 - e1(1) - 0.10;
 e2(4) = e1(4);
 
 obj.controls.editID = newEditText(...
-    obj, obj.panel.selectTab, obj.view.id, 'idedit', e2);
+    obj, obj.panel.sampleTab, obj.view.id, 'idedit', e2);
 
 obj.controls.editName = newEditText(...
-    obj, obj.panel.selectTab, obj.view.name, 'nameedit', e1);
+    obj, obj.panel.sampleTab, obj.view.name, 'nameedit', e1);
 
 % View Tab --> X-Limits, Y-Limits
 e3(1) = 0.50 - 0.35 - 0.05;
@@ -298,7 +298,7 @@ l1(3) = 0.6;
 l1(4) = 1.0;
 
 obj.controls.peakList = newListbox(...
-    obj, obj.panel.peakList, obj.peaks.name, 'peaklist', l1);
+    obj, obj.panel.peaklist, obj.peaks.name, 'peaklist', l1);
 
 % ---------------------------------------
 % Sliders
@@ -452,8 +452,14 @@ switch src.String
         msg = questdlg(str, 'Delete', 'Yes', 'No', 'Yes');
         
         if strcmpi(msg, 'Yes')
-            obj.tableDeletePeakColumn(col);
-            obj.updatePeakText();
+            
+            if isempty(obj.peaks.name) || col > length(obj.peaks.name)
+                return
+            elseif any(strcmp(peakName, obj.peaks.name))
+                obj.tableDeletePeakColumn(col);
+                obj.updatePeakText();
+            end
+            
         end
         
 end

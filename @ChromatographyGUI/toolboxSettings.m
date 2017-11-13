@@ -40,6 +40,19 @@ function initalizeSettings(obj, varargin)
 obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
+% Panel
+obj.settings.panel.backgroundColor = [0.99, 0.99, 0.99];
+obj.settings.panel.foregroundColor = [0.00, 0.00, 0.00];
+obj.settings.panel.highlightColor  = [0.20, 0.20, 0.20];
+obj.settings.panel.borderType      = 'line';
+obj.settings.panel.borderWidth     = 1;
+obj.settings.panel.fontname        = obj.font;
+obj.settings.panel.fontsize        = 12;
+
+% Tab
+obj.settings.tab.backgroundColor = [0.99, 0.99, 0.99];
+obj.settings.tab.foregroundColor = [0.00, 0.00, 0.00];
+
 % Table
 obj.settings.table.backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 obj.settings.table.foregroundColor = [0.00, 0.00, 0.00];
@@ -60,6 +73,9 @@ obj.settings.table.labelNames = {...
     'Time',...
     'Width',...
     'Model'};
+
+% Axes
+obj.settings.axes.backgroundColor = [1.00, 1.00, 1.00];
 
 % Font
 obj.settings.gui.fontname    = obj.font;
@@ -191,7 +207,7 @@ switch mode
         file = [...
             obj.toolbox_path, filesep,...
             obj.toolbox_config, filesep,....
-            obj.default_settings];
+            obj.toolbox_settings];
         
         if exist(file, 'file')
             data = importMAT('file', file);
@@ -234,7 +250,7 @@ settings.data = obj.settings;
 
 % File info
 filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
-fileName = obj.default_settings;
+fileName = obj.toolbox_settings;
 
 % Save MAT file
 exportMAT(settings,...
@@ -254,7 +270,7 @@ settings.data = obj.settings;
 
 % File info
 filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
-fileName = obj.default_settings;
+fileName = obj.toolbox_settings;
 
 % Save MAT file
 exportMAT(settings,...

@@ -76,7 +76,7 @@ end
 function textPosition(obj,x)
 
 for i = 1:length(x)
-
+    
     t = obj.controls.(x{i});
     
     t.Units = 'characters';

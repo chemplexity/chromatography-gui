@@ -32,24 +32,20 @@ classdef ChromatographyGUI < handle
     properties (Hidden = true)
         
         % Paths
-        toolbox_path = fileparts(fileparts(mfilename('fullpath')));
-        toolbox_file = fileparts(mfilename('fullpath'));
-        
-        toolbox_config = 'config';
-        toolbox_data   = 'data';
-        toolbox_src    = 'src';
-        
-        checkpoint
-        
-        % Defaults
-        default_settings = 'default_settings.mat';
-        default_peaklist = 'default_peaklist.mat';
-        
-        % Java Objects
-        java
+        toolbox_path       = fileparts(fileparts(mfilename('fullpath')));
+        toolbox_file       = fileparts(mfilename('fullpath'));
+        toolbox_config     = 'config';
+        toolbox_data       = 'data';
+        toolbox_src        = 'src';
+        toolbox_settings   = 'default_settings.mat';
+        toolbox_peaklist   = 'default_peaklist.mat';
+        toolbox_checkpoint = '';
         
         % Font
         font = ChromatographyGUI.getFont();
+        
+        % Java
+        java
         
     end
     

@@ -499,7 +499,7 @@ if ~isempty(data) && isstruct(data)
             obj.validatePeakData(nRow, nCol);
         end
         
-        obj.checkpoint = file;
+        obj.toolbox_checkpoint = file;
         
         obj.clearTableData();
         obj.updateTableHeader();
@@ -529,8 +529,8 @@ else
     return
 end
 
-if ~isempty(obj.checkpoint) && fileattrib(obj.checkpoint)
-    file = obj.checkpoint;
+if ~isempty(obj.toolbox_checkpoint) && fileattrib(obj.toolbox_checkpoint)
+    file = obj.toolbox_checkpoint;
 else
     file = [];
 end
@@ -541,7 +541,7 @@ file = exportMAT(obj.data,...
     'waitbar', true);
 
 if ischar(file)
-    obj.checkpoint = file;
+    obj.toolbox_checkpoint = file;
 end
 
 end
@@ -562,7 +562,7 @@ file = exportMAT(obj.data,...
     'waitbar', true);
 
 if ischar(file)
-    obj.checkpoint = file;
+    obj.toolbox_checkpoint = file;
 end
 
 end
@@ -699,7 +699,7 @@ if ischar(fileName) && ischar(filePath)
     if ishandle(h)
         close(h);
     end
-
+    
 end
 
 end

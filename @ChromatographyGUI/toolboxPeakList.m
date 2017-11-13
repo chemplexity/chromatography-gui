@@ -14,7 +14,7 @@ switch varargin{1}
     
     case {'initialize'}
         initalizePeakList(obj);
-    
+        
     case {'load_default', 'load_custom'}
         loadPeakList(obj, varargin{1});
         
@@ -56,7 +56,7 @@ switch mode
         file = [...
             obj.toolbox_path, filesep,...
             obj.toolbox_config, filesep,....
-            obj.default_peaklist];
+            obj.toolbox_peaklist];
         
         if exist(file, 'file')
             data = importMAT('file', file);
@@ -74,7 +74,7 @@ switch mode
         elseif ~exist(filePath, 'dir')
             filePath = pwd;
         end
-            
+        
         data = importMAT('path', filePath);
         
     otherwise
@@ -104,14 +104,14 @@ switch mode
         obj.peaks.name = data;
         
     case 'load_custom'
-
+        
         str = 'Overwrite existing peak list?';
         msg = questdlg(str, 'Import', 'OK', 'Cancel', 'OK');
         
         switch msg
             
             case {'OK'}
-        
+                
                 if ~isempty(obj.peaks.name)
                     for i = length(obj.peaks.name):-1:1
                         obj.tableDeletePeakColumn(i);
@@ -181,7 +181,7 @@ peaklist.data = obj.peaks.name(:);
 
 % File info
 filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
-fileName = obj.default_peaklist;
+fileName = obj.toolbox_peaklist;
 
 % Save MAT file
 exportMAT(peaklist,...

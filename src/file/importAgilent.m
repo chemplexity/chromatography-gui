@@ -953,6 +953,9 @@ if isempty(data.file_path) || ~exist(data.file_path, 'dir')
     return
 end
 
+[~, data.sequence_path] = fileparts(data.file_path);
+data.sequence_name = '';
+
 f = dir(data.file_path);
 f = f(~[f.isdir]);
 
@@ -970,8 +973,6 @@ for i = 1:length(f)
     end
     
 end
-
-[~, data.sequence_path] = fileparts(data.file_path);
 
 end
 

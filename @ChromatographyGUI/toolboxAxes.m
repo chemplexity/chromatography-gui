@@ -30,7 +30,7 @@ default.fontsize    = obj.settings.axes.fontsize;
 default.fontweight  = 'normal';
 default.xlabel      = 'Time (min)';
 default.ylabel      = 'Intensity';
-            
+
 % ---------------------------------------
 % Primary Axes
 % ---------------------------------------
@@ -39,7 +39,7 @@ obj.axes.main = axes(...
     'tag',        'axesplot',...
     'nextplot',   'add',...
     'looseinset', default.looseinset,...
-    'units',      default.units,...    
+    'units',      default.units,...
     'position',   default.position,...
     'color',      default.color,...
     'xcolor',     default.xcolor,...
@@ -114,20 +114,24 @@ end
 try
     
     if verLessThan('matlab', 'R2014b')
+        
         set(obj.figure,...
             'resizefcn', @(varargin) set(obj.axes.secondary,...
             'position', get(obj.axes.main, 'position')));
+        
     else
+        
         set(obj.figure,...
             'sizechangedfcn', @(varargin) set(obj.axes.secondary,...
             'position', get(obj.axes.main, 'position')));
-
+        
         set(get(get(obj.axes.main, 'yruler'), 'axle'), 'visible', 'off');
         set(get(get(obj.axes.main, 'xruler'), 'axle'), 'visible', 'off');
         set(get(get(obj.axes.main, 'ybaseline'), 'axle'), 'visible', 'off');
+        
     end
     
-catch 
+catch
 end
 
 if ~verLessThan('matlab', 'R2015b')
@@ -153,7 +157,7 @@ if isprop(obj.axes.main, 'OuterPosition')
     x(3) = x1(3) - (x2(3)-1);
     x(4) = x1(4) - (x2(4)-1);
     
-    if all(x > 0) 
+    if all(x > 0)
         obj.axes.main.Position = x;
         obj.axes.secondary.Position = x;
     end
