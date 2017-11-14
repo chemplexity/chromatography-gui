@@ -530,18 +530,20 @@ else
 end
 
 if ~isempty(obj.toolbox_checkpoint) && fileattrib(obj.toolbox_checkpoint)
-    file = obj.toolbox_checkpoint;
+    fileType = 'file';
+    fileName = obj.toolbox_checkpoint;
 else
-    file = [];
+    fileType = 'suggest';
+    fileName = getSuggestedFilename(obj, 'mat');
 end
 
-file = exportMAT(obj.data,...
-    'file',    file,...
+fileName = exportMAT(obj.data,...
+    fileType,  fileName,...
     'varname', 'data',...
     'waitbar', true);
 
-if ischar(file)
-    obj.toolbox_checkpoint = file;
+if ischar(fileName)
+    obj.toolbox_checkpoint = fileName;
 end
 
 end
@@ -557,12 +559,15 @@ else
     return
 end
 
-file = exportMAT(obj.data,...
+fileName = getSuggestedFilename(obj, 'mat');
+
+fileName = exportMAT(obj.data,...
+    'suggest', fileName,...
     'varname', 'data',...
     'waitbar', true);
 
-if ischar(file)
-    obj.toolbox_checkpoint = file;
+if ischar(fileName)
+    obj.toolbox_checkpoint = fileName;
 end
 
 end
@@ -880,9 +885,10 @@ function str = getSuggestedFilename(obj, option)
 
 switch option
     
-    case {'table'}
+    case {'table', 'mat'}
         
-        str = [datestr(date, 'yyyymmdd'), '-chromatography-data'];
+        val = num2str(length(obj.data));
+        str = [datestr(date, 'yyyymmdd'), '-results-', val, 'samples'];
         
         if isfield(obj.data, 'sequence_name')
             x = {obj.data.sequence_name};
@@ -960,7 +966,7 @@ end
 % ---------------------------------------
 function tableDeleteRowMenu(src, ~, obj)
 
-if isempty(obj.data) || isempty(obj.table.main.Data)% || isempty(obj.table.selection)
+if isempty(obj.data) || isempty(obj.table.main.Data)
     return
 else
     row = '';
