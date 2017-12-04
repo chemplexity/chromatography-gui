@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171114-dev';
+        version     = '0.0.9.20171204-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -27,8 +27,19 @@ classdef ChromatographyGUI < handle
         
     end
     
-    properties (Access = protected)
+    properties (Hidden = true)
         
+        % Paths
+        toolbox_path       = fileparts(fileparts(mfilename('fullpath')));
+        toolbox_file       = fileparts(mfilename('fullpath'));
+        toolbox_config     = 'config';
+        toolbox_data       = 'data';
+        toolbox_src        = 'src';
+        toolbox_settings   = 'default_settings.mat';
+        toolbox_peaklist   = 'default_peaklist.mat';
+        toolbox_checkpoint = '';
+        
+        % Plots
         view = struct(...
             'index',        0,...
             'id',           'N/A',...
@@ -41,20 +52,6 @@ classdef ChromatographyGUI < handle
             'peakLabel',    [],...
             'peakBaseline', [],...
             'peakArea',     []);
-        
-    end
-    
-    properties (Hidden = true)
-        
-        % Paths
-        toolbox_path       = fileparts(fileparts(mfilename('fullpath')));
-        toolbox_file       = fileparts(mfilename('fullpath'));
-        toolbox_config     = 'config';
-        toolbox_data       = 'data';
-        toolbox_src        = 'src';
-        toolbox_settings   = 'default_settings.mat';
-        toolbox_peaklist   = 'default_peaklist.mat';
-        toolbox_checkpoint = '';
         
         % Font
         font = ChromatographyGUI.getFont();
@@ -1330,10 +1327,10 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(currentIndex) && currentIndex ~= 0
                 
-                if obj.settings.other.useJavaTable && ~isempty(obj.java.viewport)
-                    viewPosition = obj.java.viewport.getViewPosition;
+                if isfield(obj.java, 'table') && ismethod(obj.java.table, 'getSelectedColumn')
+                    colNum = obj.java.table.getSelectedColumn;
                 else
-                    viewPosition = [];
+                    colNum = [];
                 end
                 
                 obj.removeTableHighlightText();
@@ -1376,8 +1373,17 @@ classdef ChromatographyGUI < handle
                 
                 obj.peakAutoDetectionCallback();
                 
-                if ~isempty(viewPosition)
-                    obj.java.viewport.setViewPosition(viewPosition);
+                if obj.settings.java.fixTableScrollpane && ~isempty(colNum)
+                    
+                    drawnow();
+                    
+                    if colNum == -1
+                        colNum = 0;
+                    end
+                    
+                    rowNum = obj.view.index - 1;
+                    obj.java.table.changeSelection(rowNum, colNum, 0, 0);
+                    
                 end
                 
             end

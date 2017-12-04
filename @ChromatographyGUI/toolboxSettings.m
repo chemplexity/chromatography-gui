@@ -196,6 +196,9 @@ obj.settings.export.height = 600;
 obj.settings.other.asyncMode = 1;
 obj.settings.other.useJavaTable = 0;
 
+% Java Options
+obj.settings.java.fixTableScrollpane = 1;
+
 end
 
 function loadSettings(obj, mode, varargin)

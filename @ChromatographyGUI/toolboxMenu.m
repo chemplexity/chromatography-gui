@@ -759,8 +759,18 @@ if ischar(fileName) && ischar(filePath)
     end
     
     % Write Excel file
-    xlswrite(fileName, excelData)
+    try
+        [status, msg] = xlswrite(fileName, excelData);
+    catch
+        status = 0;
+        msg = 'Unknown error: xlswrite';
+    end
     
+    % Error message
+    if ~status
+        questdlg({'Unable to save Excel file...'; msg}, '', 'OK', 'OK');
+    end 
+        
     if ishandle(h)
         waitbar(0.99, h);
     end
