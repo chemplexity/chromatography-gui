@@ -763,12 +763,18 @@ if ischar(fileName) && ischar(filePath)
         [status, msg] = xlswrite(fileName, excelData);
     catch
         status = 0;
-        msg = 'Unknown error: xlswrite';
+        msg = 'MATLAB:xlswrite:UnknownError';
     end
     
     % Error message
     if ~status
-        questdlg({'Unable to save Excel file...'; msg}, '', 'OK', 'OK');
+        
+        if isstruct(msg)
+            msg = msg.identifier;
+        end
+        
+        questdlg({'Unable to save Excel file...'; msg}, 'ERROR', 'OK', 'OK');
+        
     end 
         
     if ishandle(h)
