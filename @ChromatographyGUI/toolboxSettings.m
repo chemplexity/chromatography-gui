@@ -186,6 +186,8 @@ obj.settings.keyboard.nextPeak           = 'downarrow';
 obj.settings.keyboard.previousSample     = 'leftarrow';
 obj.settings.keyboard.nextSample         = 'rightarrow';
 obj.settings.keyboard.selectPeakOverride = 'o';
+obj.settings.keyboard.toggleZoom         = 'z';
+obj.settings.keyboard.repocessSample     = 'r';
 
 % Export Options
 obj.settings.export.dpi    = 150;
@@ -195,6 +197,7 @@ obj.settings.export.height = 600;
 % Other Options
 obj.settings.other.asyncMode = 1;
 obj.settings.other.useJavaTable = 0;
+obj.settings.other.getFileChecksum = 0;
 
 % Java Options
 obj.settings.java.fixTableScrollpane = 1;

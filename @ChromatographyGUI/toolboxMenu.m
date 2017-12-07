@@ -456,6 +456,12 @@ if ~isempty(data) && isstruct(data)
     obj.validatePeakData(length(obj.data), length(obj.peaks.name));
     obj.updateFigure();
     
+    if obj.settings.other.getFileChecksum
+        for i = 1:length(obj.data)
+            obj.getFileChecksum(i);
+        end
+    end
+        
 end
 
 end
@@ -674,7 +680,7 @@ if ischar(fileName) && ischar(filePath)
         
         l.Position(1) = p2(1) - (p1(1) + p1(3) - (x(2) - diff(x) * 0.01));
         l.Position(2) = p2(2) - (p1(2) + p1(4) - (y(2) - diff(y) * 0.01));
-        
+
     end
     
     % Waitbar
@@ -694,14 +700,11 @@ if ischar(fileName) && ischar(filePath)
         close(fig);
     end
     
-    if ishandle(h)
-        waitbar(0.99, h);
-    end
-    
     % Reset path
     cd(currentPath);
     
     if ishandle(h)
+        waitbar(0.99, h);
         close(h);
     end
     

@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171204-dev';
+        version     = '0.0.9.20171206-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1305,6 +1305,26 @@ classdef ChromatographyGUI < handle
             end
             
             clipboard('copy', str);
+            
+        end
+        
+        % ---------------------------------------
+        % MD5 Checksum
+        % ---------------------------------------
+        function getFileChecksum(obj, row)
+            
+            if isempty(obj.data) || row < 1 || row > length(obj.data)
+                return
+            elseif isfield(obj.data, 'file_checksum') && ~isempty(obj.data(row).file_checksum)
+                return
+            end
+            
+            file = [obj.data(row).file_path, filesep, obj.data(row).file_name];
+            str = getFileChecksum(file, 'hash', 'MD5', 'verbose', false);
+            
+            if iscell(str) && ~isempty(str{1})
+                obj.data(row).file_checksum = str{1};
+            end
             
         end
         

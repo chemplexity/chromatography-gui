@@ -14,10 +14,10 @@ function data = importAgilent(varargin)
 % Input (Name, Value)
 % ------------------------------------------------------------------------
 %   'file' -- name of file or folder path
-%       empty (default) | cell array of strings
+%       empty (default) | char | cell array of strings
 %
 %   'depth' -- subfolder search depth
-%       1 (default) | integer
+%       1 (default) | integer >= 0
 %
 %   'content' -- read all data, header only, or signal data only
 %       'all' (default) | 'header', 'data'
@@ -42,6 +42,7 @@ data = struct(...
     'file_path',       [],...
     'file_name',       [],...
     'file_size',       [],...
+    'file_checksum',   [],...
     'file_info',       [],...
     'file_version',    [],...
     'sample_name',     [],...
@@ -697,6 +698,10 @@ switch data.file_version
             data.channel = 'B';
         else
             data.channel = '';
+        end
+        
+        if isempty(data.channel_units)
+            data.channel_units = 'char';
         end
         
 end
