@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171206-dev';
+        version     = '0.0.9.20171208-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1391,20 +1391,8 @@ classdef ChromatographyGUI < handle
                 
                 drawnow();
                 
+                obj.updateJavaScrollpane();
                 obj.peakAutoDetectionCallback();
-                
-                if obj.settings.java.fixTableScrollpane && ~isempty(colNum)
-                    
-                    drawnow();
-                    
-                    if colNum == -1
-                        colNum = 0;
-                    end
-                    
-                    rowNum = obj.view.index - 1;
-                    obj.java.table.changeSelection(rowNum, colNum, 0, 0);
-                    
-                end
                 
             end
             
@@ -1531,7 +1519,7 @@ classdef ChromatographyGUI < handle
                 peakHeight = obj.peaks.height{row,col};
                 peakError  = obj.peaks.error{row,col};
                 
-                if peakArea == 0.05 || peakHeight == 0.05
+                if peakArea <= 0.05 || peakHeight <= 0.05
                     obj.clearPeak();
                 elseif peakArea <= minArea && peakError > 15
                     obj.clearPeak();
@@ -1761,32 +1749,58 @@ classdef ChromatographyGUI < handle
             
             for i = 1:length(x)
                 
-                if ~strcmpi(fmt{i}, 'numeric')
-                    x{i} = [str, '1000">', x{i}, '&nbsp</html>'];
-                elseif i > obj.settings.table.minColumns
-                    x{i} = [str, num2str(width(i)), '" align="right">',...
-                        sprintf('%.4f', x{i}), '&nbsp</html>'];
-                else
-                    x{i} = [str, num2str(width(i)), '" align="right">',...
-                        num2str(x{i}), '&nbsp</html>'];
+                switch fmt{i}
+                    
+                    case 'char'
+                        
+                        if isempty(x{i})
+                            x{i} = '';
+                        elseif i > obj.settings.table.minColumns
+                            if ~isnan(str2double(x{i}))
+                                x{i} = sprintf('%.4f', str2double(x{i}));
+                            end
+                        end
+                        
+                        x{i} = [str, '1000">', x{i}, '&nbsp</html>'];
+                        
+                    case 'numeric'
+                        
+                        if ~isempty(x{i}) && ischar(x{i})
+                            x{i} = str2double(x{i});
+                        end
+                        
+                        if isempty(x{i}) || ~isnumeric(x{i}) || isnan(x{i})
+                            x{i} = '';
+                        elseif i > obj.settings.table.minColumns
+                            x{i} = sprintf('%.4f', x{i});
+                        else
+                            x{i} = num2str(x{i});
+                        end
+                        
+                        n = [num2str(width(i)), '" align="right">'];
+                        x{i} = [str, n, x{i}, '&nbsp</html>'];
+                        
                 end
                 
             end
             
-            obj.table.main.Data(row,:) = x;
+            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
+            
+                for i = 1:length(x)
+                    obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
+                end
+                
+            else
+                obj.table.main.Data(row,:) = x; 
+            end
             
         end
         
         function addCellHighlightText(obj, row, col)
             
-            format = obj.table.main.ColumnFormat{col};
-            width  = obj.table.main.ColumnWidth{col};
-            
             if row < 1 || isempty(obj.table.main.Data)
                 return
-            end
-            
-            if row > size(obj.table.main.Data,1)
+            elseif row > size(obj.table.main.Data,1)
                 obj.table.main.Data{row,1} = [];
             end
             
@@ -1794,27 +1808,51 @@ classdef ChromatographyGUI < handle
                 obj.table.main.Data{end,col} = [];
             end
             
-            if obj.settings.other.useJavaTable
-                x = obj.java.table.getValueAt(row-1, col-1);
-            else
-                x = obj.table.main.Data{row,col};
-            end
+            width = obj.table.main.ColumnWidth{col};
+            fmt = obj.table.main.ColumnFormat{col};
+            
+            x = obj.table.main.Data{row,col};
             
             str = ['<html><body ',...
                 'bgcolor="', obj.settings.table.highlightColor, '" ',...
                 'text="',    obj.settings.table.highlightText, '" ',...
-                'width="',   num2str(width), '"'];
+                'width="'];
             
-            if ~strcmpi(format, 'numeric')
-                x = [str, '>', x, '&nbsp</html>'];
-            elseif col > 13 && ~isempty(x)
-                x = [str, ' align="right">', num2str(x,'%.4f'), '&nbsp</html>'];
-            else
-                x = [str, ' align="right">', num2str(x), '&nbsp</html>'];
+            switch fmt
+                
+                case 'char'
+                    
+                    if isempty(x)
+                        x = '';
+                    elseif col > obj.settings.table.minColumns
+                        if ~isnan(str2double(x))
+                            x = sprintf(obj.settings.table.precision, str2double(x));
+                        end
+                    end
+                    
+                    x = [str, '1000">', x, '&nbsp</html>'];
+                    
+                case 'numeric'
+                    
+                    if ~isempty(x) && ischar(x)
+                        x = str2double(x);
+                    end
+                    
+                    if isempty(x) || ~isnumeric(x) || isnan(x)
+                        x = '';
+                    elseif col > obj.settings.table.minColumns
+                        x = sprintf('%.4f', x);
+                    else
+                        x = num2str(x);
+                    end
+                    
+                    n = [num2str(width), '" align="right">'];
+                    x = [str, n, x, '&nbsp</html>'];
+                    
             end
-            
-            if obj.settings.other.useJavaTable
-                obj.java.table.setValueAt(x, row-1, col-1);
+                
+            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
+                obj.java.table.setValueAt(java.lang.String(x), row-1, col-1);
             else
                 obj.table.main.Data{row, col} = x;
             end
@@ -1844,7 +1882,7 @@ classdef ChromatographyGUI < handle
                 end
                 
                 str = regexpi(x{i}, '["][>](.+)[<][/]h', 'tokens', 'once');
-                
+
                 if ~isempty(str)
                     str = str{1};
                     str = strrep(str, '&nbsp', '');
@@ -1865,8 +1903,16 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            obj.table.main.Data(row,:) = x;
+            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
             
+                for i = 1:length(x)
+                    obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
+                end
+                
+            else
+                obj.table.main.Data(row,:) = x; 
+            end
+                        
         end
         
         function updateSampleText(obj, varargin)
@@ -2830,6 +2876,28 @@ classdef ChromatographyGUI < handle
                 
             end
             
+        end
+        
+        % ---------------------------------------
+        % Java - set scrollpane position
+        % ---------------------------------------
+        function updateJavaScrollpane(obj, varargin)
+            
+            if ~obj.settings.java.fixTableScrollpane
+                return
+            elseif isempty(obj.table.main.Data)
+                return
+            elseif ~isfield(obj.java, 'table') || isempty(obj.java.table)
+                return
+            elseif ~ismethod(obj.java.table, 'changeSelection')
+                return
+            end
+            
+            drawnow();
+
+            rowNum = obj.view.index - 1;
+            obj.java.table.changeSelection(rowNum, 0, 0, 0);
+
         end
         
         % ---------------------------------------

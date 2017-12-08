@@ -706,6 +706,9 @@ switch data.file_version
         
 end
 
+% Parse start/end time
+data = parsexlim(f, data);
+
 % Parse sequence name
 data = parsesequence(data);
 
@@ -757,31 +760,8 @@ switch data.file_version
 end
 
 % Time range
-switch data.file_version
-    
-    case {'81', '179', '181'}
-        
-        data.start_time = fnumeric(f, 282, 'float32');
-        data.end_time = fnumeric(f, 286, 'float32');
-        
-    case {'2', '8', '30', '130'}
-        
-        data.start_time = fnumeric(f, 282, 'int32');
-        data.end_time = fnumeric(f, 286, 'int32');
-        
-    otherwise
-        
-        data.start_time = [];
-        data.end_time = [];
-        
-end
-
-if ~isempty(data.start_time)
-    data.start_time = data.start_time ./ 6E4;
-end
-
-if ~isempty(data.end_time)
-    data.end_time = data.end_time ./ 6E4;
+if isempty(data.start_time) || isempty(data.end_time)
+    data = parsexlim(f, data);
 end
 
 % Intensity values
@@ -895,6 +875,38 @@ end
 % Sampling Rate
 if ~isempty(data.time)
     data.sampling_rate = round(1 ./ mean(diff(data.time .* 60)), 2);
+end
+
+end
+
+function data = parsexlim(f, data)
+
+% Time range
+switch data.file_version
+    
+    case {'81', '179', '181'}
+        
+        data.start_time = fnumeric(f, 282, 'float32');
+        data.end_time = fnumeric(f, 286, 'float32');
+        
+    case {'2', '8', '30', '130'}
+        
+        data.start_time = fnumeric(f, 282, 'int32');
+        data.end_time = fnumeric(f, 286, 'int32');
+        
+    otherwise
+        
+        data.start_time = [];
+        data.end_time = [];
+        
+end
+
+if ~isempty(data.start_time)
+    data.start_time = data.start_time ./ 6E4;
+end
+
+if ~isempty(data.end_time)
+    data.end_time = data.end_time ./ 6E4;
 end
 
 end

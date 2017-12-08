@@ -200,7 +200,7 @@ obj.settings.other.useJavaTable = 0;
 obj.settings.other.getFileChecksum = 0;
 
 % Java Options
-obj.settings.java.fixTableScrollpane = 1;
+obj.settings.java.fixTableScrollpane = 0;
 
 end
 
