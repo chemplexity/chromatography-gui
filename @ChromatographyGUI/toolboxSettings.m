@@ -197,10 +197,10 @@ obj.settings.export.height = 600;
 % Other Options
 obj.settings.other.asyncMode = 1;
 obj.settings.other.useJavaTable = 0;
-obj.settings.other.getFileChecksum = 0;
+obj.settings.other.getFileChecksum = 1;
 
 % Java Options
-obj.settings.java.fixTableScrollpane = 0;
+obj.settings.java.fixTableScrollpane = 1;
 
 end
 

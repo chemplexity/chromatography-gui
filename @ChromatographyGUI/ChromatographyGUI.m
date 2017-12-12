@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171208-dev';
+        version     = '0.0.9.20171211-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1347,12 +1347,6 @@ classdef ChromatographyGUI < handle
             
             if ~isempty(currentIndex) && currentIndex ~= 0
                 
-                if isfield(obj.java, 'table') && ismethod(obj.java.table, 'getSelectedColumn')
-                    colNum = obj.java.table.getSelectedColumn;
-                else
-                    colNum = [];
-                end
-                
                 obj.removeTableHighlightText();
                 
                 if length(varargin) == 1
@@ -1391,8 +1385,8 @@ classdef ChromatographyGUI < handle
                 
                 drawnow();
                 
-                obj.updateJavaScrollpane();
                 obj.peakAutoDetectionCallback();
+                obj.updateJavaScrollpane();
                 
             end
             
@@ -1481,22 +1475,40 @@ classdef ChromatographyGUI < handle
                 sequence = true(1, length(obj.data));
             end
             
+            % Date filter
+            minDays = 7;
+            dateoffset = abs(obj.data(row).datevalue - [obj.data.datevalue]);
+            datevalue = dateoffset <= minDays;
+            
             % Group filter
             if length(method) == length(channel)
+                
                 if length(method) == length(sequence)
                     group = method & channel & sequence;
                 else
                     group = method & channel;
                 end
+                
             else
                 return
             end
+            
+            %if ~any(group)
+            %    group = method & channel & datevalue;
+            %end
             
             % Median retention time
             if isempty(group) || ~any(group)
                 return
             elseif length(group) == size(obj.peaks.time,1)
-                x = median([obj.peaks.time{group,col}]);
+                
+                if isempty([obj.peaks.time{group,col}])
+                    group = method & channel & datevalue;
+                end
+                
+                time = [obj.peaks.time{group,col}];
+                x = median(time);
+                
             else
                 return
             end
@@ -1509,8 +1521,8 @@ classdef ChromatographyGUI < handle
             end
             
             % Check peak data
-            minArea   = 0.5;
-            minHeight = 0.25;
+            minArea   = 0.40;
+            minHeight = 0.15;
             minError  = 150;
             
             if ~isempty(obj.peaks.area{row,col})
@@ -1519,7 +1531,7 @@ classdef ChromatographyGUI < handle
                 peakHeight = obj.peaks.height{row,col};
                 peakError  = obj.peaks.error{row,col};
                 
-                if peakArea <= 0.05 || peakHeight <= 0.05
+                if peakArea <= 0.1 || peakHeight <= 0.05
                     obj.clearPeak();
                 elseif peakArea <= minArea && peakError > 15
                     obj.clearPeak();
@@ -1545,6 +1557,7 @@ classdef ChromatographyGUI < handle
                             
                             if dx{i}
                                 
+                                % Check for duplicate
                                 a0 = obj.peaks.area{row,col};
                                 a1 = obj.peaks.area{row,i};
                                 
