@@ -505,6 +505,7 @@ if ~isempty(data) && isstruct(data)
             obj.validatePeakData(nRow, nCol);
         end
         
+        obj.view.index = 1;
         obj.toolbox_checkpoint = file;
         
         obj.clearTableData();

@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171211-dev';
+        version     = '0.0.9.20171212-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1492,10 +1492,6 @@ classdef ChromatographyGUI < handle
             else
                 return
             end
-            
-            %if ~any(group)
-            %    group = method & channel & datevalue;
-            %end
             
             % Median retention time
             if isempty(group) || ~any(group)
