@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171212-dev';
+        version     = '0.0.9.20171220-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -104,6 +104,9 @@ classdef ChromatographyGUI < handle
                 obj.view.index = 1;
                 obj.view.id    = '1';
                 obj.view.name  = obj.data(1).sample_name;
+            elseif obj.view.index > 0 && ~isempty(obj.data)
+                obj.view.id    = num2str(obj.view.index);
+                obj.view.name  = obj.data(obj.view.index).sample_name;
             elseif isempty(obj.data)
                 obj.view.index = 0;
                 obj.view.id    = 'N/A';
@@ -1243,60 +1246,74 @@ classdef ChromatographyGUI < handle
             
             if isempty(obj.table.main.Data)
                 return
-            else
-                str = '';
             end
             
-            % Get table data
+            % Get table and peak data
+            str = obj.settings.table.labelNames;
+            
+            m = obj.settings.table.minColumns;
+            n = obj.peaks.name;
+            
+            x = obj.table.main.ColumnName(1:m);
+            f = obj.table.main.ColumnFormat(1:m);
+            
             obj.removeTableHighlightText();
-            
-            tableHeader = obj.table.main.ColumnName;
-            tableFormat = obj.table.main.ColumnFormat;
-            tableData   = obj.table.main.Data;
-            
+            y = obj.table.main.Data(:,1:m);
             obj.addTableHighlightText();
             
-            % Check table data
-            [m,n] = size(tableData);
-            
-            if length(tableHeader) ~= n && m ~= 0
-                tableData = obj.validateData(tableData, m, n);
+            for i = 1:length(str)
+                
+                a = [str{i}, ' ('];
+                x = [x; cellfun(@(x) [a,x,')'], n, 'uniformoutput', 0)];
+                y = [y, obj.peaks.(lower(str{i}))];
+                
+                switch lower(str{i})
+                    case {'model'}
+                        xtype = 'char';
+                    otherwise
+                        xtype = 'numeric';
+                end
+                            
+                f = [f, repmat({xtype}, 1, length(n))];
+                
             end
             
-            if length(tableFormat) ~= length(tableHeader)
-                obj.updateTableProperties();
+            if size(x,1) ~= 1 && size(x,2) == 1
+                x = x';
             end
+            
+            str = '';
             
             % Format table header
-            for i = 1:n
-                str = sprintf('%s%s\t', str, tableHeader{i});
+            for i = 1:size(x,2)
+                str = sprintf('%s%s\t', str, x{i});
             end
             
             str = sprintf('%s\n', str);
             
             % Format table data
-            for i = 1:m
+            for i = 1:size(y,1)
                 
-                for j = 1:n
+                for j = 1:size(y,2)
                     
-                    if j <= length(tableFormat)
-                        x = tableFormat{j};
+                    if j <= length(f)
+                        x = f{j};
                     else
                         x = 'char';
                     end
                     
                     switch x
                         case 'char'
-                            str = sprintf('%s%s\t', str, tableData{i,j});
+                            str = sprintf('%s%s\t', str, y{i,j});
                         case 'numeric'
-                            str = sprintf('%s%f\t', str, tableData{i,j});
+                            str = sprintf('%s%f\t', str, y{i,j});
                         otherwise
-                            str = sprintf('%s%s\t', str, tableData{i,j});
+                            str = sprintf('%s%s\t', str, y{i,j});
                     end
                     
                 end
                 
-                if i == m
+                if i == size(y,1)
                     str = sprintf('%s', str);
                 else
                     str = sprintf('%s\n', str);
@@ -3251,6 +3268,32 @@ classdef ChromatographyGUI < handle
                         obj.selectTab();
                     end
                     
+                case 'm'
+                    
+                    if isempty(evt.Modifier)
+                        
+                        x = obj.menu.peakOptionsModel.Children;
+                        
+                        for i = 1:length(x)
+                            x(i).Checked = 'off';
+                        end
+                        
+                        switch obj.settings.peakModel
+                            case 'nn1'
+                                obj.settings.peakModel = 'nn2';
+                                obj.menu.peakNN2.Checked = 'on';
+                            case 'nn2'
+                                obj.settings.peakModel = 'egh';
+                                obj.menu.peakEGH.Checked = 'on';
+                            case 'egh'
+                                obj.settings.peakModel = 'nn1';
+                                obj.menu.peakNN1.Checked = 'on';
+                        end
+                        
+                        disp(obj.settings.peakModel);
+                        
+                    end
+                    
             end
             
         end
@@ -3276,7 +3319,15 @@ classdef ChromatographyGUI < handle
             
         end
         
-        function validatePeakData(obj, rows, cols)
+        function validatePeakData(obj, varargin)
+            
+            if ~isempty(varargin) && length(varargin) == 2
+                rows = varargin{1};
+                cols = varargin{2};
+            else
+                rows = length(obj.data);
+                cols = length(obj.peaks.name);
+            end
             
             x = fields(obj.peaks);
             x(strcmp(x,'name')) = [];
