@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20171220-dev';
+        version     = '0.0.9.20180114-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1515,11 +1515,41 @@ classdef ChromatographyGUI < handle
                 return
             elseif length(group) == size(obj.peaks.time,1)
                 
+                % New sequence filter
                 if isempty([obj.peaks.time{group,col}])
                     group = method & channel & datevalue;
                 end
                 
-                time = [obj.peaks.time{group,col}];
+                % Existing retention times
+                xf = ~cellfun(@isempty, obj.peaks.time(group,col));
+                
+                if any(xf)
+                    
+                    % Sort by nearest date
+                    x0 = dateoffset(group);
+                    x0 = x0(xf);
+                
+                    t0 = obj.peaks.time(group,col);
+                    t0 = cell2mat(t0(xf));
+                
+                    [~,ii] = sort(x0, 'ascend');
+                
+                    x0 = round(x0(ii));
+                    t0 = t0(ii);
+                    
+                    x1 = unique(x0);
+                    time = t0(x0 == x1(1));
+                    
+                else
+                    time = [obj.peaks.time{group,col}];
+                end
+                
+                numValues = 3;
+                
+                if length(time) > numValues
+                    time = time(1:numValues);
+                end
+                
                 x = median(time);
                 
             else
@@ -1535,7 +1565,7 @@ classdef ChromatographyGUI < handle
             
             % Check peak data
             minArea   = 0.40;
-            minHeight = 0.15;
+            minHeight = 0.10;
             minError  = 150;
             
             if ~isempty(obj.peaks.area{row,col})
@@ -2922,8 +2952,12 @@ classdef ChromatographyGUI < handle
             drawnow();
 
             rowNum = obj.view.index - 1;
-            obj.java.table.changeSelection(rowNum, 0, 0, 0);
-
+            
+            try
+                obj.java.table.changeSelection(rowNum, 0, 0, 0);
+            catch
+            end
+                
         end
         
         % ---------------------------------------
@@ -3259,6 +3293,26 @@ classdef ChromatographyGUI < handle
                         
                         obj.userPeak(1);
                         obj.figure.CurrentObject = obj.controls.peakList;
+                        
+                    end
+                    
+                case obj.settings.keyboard.resetPeaks % 'r'
+                    
+                    if isempty(evt.Modifier)
+            
+                        for i = 1:length(obj.peaks.name)
+                            
+                            obj.clearPeak();
+                            
+                            col = obj.controls.peakList.Value;
+                            
+                            if col + 1 > length(obj.peaks.name)
+                                obj.controls.peakList.Value = 1;
+                            else
+                                obj.controls.peakList.Value = col + 1;
+                            end
+                            
+                        end
                         
                     end
                     

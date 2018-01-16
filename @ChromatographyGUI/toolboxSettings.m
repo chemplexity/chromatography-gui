@@ -187,7 +187,8 @@ obj.settings.keyboard.previousSample     = 'leftarrow';
 obj.settings.keyboard.nextSample         = 'rightarrow';
 obj.settings.keyboard.selectPeakOverride = 'o';
 obj.settings.keyboard.toggleZoom         = 'z';
-obj.settings.keyboard.repocessSample     = 'r';
+obj.settings.keyboard.repocessPeaks      = 'p';
+obj.settings.keyboard.resetPeaks         = 'r';
 
 % Export Options
 obj.settings.export.dpi    = 150;
