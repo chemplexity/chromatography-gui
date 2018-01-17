@@ -36,7 +36,30 @@ end
 
 function initalizeSettings(obj, varargin)
 
-% GUI
+%
+% Keyboard Shortcuts
+%
+
+obj.settings.keyboard.previousSample     = 'leftarrow';
+obj.settings.keyboard.nextSample         = 'rightarrow';
+obj.settings.keyboard.previousPeak       = 'uparrow';
+obj.settings.keyboard.nextPeak           = 'downarrow';
+
+obj.settings.keyboard.selectPeak         = 'space';
+obj.settings.keyboard.selectPeakOverride = 'o';
+obj.settings.keyboard.selectPeakModel    = 'm';
+
+obj.settings.keyboard.clearPeak          = 'backspace';
+obj.settings.keyboard.resetPeaks         = 'r';
+
+obj.settings.keyboard.toggleZoom         = 'z';
+obj.settings.keyboard.toggleXAxisMode    = 'x';
+obj.settings.keyboard.toggleYAxisMode    = 'y';
+
+%
+% GUI Settings
+%
+
 obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
@@ -112,7 +135,7 @@ obj.settings.peakBaseline.markersize = 5;
 obj.settings.labels.margin = 3;
 obj.settings.labels.precision = '%.2f';
 
-% Auto-Save
+% Auto-Save (settings and peak list on exit)
 obj.settings.autosave = 1;
 
 % Zoom Settings
@@ -146,6 +169,10 @@ obj.settings.labels.data = {...
 obj.settings.labels.peak = {
     'peakName'};
 
+%
+% Data Processing Settings
+%
+
 % Baseline Parameters
 obj.settings.baseline.smoothness    = 5.5;
 obj.settings.baseline.minSmoothness = 1.0;
@@ -178,17 +205,9 @@ obj.settings.peakFields = {...
     'xlim',...
     'ylim'};
 
-% Keyboard Shortcuts
-obj.settings.keyboard.selectPeak         = 'space';
-obj.settings.keyboard.clearPeak          = 'backspace';
-obj.settings.keyboard.previousPeak       = 'uparrow';
-obj.settings.keyboard.nextPeak           = 'downarrow';
-obj.settings.keyboard.previousSample     = 'leftarrow';
-obj.settings.keyboard.nextSample         = 'rightarrow';
-obj.settings.keyboard.selectPeakOverride = 'o';
-obj.settings.keyboard.toggleZoom         = 'z';
-obj.settings.keyboard.repocessPeaks      = 'p';
-obj.settings.keyboard.resetPeaks         = 'r';
+%
+% Other Settings
+%
 
 % Export Options
 obj.settings.export.dpi    = 150;

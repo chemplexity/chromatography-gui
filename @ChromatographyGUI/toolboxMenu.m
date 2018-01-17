@@ -1117,17 +1117,13 @@ if strcmpi(evt.EventName, 'Action')
     switch src.Checked
         
         case 'on'
-            src.Checked = 'off';
             obj.userZoom(0);
             
         case 'off'
-            src.Checked = 'on';
             obj.userZoom(1);
             obj.userPeak(0);
             
     end
-    
-    obj.settings.showZoom = src.Checked;
     
 end
 

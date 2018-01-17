@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180114-dev';
+        version     = '0.0.9.20180117-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -2966,14 +2966,17 @@ classdef ChromatographyGUI < handle
         function zoomCallback(obj, varargin)
             
             if obj.view.index ~= 0
+                
                 obj.settings.xmode = 'manual';
                 obj.settings.ymode = 'manual';
                 obj.settings.xlim = varargin{1,2}.Axes.XLim;
                 obj.settings.ylim = varargin{1,2}.Axes.YLim;
+                
                 obj.updateAxesLimitToggle();
                 obj.updateAxesLimitEditText();
                 obj.updateAxesLimits();
                 obj.updatePlotLabelPosition();
+                
             else
                 obj.axes.main.XLim = obj.settings.xlim;
                 obj.axes.main.YLim = obj.settings.ylim;
@@ -2996,8 +2999,10 @@ classdef ChromatographyGUI < handle
                 
                 case 0
                     
-                    obj.settings.selectZoom = 0;
-                    obj.axes.zoom.Enable = 'off';
+                    obj.settings.selectZoom    = 0;
+                    obj.settings.showZoom      = 'off';
+                    obj.menu.view.zoom.Checked = 'off';
+                    obj.axes.zoom.Enable       = 'off';
                     
                     set(obj.figure, 'Pointer', 'arrow');
                     set(obj.figure, 'WindowKeyPressFcn', @obj.keyboardCallback);
@@ -3005,8 +3010,10 @@ classdef ChromatographyGUI < handle
                     
                 case 1
                     
-                    obj.settings.selectZoom = 1;
-                    obj.axes.zoom.Enable = 'on';
+                    obj.settings.selectZoom    = 1;
+                    obj.settings.showZoom      = 'on';
+                    obj.menu.view.zoom.Checked = 'on';
+                    obj.axes.zoom.Enable       = 'on';
                     
                     x = uigetmodemanager(obj.figure);
                     
@@ -3225,6 +3232,14 @@ classdef ChromatographyGUI < handle
             
             switch evt.Key
                 
+                % 'tab' - switch between 'view' and 'integrate' panels
+                case 'tab'
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectTab();
+                    end
+                
+                % 'CTRL-C'/'CMD-C' - copy figure to clipboard
                 case 'c'
                     
                     if ~isempty(evt.Modifier) && obj.view.index
@@ -3237,7 +3252,35 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
-                case obj.settings.keyboard.selectPeak %'space'
+                % 'up-arrow' - previous selection in peak list
+                case obj.settings.keyboard.previousPeak
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectPeak(-1);
+                    end
+                    
+                % 'down-arrow' - next selection in peak list                case obj.settings.keyboard.nextPeak
+                case obj.settings.keyboard.nextPeak
+                    if isempty(evt.Modifier)
+                        obj.selectPeak(1);
+                    end
+                    
+                % 'left-arrow' - previous selection in sample list
+                case obj.settings.keyboard.previousSample
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectSample(-1);
+                    end
+                    
+                % 'right-arrow' - next selection in sample list
+                case obj.settings.keyboard.nextSample
+                    
+                    if isempty(evt.Modifier)
+                        obj.selectSample(1);
+                    end
+                
+                % 'space' - toggle peak selection mode
+                case obj.settings.keyboard.selectPeak
                     
                     if isempty(evt.Modifier)
                         
@@ -3251,37 +3294,8 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
-                case obj.settings.keyboard.clearPeak %'backspace'
-                    
-                    if isempty(evt.Modifier)
-                        obj.clearPeak();
-                    end
-                    
-                case obj.settings.keyboard.previousPeak %'uparrow'
-                    
-                    if isempty(evt.Modifier)
-                        obj.selectPeak(-1);
-                    end
-                    
-                case obj.settings.keyboard.nextPeak %'downarrow'
-                    
-                    if isempty(evt.Modifier)
-                        obj.selectPeak(1);
-                    end
-                    
-                case obj.settings.keyboard.previousSample %'leftarrow'
-                    
-                    if isempty(evt.Modifier)
-                        obj.selectSample(-1);
-                    end
-                    
-                case obj.settings.keyboard.nextSample %'rightarrow'
-                    
-                    if isempty(evt.Modifier)
-                        obj.selectSample(1);
-                    end
-                    
-                case obj.settings.keyboard.selectPeakOverride % 'o'
+                % 'o' - toggle peak override selection mode
+                case obj.settings.keyboard.selectPeakOverride
                     
                     if isempty(evt.Modifier)
                         
@@ -3295,8 +3309,16 @@ classdef ChromatographyGUI < handle
                         obj.figure.CurrentObject = obj.controls.peakList;
                         
                     end
+                
+                % 'backspace' - clear current peak data    
+                case obj.settings.keyboard.clearPeak
                     
-                case obj.settings.keyboard.resetPeaks % 'r'
+                    if isempty(evt.Modifier)
+                        obj.clearPeak();
+                    end
+                    
+                % 'r' - reset/clear peak data for current sample
+                case obj.settings.keyboard.resetPeaks
                     
                     if isempty(evt.Modifier)
             
@@ -3316,13 +3338,8 @@ classdef ChromatographyGUI < handle
                         
                     end
                     
-                case 'tab'
-                    
-                    if isempty(evt.Modifier)
-                        obj.selectTab();
-                    end
-                    
-                case 'm'
+                % 'm' - change peak model
+                case obj.settings.keyboard.selectPeakModel
                     
                     if isempty(evt.Modifier)
                         
@@ -3347,6 +3364,39 @@ classdef ChromatographyGUI < handle
                         disp(obj.settings.peakModel);
                         
                     end
+                    
+                % 'z' - toggle zoom mode
+                case obj.settings.keyboard.toggleZoom
+                    
+                    obj.userZoom(~obj.settings.selectZoom);
+                    
+                % 'x' - toggle manual/auto x-axis limits
+                case obj.settings.keyboard.toggleXAxisMode
+                    
+                    switch obj.settings.xmode
+                        case 'manual'
+                            obj.settings.xmode = 'auto';
+                        case 'auto'
+                            obj.settings.xmode = 'manual';
+                    end
+                    
+                    obj.updateAxesLimitToggle();
+                    obj.updateAxesLimits();
+                    obj.updatePlotLabelPosition();
+                    
+                % 'y' - toggle manual/auto y-axis limits
+                case  obj.settings.keyboard.toggleYAxisMode
+                    
+                    switch obj.settings.ymode
+                        case 'manual'
+                            obj.settings.ymode = 'auto';
+                        case 'auto'
+                            obj.settings.ymode = 'manual';
+                    end
+                    
+                    obj.updateAxesLimitToggle();
+                    obj.updateAxesLimits();
+                    obj.updatePlotLabelPosition();
                     
             end
             
