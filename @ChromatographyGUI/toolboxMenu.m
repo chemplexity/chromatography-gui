@@ -168,6 +168,7 @@ obj.menu.labelFilePath   = newMenu(obj.menu.labelData, 'File Path');
 obj.menu.labelFileName   = newMenu(obj.menu.labelData, 'File Name');
 obj.menu.labelInstrument = newMenu(obj.menu.labelData, 'Instrument');
 obj.menu.labelDatetime   = newMenu(obj.menu.labelData, 'Date/Time');
+obj.menu.labelSeqName    = newMenu(obj.menu.labelData, 'Sequence Name');
 obj.menu.labelMethodName = newMenu(obj.menu.labelData, 'Method Name');
 obj.menu.labelSampleName = newMenu(obj.menu.labelData, 'Sample Name');
 obj.menu.labelOperator   = newMenu(obj.menu.labelData, 'Operator');
@@ -181,6 +182,7 @@ obj.menu.labelFilePath.Tag   = 'file_path';
 obj.menu.labelFileName.Tag   = 'file_name';
 obj.menu.labelInstrument.Tag = 'instrument';
 obj.menu.labelDatetime.Tag   = 'datetime';
+obj.menu.labelSeqName.Tag    = 'sequence_name';
 obj.menu.labelMethodName.Tag = 'method_name';
 obj.menu.labelSampleName.Tag = 'sample_name';
 obj.menu.labelOperator.Tag   = 'operator';
@@ -194,6 +196,7 @@ obj.menu.labelFilePath.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelFileName.Callback   = {@plotLabelCallback, obj};
 obj.menu.labelInstrument.Callback = {@plotLabelCallback, obj};
 obj.menu.labelDatetime.Callback   = {@plotLabelCallback, obj};
+obj.menu.labelSeqName.Callback    = {@plotLabelCallback, obj};
 obj.menu.labelMethodName.Callback = {@plotLabelCallback, obj};
 obj.menu.labelSampleName.Callback = {@plotLabelCallback, obj};
 obj.menu.labelOperator.Callback   = {@plotLabelCallback, obj};
@@ -1361,16 +1364,18 @@ for i = 1:length(src.Parent.Children)
                 plotLabel{4} = src.Parent.Children(i).Tag;
             case 'datetime'
                 plotLabel{5} = src.Parent.Children(i).Tag;
-            case 'method_name'
+            case 'sequence_name'
                 plotLabel{6} = src.Parent.Children(i).Tag;
-            case 'sample_name'
+            case 'method_name'
                 plotLabel{7} = src.Parent.Children(i).Tag;
-            case 'operator'
+            case 'sample_name'
                 plotLabel{8} = src.Parent.Children(i).Tag;
-            case 'seqindex'
+            case 'operator'
                 plotLabel{9} = src.Parent.Children(i).Tag;
-            case 'vial'
+            case 'seqindex'
                 plotLabel{10} = src.Parent.Children(i).Tag;
+            case 'vial'
+                plotLabel{11} = src.Parent.Children(i).Tag;
                 
             case 'peakName'
                 plotLabel{1} = src.Parent.Children(i).Tag;
