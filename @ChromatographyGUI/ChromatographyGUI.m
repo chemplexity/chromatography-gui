@@ -179,11 +179,20 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
-        % Load signal data
+        % Load Agilent data
         % ---------------------------------------
         function loadAgilentData(obj, varargin)
             
-            i = obj.view.index;
+            if ~isempty(varargin) && isnumeric(varargin{1})
+                i = varargin{1};
+            else
+                i = obj.view.index;
+            end
+            
+            if i < 1 || i > length(obj.data)
+                return
+            end
+            
             f = [obj.data(i).file_path, filesep, obj.data(i).file_name];
             
             if ~exist(f, 'file')
@@ -1988,8 +1997,17 @@ classdef ChromatographyGUI < handle
                 return
             end
             
+            if ~isempty(varargin) && isnumeric(varargin{1})
+                col = varargin{1};
+            else
+                col = obj.controls.peakList.Value;
+            end
+            
+            if col < 1 || col > length(obj.peaks.name)
+                return
+            end
+            
             row = obj.view.index;
-            col = obj.controls.peakList.Value;
             str = obj.peaks.name{col};
             
             if size(obj.peaks.time, 2) >= col
@@ -2583,7 +2601,7 @@ classdef ChromatographyGUI < handle
             if isfield(peak, 'areaOf')
                 obj.peaks.areaOf{row,col} = peak.areaOf;
             else
-                obj.peaks.areaOf{row,col} = obj.settings.peakArea;
+                obj.peaks.areaOf{row,col} = obj.settings.peakAreaOf;
             end
             
             if isfield(peak, 'model')
@@ -2606,6 +2624,22 @@ classdef ChromatographyGUI < handle
                 obj.peaks.ylim{row,col} = [peak.ymin, peak.ymax];
             else
                 obj.peaks.ylim{row,col} = [];
+            end
+            
+            if isfield(peak, 'input_x')
+                obj.peaks.input_x{row,col} = peak.input_x;
+            end
+            
+            if isfield(peak, 'input_y')
+                obj.peaks.input_y{row,col} = peak.input_y;
+            end
+            
+            if isfield(peak, 'input_mode')
+                obj.peaks.input_mode{row,col} = peak.input_mode;
+            end
+            
+            if isfield(peak, 'date_created')
+                obj.peaks.date_created{row,col} = peak.date_created;
             end
             
         end
@@ -3039,6 +3073,8 @@ classdef ChromatographyGUI < handle
                 state = varargin{1};
             elseif obj.view.selectPeak == state
                 return
+            elseif isempty(obj.data) || isempty(obj.peaks.name)
+                return
             end
             
             switch state
@@ -3047,6 +3083,7 @@ classdef ChromatographyGUI < handle
                     
                     obj.view.selectPeak = 0;
                     obj.controls.selectPeak.Value = 0;
+                    obj.settings.peakOverride = 0;
                     
                     if strcmpi(obj.menu.view.zoom.Checked, 'on')
                         obj.userZoom(1);
@@ -3057,34 +3094,30 @@ classdef ChromatographyGUI < handle
                     
                 case 1
                     
-                    if ~isempty(obj.data) && ~isempty(obj.peaks.name)
-                        
-                        obj.view.selectPeak = 1;
-                        obj.controls.selectPeak.Value = 1;
-                        
-                        if strcmpi(obj.menu.view.zoom.Checked, 'on')
-                            obj.userZoom(0);
-                        end
-                        
-                        cursorType = 'circle';
-                        
-                        if isfield(obj.settings, 'peakOverride')
-                            if obj.settings.peakOverride
-                                cursorType = 'cross';
-                            end
-                        end
-                        
-                        set(obj.figure, 'Pointer', cursorType);
-                        set(obj.axes.main, 'ButtonDownFcn', @obj.peakTimeSelectCallback);
-                        
+                    obj.view.selectPeak = 1;
+                    obj.controls.selectPeak.Value = 1;
+                    
+                    if strcmpi(obj.menu.view.zoom.Checked, 'on')
+                        obj.userZoom(0);
                     end
+                    
+                    cursorType = 'circle';
+                    
+                    if isfield(obj.settings, 'peakOverride')
+                        if obj.settings.peakOverride
+                            cursorType = 'cross';
+                        end
+                    end
+                    
+                    set(obj.figure, 'Pointer', cursorType);
+                    set(obj.axes.main, 'ButtonDownFcn', @obj.peakTimeSelectCallback);
                     
             end
             
         end
         
         % ---------------------------------------
-        % Callback - mouse selection
+        % Callback - mouse peak selection
         % ---------------------------------------
         function peakTimeSelectCallback(obj, ~, evt)
             
@@ -3093,12 +3126,12 @@ classdef ChromatographyGUI < handle
                 if strcmpi(evt.EventName, 'Hit')
                     
                     x = evt.IntersectionPoint(1);
+                    y = evt.IntersectionPoint(2);
                     
                     if obj.view.index == 0 || isempty(obj.peaks.name)
                         obj.clearPeak();
                     elseif x > obj.settings.xlim(1) && x < obj.settings.xlim(2)
-                        obj.toolboxPeakFit(x);
-                        obj.updatePeakListText();
+                        obj.toolboxPeakFit(x, y, 'selectionType', 'manual');
                     end
                     
                     obj.userPeak([], 0);
@@ -3109,11 +3142,13 @@ classdef ChromatographyGUI < handle
                 
             elseif isnumeric(evt)
                 
+                x = evt;
+                y = 0;
+                
                 if obj.view.index == 0 || isempty(obj.peaks.name)
                     obj.clearPeak();
                 else
-                    obj.toolboxPeakFit(evt);
-                    obj.updatePeakListText();
+                    obj.toolboxPeakFit(x, y, 'selectionType', 'auto');
                 end
                 
             end
@@ -3284,11 +3319,12 @@ classdef ChromatographyGUI < handle
                     
                     if isempty(evt.Modifier)
                         
-                        if obj.view.selectPeak
+                        if obj.view.selectPeak && ~obj.settings.peakOverride
                             obj.userPeak(0);
                             obj.figure.CurrentObject = obj.axes.main;
                         else
-                            obj.userPeak(1);
+                            obj.settings.peakOverride = 0;
+                            obj.userPeak([],1);
                             obj.figure.CurrentObject = obj.controls.peakList;
                         end
                         
@@ -3301,12 +3337,13 @@ classdef ChromatographyGUI < handle
                         
                         obj.settings.peakOverride = ~obj.settings.peakOverride;
                         
-                        if obj.view.selectPeak
+                        if obj.view.selectPeak && ~obj.settings.peakOverride
                             obj.userPeak(0);
+                            obj.figure.CurrentObject = obj.axes.main;
+                        else
+                            obj.userPeak([],1);
+                            obj.figure.CurrentObject = obj.controls.peakList;    
                         end
-                        
-                        obj.userPeak(1);
-                        obj.figure.CurrentObject = obj.controls.peakList;
                         
                     end
                 

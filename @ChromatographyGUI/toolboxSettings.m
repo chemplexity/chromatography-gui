@@ -183,13 +183,16 @@ obj.settings.baseline.minAsymmetry = -10.0;
 obj.settings.baseline.maxAsymmetry = -1.0;
 
 % Peak Integration Settings
-obj.settings.peakModel = 'nn2';     % 'egh', 'nn1', 'nn2'
-obj.settings.peakArea  = 'rawdata'; % 'rawdata', 'fitdata'
+obj.settings.peakModelOptions  = {'nn1', 'nn2', 'egh'};
+obj.settings.peakModel         = 'nn2';
+
+obj.settings.peakAreaOfOptions = {'rawdata', 'fitdata'};
+obj.settings.peakAreaOf        = 'rawdata';
 
 % Other Peak Settings
-obj.settings.peakOverride = 0;
+obj.settings.peakOverride   = 0;
 obj.settings.peakAutoDetect = 1;
-obj.settings.peakAutoStep = 0;
+obj.settings.peakAutoStep   = 0;
 
 % Peak Data Fields
 obj.settings.peakFields = {...
@@ -203,7 +206,11 @@ obj.settings.peakFields = {...
     'fit',...
     'model',...
     'xlim',...
-    'ylim'};
+    'ylim',...
+    'input_x',...
+    'input_y',...
+    'input_mode',...
+    'date_created'};
 
 %
 % Other Settings
@@ -378,7 +385,7 @@ switch lower(obj.settings.peakModel)
 end
 
 % Menu --> Options --> Peak --> AreaOf
-switch lower(obj.settings.peakArea)
+switch lower(obj.settings.peakAreaOf)
     case {'rawdata'}
         obj.menu.peakOptionsAreaActual.Checked = 'on';
     case {'fitdata'}

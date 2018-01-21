@@ -146,8 +146,10 @@ if ~override
     center = findPeakCenter(x,y,center);
 end
 
-if width ~= 0.05
+if ~override && width ~= 0.05
     width = 0.05;
+else
+    width = 0.15;
 end
 
 % Parameter: 'minarea'

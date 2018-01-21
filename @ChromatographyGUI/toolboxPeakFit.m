@@ -4,271 +4,378 @@ if isempty(obj.data) || isempty(obj.controls.peakList.Value)
     return
 elseif obj.view.index == 0 || obj.controls.peakList.Value == 0
     return
-else
-    row = obj.view.index;
-    col = obj.controls.peakList.Value;
-end
-
-if length(obj.data) < row || length(obj.peaks.name) < col
+elseif length(obj.data) < obj.view.index
+    return
+elseif length(obj.peaks.name) < obj.controls.peakList.Value
     return
 end
 
-if isempty(varargin)
-    userX = str2double(obj.controls.peakTimeEdit.String);
-else
-    userX = varargin{1};
+% ---------------------------------------
+% Defaults
+% ---------------------------------------
+default.y              = [];
+default.selectionType  = [];
+default.peakOverride   = [];
+default.peakWindow     = 3;
+default.peakModel      = obj.settings.peakModel;
+default.areaOf         = obj.settings.peakAreaOf;
+default.row            = obj.view.index;
+default.col            = obj.controls.peakList.Value;
+
+% ---------------------------------------
+% Input
+% ---------------------------------------
+p = inputParser;
+
+addRequired(p, 'x');
+addOptional(p, 'y', default.y);
+
+addParameter(p, 'selectionType',  default.selectionType);
+addParameter(p, 'peakOverride',   default.peakOverride);
+addParameter(p, 'peakWindow',     default.peakWindow);
+addParameter(p, 'peakModel',      default.peakModel);
+addParameter(p, 'areaOf',         default.areaOf);
+addParameter(p, 'row',            default.row);
+addParameter(p, 'col',            default.col);
+
+parse(p, varargin{:});
+
+% ---------------------------------------
+% Parse
+% ---------------------------------------
+input.x              = p.Results.x;
+input.y              = p.Results.y;
+input.selectionType  = p.Results.selectionType;
+input.peakOverride   = p.Results.peakOverride;
+input.peakWindow     = p.Results.peakWindow;
+input.peakModel      = p.Results.peakModel;
+input.areaOf         = p.Results.areaOf;
+input.row            = p.Results.row;
+input.col            = p.Results.col;
+
+% ---------------------------------------
+% Validate
+% ---------------------------------------
+
+% Parameter: x
+if ~isnumeric(input.x) || isinf(input.x) || isnan(input.x)
+    return
 end
 
-if isnan(userX) || isinf(userX)
+% Parameter: y
+if ~isempty(input.y) && ~isnumeric(input.y)
+    input.y = [];
+end
+
+% Parameter: peakOverride
+if ~isfield(obj.settings, 'peakOverride')
+    obj.settings.peakOverride = 0;
+end
+
+if isempty(input.peakOverride)
+    input.peakOverride = obj.settings.peakOverride;
+elseif ~isempty(input.peakOverride) && ~isnumeric(input.peakOverride)
+    input.peakOverride = obj.settings.peakOverride;
+end
+
+% Parameter: selectionType
+if ~isempty(input.selectionType)
+    if ~ischar(input.selectionType)
+        input.selectionType = [];
+    elseif strcmpi(input.selectionType, 'manual') && input.peakOverride
+        input.selectionType = 'override';
+    end
+end
+
+% Parameter: peakWindow
+if ~isempty(input.peakWindow) && ~isnumeric(input.peakWindow)
+    input.peakWindow = default.peakWindow;
+elseif isinf(input.peakWindow) || isnan(input.peakWindow)
+    input.peakWindow = default.peakWindow;
+end
+
+% Parameter: peakModel
+if isempty(input.peakModel) || ~ischar(input.peakModel)
+    input.peakModel = default.peakModel;
+elseif ~any(strcmpi(input.peakModel, obj.settings.peakModelOptions))
+    input.peakModel = default.peakModel;
+end
+    
+% Parameter: areaOf
+if isempty(input.areaOf) || ~ischar(input.areaOf)
+    input.areaOf = default.areaOf;
+elseif ~any(strcmpi(input.areaOf, obj.settings.peakAreaOfOptions))
+    input.areaOf = default.areaOf;
+end
+
+% Parameter: row
+if isempty(input.row) || ~isnumeric(input.row)
+    input.row = default.row;
+elseif isinf(input.row) || isnan(input.row)
+    input.row = default.row;
+elseif input.row < 1 || input.row > length(obj.data)
     return
 else
-    [x,y] = getXY(obj, userX);
+    input.row = input.row(1);
 end
 
-if isempty(x) || isempty(y) || userX > max(x) || userX < min(x)
+% Parameter: col
+if isempty(input.col) || ~isnumeric(input.col)
+    input.col = default.col;
+elseif isinf(input.col) || isnan(input.col)
+    input.col = default.col;
+elseif input.col < 1 || input.col > length(obj.peaks.name)
+    return
+else
+    input.col = input.col(1);
+end
+
+% ---------------------------------------
+% Get XY values
+% ---------------------------------------
+[x,y] = getXY(obj, input.row, input.x, input.peakWindow);
+
+if isempty(x) || isempty(y)
     return
 end
 
-switch obj.settings.peakModel
+% ---------------------------------------
+% Peak fit
+% ---------------------------------------
+switch input.peakModel
     
     case {'nn', 'nn1', 'nn2'}
-        getNN(obj, x, y, userX)
+        getNN(obj, x, y, input)
         
     case {'egh'}
-        getEGH(obj, x, y, userX);
+        getEGH(obj, x, y, input);
         
 end
 
+% ---------------------------------------
+% Update GUI
+% ---------------------------------------
 obj.updatePeakText();
 obj.userPeak(0);
 
 end
 
-function [x,y] = getXY(obj, c)
+% ------------------------------------------
+% Get XY values
+% ------------------------------------------
+function [x,y] = getXY(obj, row, time, width)
 
-row = obj.view.index;
-pad = 3;
+% Check data
+if isempty(obj.data(row).time) && isempty(obj.data(row).intensity)
+    obj.loadAgilentData(row);
+end
 
-x = [];
-y = [];
-
-if ~isempty(obj.data(row).intensity)
-    x = obj.data(row).time;
+% Get xy values
+if ~isempty(obj.data(row).time) && ~isempty(obj.data(row).intensity)
+    x = obj.data(row).time(:,1);
     y = obj.data(row).intensity(:,1);
 else
+    x = [];
+    y = [];
     return
 end
 
-if c < obj.settings.xlim(1) - pad
-    xmin = c - pad;
+% Get x-min
+if time < obj.settings.xlim(1) - width
+    xmin = time - width;
 else
-    xmin = obj.settings.xlim(1) - pad;
+    xmin = obj.settings.xlim(1) - width;
 end
 
-if c > obj.settings.xlim(2) + pad
-    xmax = c + pad;
+% Get x-max
+if time > obj.settings.xlim(2) + width
+    xmax = time + width;
 else
-    xmax = obj.settings.xlim(2) + pad;
+    xmax = obj.settings.xlim(2) + width;
 end
 
-if xmax - xmin < 6
-    pad = (6 - (xmax-xmin)) / 2;
-    xmin = xmin - pad;
-    xmax = xmax + pad;
+% Check boundaries
+if xmax - xmin < (width * 2)
+    width = ((width*2) - (xmax-xmin)) / 2;
+    xmin = xmin - width;
+    xmax = xmax + width;
 end
 
+% Crop xy values
 y(x < xmin | x > xmax) = [];
 x(x < xmin | x > xmax) = [];
 
 end
 
-function getNN(obj, x, y, peakCenter)
+% ------------------------------------------
+% Crop XY values
+% ------------------------------------------
+function [x,y] = cropXY(x, y, input)
 
-row = obj.view.index;
-col = obj.controls.peakList.Value;
-pad = 1.5;
+ii = x >= input.x - input.peakWindow & x <= input.x + input.peakWindow;
+x = x(ii);
+y = y(ii);
 
-% Peak Center
-if isfield(obj.settings, 'peakOverride')
+end
+
+% ------------------------------------------
+% Update peak data
+% ------------------------------------------
+function peak = updatePeaks(obj, peak, input)
+
+if ~isempty(peak) && ~isempty(input)
     
-    if ~obj.settings.peakOverride
+    peak.input_x      = input.x;
+    peak.input_y      = input.y;
+    peak.input_mode   = input.selectionType;
+    peak.date_created = datestr(datetime, 'yyyy-mm-dd HH:MM:SS.FFF');
+    
+    if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
+        obj.updatePeakData(input.row, input.col, peak);
+        obj.updatePeakTable(input.row, input.col);
+        obj.updatePeakLine(input.col);
+        obj.plotPeakLabels(input.col);
+        obj.updatePeakArea(input.col);
+        obj.updatePeakBaseline(input.col);
+        obj.updatePeakListText(input.col);
+    else
+        obj.clearPeakData(input.row, input.col);
+        obj.clearPeakTable(input.row, input.col);
+        obj.clearPeakLine(input.col);
+        obj.clearPeakLabel(input.col);
+        obj.clearPeakArea(input.col);
+        obj.clearPeakBaseline(input.col);
+    end
+    
+end
+
+end
+
+% ------------------------------------------
+% Neural network peak fit
+% ------------------------------------------
+function getNN(obj, x, y, input)
+
+if ~input.peakOverride
+    
+    % Find peaks
+    peaklist = peakfindNN(x, y,...
+        'xmin', input.x - (input.peakWindow / 2),...
+        'xmax', input.x + (input.peakWindow / 2),...
+        'sensitivity', 300);
+    
+    % Filter peaks
+    if ~isempty(peaklist)
         
-        px = peakfindNN(x, y,...
-            'xmin', peakCenter - pad,...
-            'xmax', peakCenter + pad,...
-            'sensitivity', 350);
+        % Find nearest peak
+        [~, ii] = min(abs(input.x - peaklist(:,1)));
         
-        if ~isempty(px)
-            
-            [~, ii] = min(abs(peakCenter - px(:,1)));
-            xc = px(ii,1);
-            
-            xtol = 0.02;
-            xf = x(x >= xc-xtol & x <= xc+xtol);
-            yf = y(x >= xc-xtol & x <= xc+xtol);
-            
-            if ~isempty(yf)
-                [~,xi] = max(yf);
-                peakCenter = xf(xi);
-            else
-                peakCenter = px(ii,1);
-            end
-            
+        center = peaklist(ii,1);
+        window = 0.02;
+        
+        % Get peak xy values
+        px = x(x >= center - window & x <= center + window);
+        py = y(x >= center - window & x <= center + window);
+        
+        % Update peak center
+        if isempty(py)
+            input.x = peaklist(ii,1);
         else
-            peakCenter = findPeakCenter(x, y, peakCenter);
+            [~,ii] = max(py);
+            input.x = px(ii);
         end
         
     else
-        obj.settings.peakOverride = 0;
+        input.x = findPeakCenter(x, y, input.x);
     end
     
 end
 
-xi = find(x >= peakCenter, 1);
+% Update peak center
+ii = find(x >= input.x, 1);
 
-if ~isempty(xi)
-    peakCenter = x(xi);
+if ~isempty(ii)
+    input.x = x(ii);
 end
 
-% Crop XY
-xpad = 3;
-xf = x >= peakCenter - xpad & x <= peakCenter + xpad;
-x = x(xf);
-y = y(xf);
-
-% Select Model
-switch obj.settings.peakModel
-    case {'nn1'}
-        nnVersion = 'nn_v1';
-    case {'nn2', 'nn'}
-        nnVersion = 'nn_v2';
-    otherwise
-        nnVersion = 'latest';
-end
-
-% Sampling Rate
-xi = find(x >= peakCenter, 1);
-
-if ~isempty(xi)
+% Get sampling rate
+if ~isempty(ii)
     
-    if y(xi) > 175
-        f = 100;
-    elseif y(xi) > 125
-        f = 200;
-    elseif y(xi) > 50
-        f = 300;
-    elseif y(xi) > 25
-        f = 400;
+    if y(ii) >= 200
+        sampleRate = 100;
+    elseif y(ii) <= 15
+        sampleRate = 500;
     else
-        f = 500;
+        sampleRate = 150.85 * log(1/y(ii)) + 898.32;
     end
     
 else
-    f = 500;
+    sampleRate = 500;
 end
 
-% Baseline
-[b,x,y] = getBaselineFit(obj,x,y,0);
+sampleRate = sampleRate-50:50:sampleRate+50;
 
-% Peak Fit
-peak = [];
+% Update xy values
+[x,y] = cropXY(x,y,input);
+[peakBaseline,x,y] = getBaselineFit(obj,x,y,0);
 
-for i = f-50:50:f+50
+% Get peak fit
+for i = 1:length(sampleRate)
     
-    if i <= 0
+    if sampleRate(i) <= 0
         continue
     end
     
-    p = peakfitNN(x, y, peakCenter,...
-        'area', obj.settings.peakArea,...
-        'model', nnVersion,...
-        'baseline', b,...
-        'frequency', i);
-    
-    if isempty(peak)
-        peak = p;
-    end
-    
-    if isempty(p.error) || isnan(p.error)
-        continue
-    end
-    
-    if p.error < peak.error
-        peak = p;
-    end
+    peak(i) = peakfitNN(x, y, input.x,...
+        'area',      input.areaOf,...
+        'model',     input.peakModel,...
+        'frequency', sampleRate(i),...
+        'baseline',  peakBaseline);
     
 end
 
-% Update
-if ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
-    obj.updatePeakData(row, col, peak);
-    obj.updatePeakTable(row, col);
-    obj.updatePeakLine(col);
-    obj.plotPeakLabels(col);
-    obj.updatePeakArea(col);
-    obj.updatePeakBaseline(col);
-else
-    obj.clearPeakData(row, col);
-    obj.clearPeakTable(row, col);
-    obj.clearPeakLine(col);
-    obj.clearPeakLabel(col);
-    obj.clearPeakArea(col);
-    obj.clearPeakBaseline(col);
-end
+% Update peak info
+[~,ii] = min([peak.error]);
+peak = peak(ii);
+
+updatePeaks(obj, peak, input);
 
 end
 
-function getEGH(obj, x, y, peakCenter)
+% ------------------------------------------
+% Exponential Gaussian hybrid peak
+% ------------------------------------------
+function getEGH(obj, x, y, input)
 
-row = obj.view.index;
-col = obj.controls.peakList.Value;
+% Update xy values
+[x,y] = cropXY(x,y,input);
+[peakBaseline,x,y] = getBaselineFit(obj,x,y,0);
 
-% Crop XY
-xpad = 3;
-xf = x >= peakCenter - xpad & x <= peakCenter + xpad;
-x = x(xf);
-y = y(xf);
+% Get peak fit
+peak = peakfitEGH(x, y-peakBaseline,...
+    'center',   input.x,...
+    'area',     input.areaOf,...
+    'override', input.peakOverride);
 
-[baseline,x,y] = getBaselineFit(obj,x,y,0);
-
-peak = peakfitEGH(...
-    x, y-baseline,...
-    'center', peakCenter,...
-    'area', obj.settings.peakArea,...
-    'override', obj.settings.peakOverride);
-
-obj.settings.peakOverride = 0;
-
-if ~isempty(peak) && ~isempty(peak.fit) && peak.area ~= 0 && peak.width ~= 0
-    
-    if length(x) == length(peak.fit)
-        peak.fit = [x, peak.fit];
-    end
-    
-    peak = yclip(peak, baseline);
-    peak = xclip(peak);
-    
-    obj.updatePeakData(row, col, peak);
-    obj.updatePeakTable(row, col);
-    obj.updatePeakLine(col);
-    obj.plotPeakLabels(col);
-    obj.updatePeakArea(col);
-    obj.updatePeakBaseline(col);
-    
-else
-    obj.clearPeakData(row, col);
-    obj.clearPeakTable(row, col);
-    obj.clearPeakLine(col);
-    obj.clearPeakLabel(col);
-    obj.clearPeakArea(col);
-    obj.clearPeakBaseline(col);
+% Update peak fit
+if length(x) == length(peak.fit)
+    peak.fit = [x, peak.fit];
 end
+    
+peak = yclip(peak, peakBaseline);
+peak = xclip(peak);
+
+% Update peak info
+updatePeaks(obj, peak, input);
 
 end
 
+% ------------------------------------------
+% Clip peak x-values
+% ------------------------------------------
 function peak = xclip(peak)
 
-if size(peak.fit,2) ~= 2
+if isempty(peak) && isempty(peak.fit) || size(peak.fit,2) ~= 2
     return
 end
 
@@ -300,9 +407,12 @@ end
 
 end
 
+% ------------------------------------------
+% Clip peak y-values
+% ------------------------------------------
 function peak = yclip(peak, b)
 
-if size(peak.fit,2) ~= 2
+if isempty(peak) && isempty(peak.fit) || size(peak.fit,2) ~= 2
     return
 end
 
@@ -366,6 +476,9 @@ end
 
 end
 
+% ------------------------------------------
+% Get peak baseline
+% ------------------------------------------
 function [b,x,y] = getBaselineFit(obj,x,y,varargin)
 
 row = obj.view.index;
@@ -444,6 +557,9 @@ end
 
 end
 
+% ------------------------------------------
+% Get peak center
+% ------------------------------------------
 function peakCenter = findPeakCenter(x, y, peakCenter)
 
 pIndex = find(x >= peakCenter, 1);

@@ -1491,7 +1491,7 @@ end
 
 src.Checked = 'on';
 
-obj.settings.peakArea = src.Tag;
+obj.settings.peakAreaOf = src.Tag;
 
 end
 
