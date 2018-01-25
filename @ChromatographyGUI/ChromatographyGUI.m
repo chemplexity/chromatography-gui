@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180120-dev';
+        version     = '0.0.9.20180123-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -148,8 +148,15 @@ classdef ChromatographyGUI < handle
                 end
                 
                 if any(ishandle(obj.view.plotLine))
-                    set(obj.view.plotLine, 'xdata', x, 'ydata', y);
+                    
+                    set(obj.view.plotLine,...
+                        'xdata',     x,...
+                        'ydata',     y,...
+                        'color',     obj.settings.plot.color,...
+                        'linewidth', obj.settings.plot.linewidth);
+                    
                 else
+                    
                     obj.view.plotLine = plot(x, y,...
                         'parent',    obj.axes.main,...
                         'color',     obj.settings.plot.color,...
@@ -157,9 +164,10 @@ classdef ChromatographyGUI < handle
                         'visible',   'on',...
                         'hittest',   'off',...
                         'tag',       'main');
+                    
                 end
                 
-                zoom reset
+                %zoom reset
                 
                 obj.updateAxesLimits();
                 
@@ -798,7 +806,8 @@ classdef ChromatographyGUI < handle
             
             b = baseline(y,...
                 'asymmetry',  10 ^ obj.settings.baseline.asymmetry,...
-                'smoothness', 10 ^ obj.settings.baseline.smoothness);
+                'smoothness', 10 ^ obj.settings.baseline.smoothness,...
+                'iterations', obj.settings.baseline.iterations);
             
             if length(x) == length(b)
                 
@@ -1282,7 +1291,7 @@ classdef ChromatographyGUI < handle
                     otherwise
                         xtype = 'numeric';
                 end
-                            
+                
                 f = [f, repmat({xtype}, 1, length(n))];
                 
             end
@@ -1367,13 +1376,14 @@ classdef ChromatographyGUI < handle
     
     methods (Hidden = true)
         
+        % ---------------------------------------
+        % GUI - select sample
+        % ---------------------------------------
         function selectSample(obj, varargin)
             
             currentIndex = obj.view.index;
             
             if ~isempty(currentIndex) && currentIndex ~= 0
-                
-                obj.removeTableHighlightText();
                 
                 if length(varargin) == 1
                     n = varargin{1};
@@ -1400,6 +1410,14 @@ classdef ChromatographyGUI < handle
                     obj.view.name  = obj.data(maxIndex).sample_name;
                 end
                 
+                if ~isempty(obj.peaks.name) && isempty([obj.peaks.time{obj.view.index,:}])
+                    getPeaks = 1;
+                else
+                    getPeaks = 0;
+                end
+                
+                obj.removeTableHighlightText(currentIndex);
+                
                 obj.figure.CurrentObject = obj.axes.main;
                 
                 obj.updateSampleText();
@@ -1411,7 +1429,10 @@ classdef ChromatographyGUI < handle
                 
                 drawnow();
                 
-                obj.peakAutoDetectionCallback();
+                if getPeaks
+                    obj.peakAutoDetectionCallback();
+                end
+                
                 obj.updateJavaScrollpane();
                 
             end
@@ -1537,12 +1558,12 @@ classdef ChromatographyGUI < handle
                     % Sort by nearest date
                     x0 = dateoffset(group);
                     x0 = x0(xf);
-                
+                    
                     t0 = obj.peaks.time(group,col);
                     t0 = cell2mat(t0(xf));
-                
+                    
                     [~,ii] = sort(x0, 'ascend');
-                
+                    
                     x0 = round(x0(ii));
                     t0 = t0(ii);
                     
@@ -1580,10 +1601,16 @@ classdef ChromatographyGUI < handle
             if ~isempty(obj.peaks.area{row,col})
                 
                 peakArea   = obj.peaks.area{row,col};
+                peakWidth  = obj.peaks.width{row,col};
                 peakHeight = obj.peaks.height{row,col};
                 peakError  = obj.peaks.error{row,col};
                 
-                if peakArea <= 0.1 || peakHeight <= 0.05
+                AW = peakArea / peakWidth;
+                HW = peakHeight / peakWidth;
+                
+                if AW <= 100 && (HW < AW * 0.08263 - 0.25 || HW > AW * 0.22465 + 0.7)
+                    obj.clearPeak();
+                elseif peakArea <= 0.1 || peakHeight <= 0.05
                     obj.clearPeak();
                 elseif peakArea <= minArea && peakError > 15
                     obj.clearPeak();
@@ -1850,13 +1877,13 @@ classdef ChromatographyGUI < handle
             end
             
             if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
-            
+                
                 for i = 1:length(x)
                     obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
                 end
                 
             else
-                obj.table.main.Data(row,:) = x; 
+                obj.table.main.Data(row,:) = x;
             end
             
         end
@@ -1915,7 +1942,7 @@ classdef ChromatographyGUI < handle
                     x = [str, n, x, '&nbsp</html>'];
                     
             end
-                
+            
             if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
                 obj.java.table.setValueAt(java.lang.String(x), row-1, col-1);
             else
@@ -1926,11 +1953,18 @@ classdef ChromatographyGUI < handle
         
         function removeTableHighlightText(obj, varargin)
             
+            if ~isempty(varargin) && isnumeric(varargin{1})
+                row = varargin{1};
+            else
+                row = obj.view.index;
+            end
+            
             fmt = obj.table.main.ColumnFormat;
-            row = obj.view.index;
             col = length(fmt);
             
-            if row < 1 || isempty(obj.table.main.Data)
+            if isempty(obj.table.main.Data)
+                return
+            elseif row < 1 || row > length(obj.data)
                 return
             elseif col > size(obj.table.main.Data,2)
                 obj.table.main.Data{end,col} = [];
@@ -1947,7 +1981,7 @@ classdef ChromatographyGUI < handle
                 end
                 
                 str = regexpi(x{i}, '["][>](.+)[<][/]h', 'tokens', 'once');
-
+                
                 if ~isempty(str)
                     str = str{1};
                     str = strrep(str, '&nbsp', '');
@@ -1969,15 +2003,15 @@ classdef ChromatographyGUI < handle
             end
             
             if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
-            
+                
                 for i = 1:length(x)
                     obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
                 end
                 
             else
-                obj.table.main.Data(row,:) = x; 
+                obj.table.main.Data(row,:) = x;
             end
-                        
+            
         end
         
         function updateSampleText(obj, varargin)
@@ -2984,14 +3018,22 @@ classdef ChromatographyGUI < handle
             end
             
             drawnow();
-
+            
+            if ismethod(obj.java.table, 'getRowCount')
+                numRows = obj.java.table.getRowCount;
+            else
+                numRows = length(obj.data);
+            end
+            
             rowNum = obj.view.index - 1;
             
             try
-                obj.java.table.changeSelection(rowNum, 0, 0, 0);
+                if rowNum <= numRows
+                    obj.java.table.changeSelection(rowNum, 0, 0, 0);
+                end
             catch
             end
-                
+            
         end
         
         % ---------------------------------------
@@ -3211,6 +3253,7 @@ classdef ChromatographyGUI < handle
                             
                         otherwise
                             obj.userPeak(0);
+                            
                     end
                     
                 else
@@ -3294,7 +3337,7 @@ classdef ChromatographyGUI < handle
                         obj.selectPeak(-1);
                     end
                     
-                % 'down-arrow' - next selection in peak list                case obj.settings.keyboard.nextPeak
+                % 'down-arrow' - next selection in peak list
                 case obj.settings.keyboard.nextPeak
                     if isempty(evt.Modifier)
                         obj.selectPeak(1);
@@ -3313,7 +3356,7 @@ classdef ChromatographyGUI < handle
                     if isempty(evt.Modifier)
                         obj.selectSample(1);
                     end
-                
+                    
                 % 'space' - toggle peak selection mode
                 case obj.settings.keyboard.selectPeak
                     
@@ -3342,12 +3385,12 @@ classdef ChromatographyGUI < handle
                             obj.figure.CurrentObject = obj.axes.main;
                         else
                             obj.userPeak([],1);
-                            obj.figure.CurrentObject = obj.controls.peakList;    
+                            obj.figure.CurrentObject = obj.controls.peakList;
                         end
                         
                     end
-                
-                % 'backspace' - clear current peak data    
+                    
+                % 'backspace' - clear current peak data
                 case obj.settings.keyboard.clearPeak
                     
                     if isempty(evt.Modifier)
@@ -3358,7 +3401,7 @@ classdef ChromatographyGUI < handle
                 case obj.settings.keyboard.resetPeaks
                     
                     if isempty(evt.Modifier)
-            
+                        
                         for i = 1:length(obj.peaks.name)
                             
                             obj.clearPeak();
@@ -3372,6 +3415,33 @@ classdef ChromatographyGUI < handle
                             end
                             
                         end
+                        
+                    end
+                    
+                % 'p' - redo peak auto-detection for current sample
+                case obj.settings.keyboard.reprocessPeaks
+                    
+                    if isempty(evt.Modifier)
+                        
+                        x = obj.settings.peakAutoStep;
+                        obj.settings.peakAutoStep = 0;
+                        
+                        for i = 1:length(obj.peaks.name)
+                            
+                            obj.clearPeak();
+                            
+                            col = obj.controls.peakList.Value;
+                            
+                            if col + 1 > length(obj.peaks.name)
+                                obj.controls.peakList.Value = 1;
+                            else
+                                obj.controls.peakList.Value = col + 1;
+                            end
+                            
+                        end
+                        
+                        obj.selectSample(0);
+                        obj.settings.peakAutoStep = x;
                         
                     end
                     
@@ -3401,6 +3471,10 @@ classdef ChromatographyGUI < handle
                         disp(obj.settings.peakModel);
                         
                     end
+                    
+                % 'a' - toggle sample auto-stepping
+                case obj.settings.keyboard.toggleAutoStep
+                    obj.settings.peakAutoStep = ~obj.settings.peakAutoStep;
                     
                 % 'z' - toggle zoom mode
                 case obj.settings.keyboard.toggleZoom

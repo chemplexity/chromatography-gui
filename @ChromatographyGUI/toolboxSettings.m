@@ -51,6 +51,9 @@ obj.settings.keyboard.selectPeakModel    = 'm';
 
 obj.settings.keyboard.clearPeak          = 'backspace';
 obj.settings.keyboard.resetPeaks         = 'r';
+obj.settings.keyboard.reprocessPeaks     = 'p';
+
+obj.settings.keyboard.toggleAutoStep     = 'a';
 
 obj.settings.keyboard.toggleZoom         = 'z';
 obj.settings.keyboard.toggleXAxisMode    = 'x';
@@ -174,6 +177,8 @@ obj.settings.labels.peak = {
 %
 
 % Baseline Parameters
+obj.settings.baseline.iterations = 10;
+
 obj.settings.baseline.smoothness    = 5.5;
 obj.settings.baseline.minSmoothness = 1.0;
 obj.settings.baseline.maxSmoothness = 10.0;
