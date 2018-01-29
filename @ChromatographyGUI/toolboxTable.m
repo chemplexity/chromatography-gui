@@ -7,12 +7,12 @@ columnParameters = {...
     'Filepath',   125,   false,   'char';...
     'Filename',   150,   false,   'char';...
     'Datetime',   150,   false,   'char';...
-    'Instrument', 75,   false,   'char';...
+    'Instrument', 75,    false,   'char';...
     'Sequence',   100,   false,   'char';...
     'Method',     125,   false,   'char';...
     'Operator',   75,    false,   'char';...
     'SampleName', 150,   false,   'char';
-    'SampleInfo', 75,   true,    'char';...
+    'SampleInfo', 75,    true,    'char';...
     'SeqLine',    75,    false,   'numeric';...
     'VialNum',    75,    false,   'numeric';...
     'InjNum',     75,    false,   'numeric';...
@@ -88,8 +88,8 @@ switch evt.Indices(2)
         obj.data(evt.Indices(1)).sample_info = evt.NewData;
         src.Data{evt.Indices(1), evt.Indices(2)} = evt.NewData;
         
-        if evt.Indices(1) == obj.view.index
-            obj.addCellHighlightText(obj.view.index, 9)
+        if evt.Indices(1) == obj.view.row
+            obj.addCellHighlightText(obj.view.row, 9)
         end
         
         javaChangeSelection(obj, evt.Indices(1)-1, evt.Indices(2)-1);
@@ -126,8 +126,8 @@ switch evt.Indices(2)
             src.Data{evt.Indices(1), evt.Indices(2)} = evt.PreviousData;
         end
         
-        if evt.Indices(1) == obj.view.index
-            obj.addCellHighlightText(obj.view.index, 13)
+        if evt.Indices(1) == obj.view.row
+            obj.addCellHighlightText(obj.view.row, 13)
         end
         
         javaChangeSelection(obj, evt.Indices(1)-1, evt.Indices(2)-1);
@@ -143,7 +143,7 @@ function tableSelectCallback(src, evt, obj)
 
 obj.table.selection = evt.Indices;
 
-if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.index
+if size(evt.Indices,1) == 1 && evt.Indices(1,1) == obj.view.row
     
     row = evt.Indices(1,1);
     col = evt.Indices(1,2);
@@ -172,14 +172,14 @@ elseif isempty(obj.table.selection) || size(obj.table.selection,2) < 2
 elseif ~strcmp(evt.EventName, 'KeyPress')
     return
 end
-        
+
 switch evt.Key
     
     case 'return'
         
         if ~any(obj.table.selection(1,2) == [9,13])
             
-            idx = obj.view.index;
+            idx = obj.view.row;
             row = obj.table.selection(1,1);
             col = obj.table.selection(1,2);
             
@@ -232,7 +232,7 @@ switch evt.Key
                     obj.data(row).injvol = [];
                     obj.table.main.Data{row,13} = ' ';
                 end
-                                
+                
                 javaChangeSelection(obj, row-1, col-1);
                 
             end
@@ -316,7 +316,7 @@ elseif col < 0 || col > size(obj.table.main.Data,2) - 1
     return
 end
 
-drawnow();
+drawnow(); pause(0.001);
 
 obj.java.table.changeSelection(row, col, 0, 0);
 

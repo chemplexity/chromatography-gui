@@ -508,7 +508,7 @@ if ~isempty(data) && isstruct(data)
             obj.validatePeakData(nRow, nCol);
         end
         
-        obj.view.index = 1;
+        obj.view.row = 1;
         obj.toolbox_checkpoint = file;
         
         obj.clearTableData();
@@ -587,7 +587,7 @@ end
 % ---------------------------------------
 function saveImageCallback(~, ~, obj)
 
-if isempty(obj.data) || obj.view.index == 0
+if isempty(obj.data) || obj.view.row == 0
     return
 end
 
@@ -666,7 +666,7 @@ if ischar(fileName) && ischar(filePath)
         
         if ~isprop(ax.Children(i), 'tag')
             continue
-        elseif strcmpi(ax.Children(i).Tag, 'plotlabel')
+        elseif strcmpi(ax.Children(i).Tag, 'plotLabel')
             l = ax.Children(i);
             break
         end
@@ -937,7 +937,7 @@ switch option
         
     case {'image'}
         
-        row = obj.view.index;
+        row = obj.view.row;
         str = '';
         
         if ~isempty(obj.data(row).instrument)
@@ -977,7 +977,10 @@ function listboxRefreshCallback(obj, varargin)
 x = obj.controls.peakList.Value;
 
 if isempty(x) || x == 0 || x > length(obj.peaks.name)
-    obj.controls.peakList.Value = 1;
+    obj.view.col = 1;
+    obj.controls.peakList.Value = obj.view.col;
+else
+    obj.view.col = obj.controls.peakList.Value;
 end
 
 obj.controls.peakList.String = obj.peaks.name;
@@ -1155,18 +1158,24 @@ if strcmpi(evt.EventName, 'Action')
         
         case 'asyncMode'
             obj.settings.other.asyncMode = src.UserData;
-            
+            obj.setStatusBarText(['Asynchronous File Import: ', src.Checked]);
+
         case 'autoDetect'
             obj.settings.peakAutoDetect = src.UserData;
+            obj.setStatusBarText(['Peak Auto-Detection: ', src.Checked]);
             obj.peakAutoDetectionCallback();
             
         case 'autoStep'
             obj.settings.peakAutoStep = src.UserData;
+            obj.setStatusBarText(['Sample Auto-Step: ', src.Checked]);
             
         case 'dpi'
             obj.settings.export.dpi = str2double(src.Label);
+            obj.setStatusBarText(['Export Figure DPI: ', src.Label]);
+            
             x = src.Parent.Children;
             set(x(~strcmpi(src.Label, {x.Label})), 'checked', 'off');
+            src.Checked = 'on';
             
     end
     
@@ -1478,6 +1487,8 @@ src.Checked = 'on';
 
 obj.settings.peakModel = src.Tag;
 
+obj.setStatusBarText(['Peak Model: ', upper(src.Tag)]);
+
 end
 
 % ---------------------------------------
@@ -1492,6 +1503,8 @@ end
 src.Checked = 'on';
 
 obj.settings.peakAreaOf = src.Tag;
+
+obj.setStatusBarText(['Peak Area Of: ', src.Tag]);
 
 end
 

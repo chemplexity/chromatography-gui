@@ -417,7 +417,7 @@ switch src.String
         
     case 'Edit'
         
-        col = obj.controls.peakList.Value;
+        col = obj.view.col;
         
         if isempty(col) || col < 1 || col > length(obj.peaks.name)
             return
@@ -440,7 +440,7 @@ switch src.String
         
     case 'Delete'
         
-        col = obj.controls.peakList.Value;
+        col = obj.view.col;
         
         if isempty(col) || col < 1 || col > length(obj.peaks.name)
             return
@@ -521,7 +521,7 @@ else
     val = floor(val);
 end
 
-obj.selectSample(val - obj.view.index);
+obj.selectSample(val - obj.view.row);
 
 end
 
@@ -555,7 +555,7 @@ function axesLimitCallback(src, ~, obj)
 
 str = @(x) sprintf('%.3f', x);
 
-row = obj.view.index;
+row = obj.view.row;
 
 n = src.String;
 x = str2double(n);
@@ -592,6 +592,8 @@ switch src.Tag
             return
         end
         
+        obj.setStatusBarText(['X-Axis minimum set to ', src.String]);
+        
     case 'xmaxedit'
         
         if isempty(n)
@@ -621,6 +623,8 @@ switch src.Tag
             src.String = str(obj.settings.xlim(2));
             return
         end
+        
+        obj.setStatusBarText(['X-Axis maximum set to ', src.String]);
         
     case 'yminedit'
         
@@ -653,6 +657,8 @@ switch src.Tag
             return
         end
         
+        obj.setStatusBarText(['Y-Axis minimum set to ', src.String]);
+        
     case 'ymaxedit'
         
         if isempty(n)
@@ -684,6 +690,8 @@ switch src.Tag
             return
         end
         
+        obj.setStatusBarText(['Y-Axis maximum set to ', src.String]);
+        
     otherwise
         return
         
@@ -699,10 +707,10 @@ end
 % ---------------------------------------
 function baselineCallback(src, ~, obj)
 
-if isempty(obj.data) || obj.view.index == 0
+if isempty(obj.data) || obj.view.row == 0
     return
 else
-    row = obj.view.index;
+    row = obj.view.row;
 end
 
 switch src.Tag
@@ -722,12 +730,17 @@ switch src.Tag
         obj.getBaseline();
         obj.updatePlotBaseline();
         
+        statusText = 'Baseline updated... ';
+        obj.setStatusBarText(statusText);
+        
     case 'clearbaseline'
         
         obj.clearLine('plotBaseline');
         
         if ~isempty(obj.data(row).baseline)
             obj.data(row).baseline = [];
+            statusText = 'Baseline deleted... ';
+            obj.setStatusBarText(statusText);
         end
         
 end
@@ -749,6 +762,9 @@ switch src.Tag
         
 end
 
+statusText = [src.Tag, ' changed to ', num2str(src.Value)];
+obj.setStatusBarText(statusText);
+
 src.TooltipString = sprintf('%.2f', src.Value);
 
 end
@@ -758,8 +774,8 @@ end
 % ---------------------------------------
 function peakListboxCallback(~, ~, obj)
 
-obj.updatePeakText();
-obj.userPeak(1);
+obj.view.col = obj.controls.peakList.Value;
+obj.selectPeak(0);
 
 end
 
@@ -773,7 +789,7 @@ switch src.Tag
     case 'peakidedit'
         
         if ~isempty(obj.peaks.name)
-            str = obj.peaks.name(obj.controls.peakList.Value, 1);
+            str = obj.peaks.name(obj.view.col, 1);
             obj.controls.peakIDEdit.String = str;
         else
             obj.controls.peakIDEdit.String = '';
@@ -800,8 +816,8 @@ end
 % ---------------------------------------
 function str = checkPeakEditText(obj, field)
 
-col = obj.controls.peakList.Value;
-row = obj.view.index;
+col = obj.view.col;
+row = obj.view.row;
 
 if isempty(obj.data) || isempty(col) || col == 0 || row == 0
     str = '';
@@ -837,6 +853,8 @@ if strcmpi(evt.EventName, 'Action')
         currentObject = obj.figure.CurrentObject.Tag;
         
         if strcmpi(currentObject, src.Tag)
+        
+            obj.setStatusBarText('');
             
             if src.Value
                 obj.userPeak(1);

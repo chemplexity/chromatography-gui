@@ -1,12 +1,12 @@
 function toolboxPeakFit(obj, varargin)
 
-if isempty(obj.data) || isempty(obj.controls.peakList.Value)
+if isempty(obj.data) || isempty(obj.view.row) || isempty(obj.view.col)
     return
-elseif obj.view.index == 0 || obj.controls.peakList.Value == 0
+elseif obj.view.row == 0 || obj.view.col == 0
     return
-elseif length(obj.data) < obj.view.index
+elseif length(obj.data) < obj.view.row
     return
-elseif length(obj.peaks.name) < obj.controls.peakList.Value
+elseif length(obj.peaks.name) < obj.view.col
     return
 end
 
@@ -19,8 +19,8 @@ default.peakOverride   = [];
 default.peakWindow     = 3;
 default.peakModel      = obj.settings.peakModel;
 default.areaOf         = obj.settings.peakAreaOf;
-default.row            = obj.view.index;
-default.col            = obj.controls.peakList.Value;
+default.row            = obj.view.row;
+default.col            = obj.view.col;
 
 % ---------------------------------------
 % Input
@@ -238,6 +238,7 @@ if ~isempty(peak) && ~isempty(input)
         obj.updatePeakArea(input.col);
         obj.updatePeakBaseline(input.col);
         obj.updatePeakListText(input.col);
+        updatePeakStatusBar(obj, input, 1)
     else
         obj.clearPeakData(input.row, input.col);
         obj.clearPeakTable(input.row, input.col);
@@ -245,7 +246,29 @@ if ~isempty(peak) && ~isempty(input)
         obj.clearPeakLabel(input.col);
         obj.clearPeakArea(input.col);
         obj.clearPeakBaseline(input.col);
+        updatePeakStatusBar(obj, input, 0)
     end
+    
+end
+
+end
+
+% ------------------------------------------
+% Update status bar
+% ------------------------------------------
+function updatePeakStatusBar(obj, input, status)
+
+if ~strcmpi(input.selectionType, 'auto')
+    
+    statusText = ['Selecting ', obj.peaks.name{obj.view.col}, ' peak... '];
+    
+    if status
+        statusText = [statusText, 'COMPLETE'];
+    else
+        statusText = [statusText, 'ERROR'];
+    end
+    
+    obj.setStatusBarText(statusText);
     
 end
 
@@ -481,7 +504,7 @@ end
 % ------------------------------------------
 function [b,x,y] = getBaselineFit(obj,x,y,varargin)
 
-row = obj.view.index;
+row = obj.view.row;
 b = [];
 
 xmin = min(x);

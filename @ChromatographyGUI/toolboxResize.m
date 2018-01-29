@@ -27,6 +27,8 @@ end
 % ---------------------------------------
 function resizeAxesPanel(obj, ~, ~, pos)
 
+obj.settings.gui.position = obj.figure.Position;
+
 obj.panel.axes.Position = pos;
 
 if isprop(obj.axes.main, 'OuterPosition')

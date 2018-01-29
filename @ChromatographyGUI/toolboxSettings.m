@@ -53,7 +53,8 @@ obj.settings.keyboard.clearPeak          = 'backspace';
 obj.settings.keyboard.resetPeaks         = 'r';
 obj.settings.keyboard.reprocessPeaks     = 'p';
 
-obj.settings.keyboard.toggleAutoStep     = 'a';
+obj.settings.keyboard.toggleAutoStep     = 's';
+obj.settings.keyboard.toggleAutoDetect   = 'd';
 
 obj.settings.keyboard.toggleZoom         = 'z';
 obj.settings.keyboard.toggleXAxisMode    = 'x';
