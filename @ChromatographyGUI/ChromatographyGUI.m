@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180128-dev';
+        version     = '0.0.9.20180129-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -444,6 +444,8 @@ classdef ChromatographyGUI < handle
                     
                 end
                 
+            else
+                obj.clearLine('plotBaseline');
             end
             
         end
@@ -2702,6 +2704,8 @@ classdef ChromatographyGUI < handle
                     
                 end
                 
+            else
+                obj.clearLine('plotBaseline');
             end
             
         end
