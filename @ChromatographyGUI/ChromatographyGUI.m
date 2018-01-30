@@ -1120,6 +1120,14 @@ classdef ChromatographyGUI < handle
                 obj.view.col = 1;
             end
             
+            if isempty(obj.controls.peakList.Value)
+                obj.controls.peakList.Value = obj.view.col;
+            elseif obj.controls.peakList.Value > length(obj.peaks.name)
+                obj.controls.peakList.Value = length(obj.peaks.name);
+            elseif obj.controls.peakList.Value < 1
+                obj.controls.peakList.Value = 1;
+            end
+                
             obj.updateAllPeakListText();
             
         end
@@ -1526,6 +1534,7 @@ classdef ChromatographyGUI < handle
             
             row = obj.view.row;
             col = obj.view.col;
+            
             isVerbose = false;
             
             if isempty(obj.data) || row == 0
@@ -1540,7 +1549,9 @@ classdef ChromatographyGUI < handle
                 end 
             end
             
-            if col <= 0 || col > length(obj.peaks.name)
+            if isempty(col)
+                return
+            elseif col <= 0 || col > length(obj.peaks.name)
                 return
             end
             
@@ -3274,11 +3285,11 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function userPeak(obj, state, varargin)
             
-            if ~isempty(varargin) && isnumeric(varargin{1})
+            if isempty(obj.data) || isempty(obj.peaks.name)
+                state = 0;
+            elseif ~isempty(varargin) && isnumeric(varargin{1})
                 state = varargin{1};
             elseif obj.view.selectPeak == state
-                return
-            elseif isempty(obj.data) || isempty(obj.peaks.name)
                 return
             end
             
