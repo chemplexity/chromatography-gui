@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180129-dev';
+        version     = '0.0.9.20180130-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -43,7 +43,7 @@ classdef ChromatographyGUI < handle
         % Plots
         view = struct(...
             'row',          0,...
-            'col',          0,...
+            'col',          1,...
             'id',           'N/A',...
             'name',         'N/A',...
             'selectPeak',   0,...
@@ -69,6 +69,11 @@ classdef ChromatographyGUI < handle
         function obj = ChromatographyGUI(varargin)
             
             % ---------------------------------------
+            % Warnings
+            % ---------------------------------------
+            warning off all
+            
+            % ---------------------------------------
             % Path
             % ---------------------------------------
             addpath(obj.toolbox_path);
@@ -79,8 +84,6 @@ classdef ChromatographyGUI < handle
             % Settings
             % ---------------------------------------
             obj.toolboxSettings([], [], 'initialize');
-            
-            
             obj.table.selection = [];
             
             for i = 1:length(obj.settings.peakFields)
@@ -90,8 +93,10 @@ classdef ChromatographyGUI < handle
             obj.toolboxSettings([], [], 'load_default');
             obj.toolboxPeakList([], [], 'load_default');
             
+            % ---------------------------------------
+            % GUI
+            % ---------------------------------------
             obj.initializeGUI();
-            
             obj.toolboxSettings([], [], 'apply');
             
         end
@@ -3619,12 +3624,10 @@ classdef ChromatographyGUI < handle
                             
                             obj.clearPeak();
                             
-                            col = obj.view.col;
-                            
-                            if col + 1 > length(obj.peaks.name)
+                            if obj.view.col + 1 > length(obj.peaks.name)
                                 obj.view.col = 1;
                             else
-                                obj.view.col = col + 1;
+                                obj.view.col = obj.view.col + 1;
                             end
                             
                         end
@@ -3637,8 +3640,9 @@ classdef ChromatographyGUI < handle
                         
                         if obj.view.col ~= obj.controls.peakList.Value
                             obj.controls.peakList.Value = obj.view.col;
-                            obj.updatePeakText();
                         end
+                        
+                        obj.updatePeakText();
             
                     end
                     
