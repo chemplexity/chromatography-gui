@@ -1,10 +1,14 @@
 function toolboxSettings(obj, ~, ~, varargin)
 
-% Settings (struct) > v0.0.5
+% ------------------------------------------
+% GUI Settings (>v0.0.5)
+% ------------------------------------------
+% default_settings.mat (struct)
 %
-% version (char) : 'x.y.z.date'
-% name (char)    : 'global_settings'
-% data (struct)  : GUI settings
+%   version (char)   : 'x.y.z.date'
+%   name    (char)   : 'global_settings'
+%   date    (char)   : 'yyyy-mm-ddTHH:MM:SS'
+%   data    (struct) : GUI settings
 
 if isempty(varargin) || ~ischar(varargin{1})
     return
@@ -36,10 +40,9 @@ end
 
 function initalizeSettings(obj, varargin)
 
-%
+% ------------------------------------------
 % Keyboard Shortcuts
-%
-
+% ------------------------------------------
 obj.settings.keyboard.previousSample     = 'leftarrow';
 obj.settings.keyboard.nextSample         = 'rightarrow';
 obj.settings.keyboard.previousPeak       = 'uparrow';
@@ -60,14 +63,13 @@ obj.settings.keyboard.toggleZoom         = 'z';
 obj.settings.keyboard.toggleXAxisMode    = 'x';
 obj.settings.keyboard.toggleYAxisMode    = 'y';
 
-%
-% GUI Settings
-%
-
+% ------------------------------------------
+% GUI Properties
+% ------------------------------------------
 obj.settings.gui.position = [0.05, 0.125, 0.90, 0.80];
 obj.settings.gui.color    = [1.00, 1.00, 1.00];
 
-% Panel
+% UIPanel
 obj.settings.panel.backgroundColor = [0.99, 0.99, 0.99];
 obj.settings.panel.foregroundColor = [0.00, 0.00, 0.00];
 obj.settings.panel.highlightColor  = [0.20, 0.20, 0.20];
@@ -76,11 +78,11 @@ obj.settings.panel.borderWidth     = 1;
 obj.settings.panel.fontname        = obj.font;
 obj.settings.panel.fontsize        = 12;
 
-% Tab
+% UITab
 obj.settings.tab.backgroundColor = [0.99, 0.99, 0.99];
 obj.settings.tab.foregroundColor = [0.00, 0.00, 0.00];
 
-% Table
+% UITable
 obj.settings.table.backgroundColor = [1.00, 1.00, 1.00; 0.94, 0.94, 0.94];
 obj.settings.table.foregroundColor = [0.00, 0.00, 0.00];
 obj.settings.table.highlightColor  = '#0950D0';
@@ -94,17 +96,10 @@ obj.settings.table.showWidth       = 1;
 obj.settings.table.showHeight      = 1;
 obj.settings.table.showModel       = 0;
 
-obj.settings.table.labelNames = {...
-    'Area',...
-    'Height',...
-    'Time',...
-    'Width',...
-    'Model'};
-
 % Axes
 obj.settings.axes.backgroundColor = [1.00, 1.00, 1.00];
 
-% Font
+% Fonts
 obj.settings.gui.fontname    = obj.font;
 obj.settings.table.fontname  = obj.font;
 obj.settings.axes.fontname   = obj.font;
@@ -122,7 +117,7 @@ obj.settings.baseline.linewidth     = 1.00;
 obj.settings.peaks.linewidth        = 1.25;
 obj.settings.peakBaseline.linewidth = 1.00;
 
-% Line Color
+% Line Colors
 obj.settings.plot.color         = [0.10, 0.10, 0.10];
 obj.settings.baseline.color     = [0.91, 0.27, 0.30];
 obj.settings.peaks.color        = [0.00, 0.30, 0.53];
@@ -163,7 +158,15 @@ obj.settings.showPeakLabel    = 1;
 obj.settings.showPeakArea     = 1;
 obj.settings.showPeakBaseline = 1;
 
-% Label Settings
+% Table Columns
+obj.settings.table.labelNames = {...
+    'Area',...
+    'Height',...
+    'Time',...
+    'Width',...
+    'Model'};
+
+% Labels
 obj.settings.labels.data = {...
     'row_num',...
     'instrument',...
@@ -173,29 +176,28 @@ obj.settings.labels.data = {...
 obj.settings.labels.peak = {
     'peakName'};
 
-%
-% Data Processing Settings
-%
-
-% Baseline Parameters
-obj.settings.baseline.iterations = 10;
-
+% ------------------------------------------
+%  Baseline Settings
+% ------------------------------------------
 obj.settings.baseline.smoothness    = 5.5;
 obj.settings.baseline.minSmoothness = 1.0;
 obj.settings.baseline.maxSmoothness = 10.0;
 
-obj.settings.baseline.asymmetry    = -5.5;
-obj.settings.baseline.minAsymmetry = -10.0;
-obj.settings.baseline.maxAsymmetry = -1.0;
+obj.settings.baseline.asymmetry     = -5.5;
+obj.settings.baseline.minAsymmetry  = -10.0;
+obj.settings.baseline.maxAsymmetry  = -1.0;
 
-% Peak Integration Settings
+obj.settings.baseline.iterations    = 10;
+
+% ------------------------------------------
+%  Peak Integration Settings
+% ------------------------------------------
 obj.settings.peakModelOptions  = {'nn1', 'nn2', 'egh'};
 obj.settings.peakModel         = 'nn2';
 
 obj.settings.peakAreaOfOptions = {'rawdata', 'fitdata'};
 obj.settings.peakAreaOf        = 'rawdata';
 
-% Other Peak Settings
 obj.settings.peakOverride   = 0;
 obj.settings.peakAutoDetect = 1;
 obj.settings.peakAutoStep   = 0;
@@ -218,9 +220,9 @@ obj.settings.peakFields = {...
     'input_mode',...
     'date_created'};
 
-%
+% ------------------------------------------
 % Other Settings
-%
+% ------------------------------------------
 
 % Export Options
 obj.settings.export.dpi    = 150;
@@ -229,11 +231,11 @@ obj.settings.export.height = 600;
 
 % Other Options
 obj.settings.other.asyncMode = 1;
-obj.settings.other.useJavaTable = 0;
 obj.settings.other.getFileChecksum = 1;
 
 % Java Options
 obj.settings.java.fixTableScrollpane = 1;
+obj.settings.other.useJavaTable = 0;
 
 end
 

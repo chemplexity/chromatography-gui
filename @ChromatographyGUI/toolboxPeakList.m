@@ -1,10 +1,14 @@
 function toolboxPeakList(obj, ~, ~, varargin)
 
-% Peak List (struct) > v0.0.5
+% ------------------------------------------
+% Peaklist (>v0.0.5)
+% ------------------------------------------
+% default_peaklist.mat (struct)
 %
-% version (char) : 'x.y.z.date'
-% name (char)    : 'peaklist'
-% data (cell)    : peak name (char)
+%   version (char) : 'x.y.z.date'
+%   name    (char) : 'peaklist'
+%   date    (char) : 'yyyy-mm-ddTHH:MM:SS'
+%   data    (cell) : peak names
 
 if isempty(varargin) || ~ischar(varargin{1})
     return
@@ -34,8 +38,12 @@ end
 
 end
 
+% ------------------------------------------
+% Default Peaklist
+% ------------------------------------------
 function initalizePeakList(obj, varargin)
 
+% Ocean Alkenones (../data/examples/*.D)
 obj.peaks.name = {...
     'C36'; 'C37';...
     'C37:3 Me'; 'C37:2 Me';...
@@ -43,20 +51,18 @@ obj.peaks.name = {...
     'C38:3 Me'; 'C38:2 Me';...
     'C39:3 Et'; 'C39:2 Et'};
 
-% obj.peaks.name = {'1', '2', '3', '4', '5', '6', '7', '8', '9', '10'};
-
 end
 
+% ------------------------------------------
+% Load Peaklist (.mat)
+% ------------------------------------------
 function loadPeakList(obj, mode, varargin)
 
 switch mode
     
     case 'load_default'
         
-        file = [...
-            obj.toolbox_path, filesep,...
-            obj.toolbox_config, filesep,....
-            obj.toolbox_peaklist];
+        file = [getDefaultFilepath(obj), filesep, getDefaultFilename(obj)];
         
         if exist(file, 'file')
             data = importMAT('file', file);
@@ -67,15 +73,7 @@ switch mode
         
     case 'load_custom'
         
-        filePath = [obj.toolbox_path, filesep, obj.toolbox_data];
-        
-        if exist([filePath, filesep, 'peaklists'], 'dir')
-            filePath = [filePath, filesep, 'peaklists'];
-        elseif ~exist(filePath, 'dir')
-            filePath = pwd;
-        end
-        
-        data = importMAT('path', filePath);
+        data = importMAT('path', getSuggestedFilepath(obj));
         
     otherwise
         
@@ -105,8 +103,12 @@ switch mode
         
     case 'load_custom'
         
-        str = 'Overwrite existing peak list?';
-        msg = questdlg(str, 'Import', 'OK', 'Cancel', 'OK');
+        if ~isempty(obj.peaks.name)
+            str = 'Overwrite existing peak list and peak data?';
+            msg = questdlg(str, 'Import', 'OK', 'Cancel', 'OK');
+        else
+            msg = 'OK';
+        end
         
         switch msg
             
@@ -142,51 +144,87 @@ end
 
 end
 
+% ------------------------------------------
+% Save Peaklist (.mat)
+% ------------------------------------------
 function savePeakList(obj, varargin)
 
-% Peaklist data
-peaklist.version = obj.version;
-peaklist.name = 'peaklist';
-peaklist.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
-peaklist.data = obj.peaks.name(:);
+peaklist = compilePeaklist(obj);
 
-% Suggested path
-filePath = [obj.toolbox_path, filesep, obj.toolbox_data];
-
-if exist([filePath, filesep, 'peaklists'], 'dir')
-    filePath = [filePath, filesep, 'peaklists'];
-elseif ~exist(filePath, 'dir')
-    filePath = pwd;
-end
-
-% Suggested file
-fileName = [datestr(now(), 'yyyymmdd'), '-peaklist'];
-fileName = [fileName, '-', num2str(length(obj.peaks.name)), '-peaks'];
-
-% Save MAT file
 exportMAT(peaklist,...
-    'path', filePath,...
-    'suggest', fileName,...
+    'path',    getSuggestedFilepath(obj),...
+    'suggest', getSuggestedFilename(obj),...
     'varname', 'user_peaks');
 
 end
 
+% ------------------------------------------
+% Autosave Peaklist (default_peaklist.mat)
+% ------------------------------------------
 function autosavePeakList(obj, varargin)
 
-% Peaklist data
-peaklist.version = obj.version;
-peaklist.name = 'peaklist';
-peaklist.date = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
-peaklist.data = obj.peaks.name(:);
+peaklist = compilePeaklist(obj);
 
-% File info
-filePath = [obj.toolbox_path, filesep, obj.toolbox_config];
-fileName = obj.toolbox_peaklist;
-
-% Save MAT file
 exportMAT(peaklist,...
-    'path', filePath,...
-    'file', fileName,...
+    'path',    getDefaultFilepath(obj),...
+    'file',    getDefaultFilename(obj),...
     'varname', 'user_peaks');
+
+end
+
+% ------------------------------------------
+% Compile Peaklist (struct)
+% ------------------------------------------
+function peaklist = compilePeaklist(obj, varargin)
+
+peaklist.version = obj.version;
+peaklist.name    = 'peaklist';
+peaklist.date    = datestr(now(), 'yyyy-mm-ddTHH:MM:SS');
+peaklist.data    = obj.peaks.name(:);
+
+end
+
+% ------------------------------------------
+% Default Filepath (../config/)
+% ------------------------------------------
+function filepath = getDefaultFilepath(obj, varargin)
+
+filepath = [obj.toolbox_path, filesep, obj.toolbox_config];
+
+end
+
+% ------------------------------------------
+% Default Filepath (default_peaklist.mat)
+% ------------------------------------------
+function filename = getDefaultFilename(obj, varargin)
+
+filename = obj.toolbox_peaklist;
+
+end
+
+% ------------------------------------------
+% Suggested Filepath (../data/peaklists/)
+% ------------------------------------------
+function filepath = getSuggestedFilepath(obj, varargin)
+
+filepath = [obj.toolbox_path, filesep, obj.toolbox_data];
+
+if exist([filepath, filesep, 'peaklists'], 'dir')
+    filepath = [filepath, filesep, 'peaklists'];
+else
+    filepath = pwd;
+end
+
+end
+
+% ------------------------------------------
+% Suggested Filename (yyyymmdd-peaklist-#-peaks)
+% ------------------------------------------
+function filename = getSuggestedFilename(obj, varargin)
+
+d = datestr(now(), 'yyyymmdd');
+n = num2str(length(obj.peaks.name));
+
+filename = [d, '-peaklist-', n, '-peaks'];
 
 end

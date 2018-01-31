@@ -57,17 +57,17 @@ input.col            = p.Results.col;
 % Validate
 % ---------------------------------------
 
-% Parameter: x
+% Parameter: x (peak retention time)
 if ~isnumeric(input.x) || isinf(input.x) || isnan(input.x)
     return
 end
 
-% Parameter: y
+% Parameter: y (currently unused)
 if ~isempty(input.y) && ~isnumeric(input.y)
     input.y = [];
 end
 
-% Parameter: peakOverride
+% Parameter: peakOverride (force peak fit at x)
 if ~isfield(obj.settings, 'peakOverride')
     obj.settings.peakOverride = 0;
 end
@@ -78,7 +78,7 @@ elseif ~isempty(input.peakOverride) && ~isnumeric(input.peakOverride)
     input.peakOverride = obj.settings.peakOverride;
 end
 
-% Parameter: selectionType
+% Parameter: selectionType ('manual', 'override', 'auto')
 if ~isempty(input.selectionType)
     if ~ischar(input.selectionType)
         input.selectionType = [];
@@ -87,28 +87,28 @@ if ~isempty(input.selectionType)
     end
 end
 
-% Parameter: peakWindow
+% Parameter: peakWindow (use data between: x +/- peakWindow)
 if ~isempty(input.peakWindow) && ~isnumeric(input.peakWindow)
     input.peakWindow = default.peakWindow;
 elseif isinf(input.peakWindow) || isnan(input.peakWindow)
     input.peakWindow = default.peakWindow;
 end
 
-% Parameter: peakModel
+% Parameter: peakModel ('nn1', 'nn2', 'egh')
 if isempty(input.peakModel) || ~ischar(input.peakModel)
     input.peakModel = default.peakModel;
 elseif ~any(strcmpi(input.peakModel, obj.settings.peakModelOptions))
     input.peakModel = default.peakModel;
 end
     
-% Parameter: areaOf
+% Parameter: areaOf ('rawdata', 'fitdata')
 if isempty(input.areaOf) || ~ischar(input.areaOf)
     input.areaOf = default.areaOf;
 elseif ~any(strcmpi(input.areaOf, obj.settings.peakAreaOfOptions))
     input.areaOf = default.areaOf;
 end
 
-% Parameter: row
+% Parameter: row (sample index)
 if isempty(input.row) || ~isnumeric(input.row)
     input.row = default.row;
 elseif isinf(input.row) || isnan(input.row)
@@ -119,7 +119,7 @@ else
     input.row = input.row(1);
 end
 
-% Parameter: col
+% Parameter: col (peak index)
 if isempty(input.col) || ~isnumeric(input.col)
     input.col = default.col;
 elseif isinf(input.col) || isnan(input.col)

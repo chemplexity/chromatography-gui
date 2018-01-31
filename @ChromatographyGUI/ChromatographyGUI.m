@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180130-dev';
+        version     = '0.0.9.20180131-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -30,7 +30,9 @@ classdef ChromatographyGUI < handle
     
     properties (Hidden = true)
         
+        % ---------------------------------------
         % Paths
+        % ---------------------------------------
         toolbox_path       = fileparts(fileparts(mfilename('fullpath')));
         toolbox_file       = fileparts(mfilename('fullpath'));
         toolbox_config     = 'config';
@@ -40,10 +42,14 @@ classdef ChromatographyGUI < handle
         toolbox_peaklist   = 'default_peaklist.mat';
         toolbox_checkpoint = '';
         
+        % ---------------------------------------
         % Plots
+        % ---------------------------------------
         view = struct(...
             'row',          0,...
             'col',          1,...
+            'numRows',      0,...
+            'numCols',      0,...
             'id',           'N/A',...
             'name',         'N/A',...
             'selectPeak',   0,...
@@ -56,10 +62,10 @@ classdef ChromatographyGUI < handle
             'peakBaseline', [],...
             'peakArea',     []);
         
+        % ---------------------------------------
         % Other
+        % ---------------------------------------
         font = ChromatographyGUI.getFont();
-        
-        % Java
         java
         
     end
@@ -1564,7 +1570,7 @@ classdef ChromatographyGUI < handle
                 obj.clearPeakBaseline(col);
                 obj.clearPeakData(row,col);
                 obj.clearPeakTable(row,col);
-                obj.updatePeakListText();
+                obj.updatePeakListText(col);
                 
                 if isVerbose
                     statusText = ['Cleared ', obj.peaks.name{col}, ' peak data...'];
