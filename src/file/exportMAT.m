@@ -13,11 +13,17 @@ function fileName = exportMAT(varargin)
 % ------------------------------------------------------------------------
 % Input (Name, Value)
 % ------------------------------------------------------------------------
-%   'file' -- name of file
+%   'file' -- name of .MAT file
+%       empty (default) | char | cell array of strings
+%
+%   'path' -- path to save file
 %       empty (default) | char | cell array of strings
 %
 %   'varname' -- variable name
 %       'data' (default) | char
+%
+%   'version' -- .MAT file version
+%       '-v7.3' (default), '-v7', '-v6', '-v4'
 %
 %   'waitbar' -- use waitbar to show progress
 %       false (default) | true
@@ -28,8 +34,11 @@ function fileName = exportMAT(varargin)
 default.file    = [];
 default.path    = [];
 default.varname = 'data';
+default.version = '-v7.3';
 default.waitbar = false;
 default.suggest = [datestr(date, 'yyyymmdd'), '_data'];
+
+matVersion = {'-v7.3', '-v7', '-v6', '-v4'};
 
 % ---------------------------------------
 % Input
@@ -41,6 +50,7 @@ addRequired(p, 'data');
 addParameter(p, 'file', default.file);
 addParameter(p, 'path', default.path);
 addParameter(p, 'varname', default.varname);
+addParameter(p, 'version', default.version);
 addParameter(p, 'waitbar', default.waitbar);
 addParameter(p, 'suggest', default.suggest);
 
@@ -54,6 +64,7 @@ data = p.Results.data;
 option.file    = p.Results.file;
 option.path    = p.Results.path;
 option.varname = p.Results.varname;
+option.version = p.Results.version;
 option.waitbar = p.Results.waitbar;
 option.suggest = p.Results.suggest;
 
@@ -120,6 +131,14 @@ end
 
 feval(@()assignin('caller', option.varname, data));
 
+if ~ischar(option.version)
+    option.version = default.version;
+elseif ~any(strcmpi(option.version, matVersion))
+    option.version = default.version;
+else
+    option.version = lower(option.version);
+end
+
 if isnumeric(option.waitbar)
     if option.waitbar == 1
         option.waitbar = true;
@@ -155,7 +174,7 @@ if option.waitbar && ishandle(h)
 end
 
 if ischar(fileName) && ischar(filePath)
-    save(fileName, option.varname, '-mat');
+    save(fileName, option.varname, option.version);%'-mat');
 else
     fileName = [];
 end

@@ -98,6 +98,7 @@ obj.settings.table.showModel       = 0;
 
 % Axes
 obj.settings.axes.backgroundColor = [1.00, 1.00, 1.00];
+obj.settings.axes.linewidth       = 1.25;
 
 % Fonts
 obj.settings.gui.fontname    = obj.font;
@@ -126,9 +127,6 @@ obj.settings.peakBaseline.color = [0.95, 0.49, 0.69];
 
 % Alpha
 obj.settings.peakFill.alpha = 0.3;
-
-% Markersize
-obj.settings.peakBaseline.markersize = 5;
 
 % Peak Label
 obj.settings.labels.margin = 3;
@@ -179,11 +177,11 @@ obj.settings.labels.peak = {
 % ------------------------------------------
 %  Baseline Settings
 % ------------------------------------------
-obj.settings.baseline.smoothness    = 5.5;
+obj.settings.baseline.smoothness    = 8.5;
 obj.settings.baseline.minSmoothness = 1.0;
 obj.settings.baseline.maxSmoothness = 10.0;
 
-obj.settings.baseline.asymmetry     = -5.5;
+obj.settings.baseline.asymmetry     = -5.0;
 obj.settings.baseline.minAsymmetry  = -10.0;
 obj.settings.baseline.maxAsymmetry  = -1.0;
 

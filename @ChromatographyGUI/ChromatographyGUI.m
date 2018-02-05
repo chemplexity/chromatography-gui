@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180131-dev';
+        version     = '0.0.9.20180204-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1493,6 +1493,50 @@ classdef ChromatographyGUI < handle
         end
         
         % ---------------------------------------
+        % GUI - select peak
+        % ---------------------------------------
+        function selectPeak(obj, varargin)
+            
+            if ~isempty(obj.view.col) && obj.view.col ~= 0
+                
+                if ~isempty(varargin) && isnumeric(varargin{1})
+                    increment = varargin{1};
+                else
+                    increment = 0;
+                end
+                
+                index = obj.view.col + increment;
+                
+                if length(obj.peaks.name) == 1
+                    return
+                elseif index <= length(obj.peaks.name) && index >= 1
+                    obj.view.col = index;
+                elseif index > length(obj.peaks.name)
+                    obj.view.col = 1;
+                elseif index < 1
+                    obj.view.col = length(obj.peaks.name);
+                end
+
+                if increment ~= 0
+                    
+                    obj.figure.CurrentObject = obj.controls.peakList;
+                    obj.controls.peakList.Value = obj.view.col;
+                    obj.updatePeakText();
+                    
+                    if obj.view.selectPeak
+                        statusText = ['Selecting ', obj.peaks.name{obj.view.col}, ' peak...'];
+                        obj.setStatusBarText(statusText);
+                    else
+                        obj.userPeak(1);
+                    end
+                    
+                end
+                
+            end
+            
+        end
+        
+        % ---------------------------------------
         % GUI - update current sample
         % ---------------------------------------
         function numPeaks = updateSample(obj, varargin)
@@ -1935,47 +1979,6 @@ classdef ChromatographyGUI < handle
                 
                 if ~isempty(currentObject)
                     obj.figure.CurrentObject = currentObject;
-                end
-                
-            end
-            
-        end
-        
-        function selectPeak(obj, varargin)
-            
-            if ~isempty(obj.view.col) && obj.view.col ~= 0
-                
-                if ~isempty(varargin) && isnumeric(varargin{1})
-                    increment = varargin{1};
-                else
-                    increment = 0;
-                end
-                
-                index = obj.view.col + increment;
-                
-                if length(obj.peaks.name) == 1
-                    return
-                elseif index <= length(obj.peaks.name) && index >= 1
-                    obj.view.col = index;
-                elseif index > length(obj.peaks.name)
-                    obj.view.col = 1;
-                elseif index < 1
-                    obj.view.col = length(obj.peaks.name);
-                end
-
-                if increment ~= 0
-                    
-                    obj.figure.CurrentObject = obj.controls.peakList;
-                    obj.controls.peakList.Value = obj.view.col;
-                    obj.updatePeakText();
-                    
-                    if obj.view.selectPeak
-                        statusText = ['Selecting ', obj.peaks.name{obj.view.col}, ' peak...'];
-                        obj.setStatusBarText(statusText);
-                    else
-                        obj.userPeak(1);
-                    end
-                    
                 end
                 
             end
@@ -2669,7 +2672,6 @@ classdef ChromatographyGUI < handle
                             'xdata',      x,...
                             'ydata',      y,...
                             'color',      obj.settings.peakBaseline.color,...
-                            'markersize', obj.settings.peakBaseline.markersize,...
                             'linewidth',  obj.settings.peakBaseline.linewidth);
                         
                     else
@@ -2677,7 +2679,6 @@ classdef ChromatographyGUI < handle
                         obj.view.peakBaseline{col(i)} = plot(x, y, '-',...
                             'parent',     obj.axes.main,...
                             'color',      obj.settings.peakBaseline.color,...
-                            'markersize', obj.settings.peakBaseline.markersize,...
                             'linewidth',  obj.settings.peakBaseline.linewidth,...
                             'visible',    'on',...
                             'hittest',    'off',...
@@ -3263,6 +3264,7 @@ classdef ChromatographyGUI < handle
                     set(obj.figure, 'Pointer', 'arrow');
                     set(obj.figure, 'WindowKeyPressFcn', @obj.keyboardCallback);
                     set(obj.figure, 'WindowButtonMotionFcn', @obj.figureMotionCallback);
+                    set(obj.figure, 'WindowScrollWheelFcn', @obj.mouseScrollWheelCallback);
                     
                 case 1
                     
@@ -3343,6 +3345,11 @@ classdef ChromatographyGUI < handle
         % Callback - mouse peak selection
         % ---------------------------------------
         function peakTimeSelectCallback(obj, ~, evt)
+            
+            if isprop(evt, 'Button') && evt.Button ~= 1
+                obj.setStatusBarText('');
+                return
+            end
             
             if isprop(evt, 'EventName')
                 
@@ -3447,6 +3454,50 @@ classdef ChromatographyGUI < handle
                 obj.userPeak(0);
             end
             
+        end
+        
+        % ---------------------------------------
+        % Callback - mouse scroll wheel
+        % ---------------------------------------
+        function mouseScrollWheelCallback(obj, src, evt)
+
+            if ~isprop(src, 'CurrentObject')
+                return
+            elseif isa(src.CurrentObject, 'matlab.ui.control.Table')
+                return
+            elseif isprop(src.CurrentObject, 'Style')
+                if strcmpi(src.CurrentObject.Style, 'slider')
+                    return
+                end
+            end
+            
+            if isprop(obj.figure, 'CurrentPoint') && ~isempty(obj.figure.CurrentPoint)
+                
+                x = obj.figure.CurrentPoint(1);
+                y = obj.figure.CurrentPoint(2);
+                
+                if y >= obj.panel.table.Position(3) - 0.02
+                    if x >= obj.panel.table.Position(1) - 0.02
+                        return
+                    end
+                end
+                
+            end
+            
+            switch evt.EventName
+                
+                case 'WindowScrollWheel'
+                    
+                    n = evt.VerticalScrollCount;
+                    
+                    if n > 0
+                        obj.selectPeak(1);
+                    elseif n < 0
+                        obj.selectPeak(-1);
+                    end
+                    
+            end
+        
         end
         
         % ---------------------------------------
@@ -3916,8 +3967,6 @@ classdef ChromatographyGUI < handle
             try
                 
                 if obj.settings.autosave
-                    
-                    obj.settings.gui.position = obj.figure.Position;
                     
                     try
                         obj.toolboxSettings([], [], 'save_default');

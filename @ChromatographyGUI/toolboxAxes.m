@@ -10,7 +10,7 @@ default.position(3) = 1.00 - default.position(1) - default.margin * 2;
 default.position(4) = 1.00 - default.position(2) - default.margin * 2;
 default.looseinset  = [0.06, 0.06, 0.025, 0.025];
 default.box         = 'off';
-default.linewidth   = 1.25;
+default.linewidth   = obj.settings.axes.linewidth;
 default.units       = 'normalized';
 default.color       = [1.00, 1.00, 1.00];
 default.xcolor      = [0.10, 0.10, 0.10];
@@ -93,7 +93,7 @@ obj.axes.secondary = axes(...
     'xtick',     [],...
     'ytick',     [],...
     'linewidth', default.linewidth,...
-    'position',  get(obj.axes.main, 'position'),...
+    'position',  obj.axes.main.Position,...
     'hittest',   'off');
 
 % ---------------------------------------
@@ -117,13 +117,13 @@ try
         
         set(obj.figure,...
             'resizefcn', @(varargin) set(obj.axes.secondary,...
-            'position', get(obj.axes.main, 'position')));
+            'position', obj.axes.main.Position));
         
     else
         
         set(obj.figure,...
             'sizechangedfcn', @(varargin) set(obj.axes.secondary,...
-            'position', get(obj.axes.main, 'position')));
+            'position', obj.axes.main.Position));
         
         set(get(get(obj.axes.main, 'yruler'), 'axle'), 'visible', 'off');
         set(get(get(obj.axes.main, 'xruler'), 'axle'), 'visible', 'off');

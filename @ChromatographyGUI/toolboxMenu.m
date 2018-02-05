@@ -468,11 +468,26 @@ end
 end
 
 % ---------------------------------------
-% Load MAT
+% Load Workspace (*.mat)
 % ---------------------------------------
 function loadMatlabCallback(~, ~, obj)
 
-[data, file] = importMAT('waitbar', true);
+if ~isempty(obj.data)
+    str = 'Overwrite existing data?';
+    msg = questdlg(str, 'Import', 'OK', 'Cancel', 'OK');
+else
+    msg = 'OK';
+end
+
+switch msg
+
+    case 'OK'
+        [data, file] = importMAT('waitbar', true);
+
+    case 'Cancel'
+        return
+        
+end
 
 if ~isempty(data) && isstruct(data)
     
@@ -501,9 +516,7 @@ if ~isempty(data) && isstruct(data)
         obj.validatePeakFields();
         
         if ~isempty(obj.peaks.name)
-            nRow = length(obj.data);
-            nCol = length(obj.peaks.name);
-            obj.validatePeakData(nRow, nCol);
+            obj.validatePeakData(length(obj.data), length(obj.peaks.name));
         end
         
         obj.view.row = 1;
@@ -538,15 +551,15 @@ else
 end
 
 if ~isempty(obj.toolbox_checkpoint) && fileattrib(obj.toolbox_checkpoint)
-    fileType = 'file';
+    saveMode = 'file';
     fileName = obj.toolbox_checkpoint;
 else
-    fileType = 'suggest';
+    saveMode = 'suggest';
     fileName = getSuggestedFilename(obj, 'mat');
 end
 
 fileName = exportMAT(obj.data,...
-    fileType,  fileName,...
+    saveMode,  fileName,...
     'varname', 'data',...
     'waitbar', true);
 

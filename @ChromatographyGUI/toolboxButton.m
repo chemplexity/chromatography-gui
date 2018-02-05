@@ -774,8 +774,8 @@ end
 % ---------------------------------------
 function peakListboxCallback(~, ~, obj)
 
-obj.view.col = obj.controls.peakList.Value;
-obj.selectPeak(0);
+n = obj.controls.peakList.Value;
+obj.selectPeak(n - obj.view.col);
 
 end
 
