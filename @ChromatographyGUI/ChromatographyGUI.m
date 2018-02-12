@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180204-dev';
+        version     = '0.0.9.20180212-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -2763,6 +2763,37 @@ classdef ChromatographyGUI < handle
             
         end
         
+        function showPeakTableData(obj, varargin)
+        
+            str = obj.settings.table.labelNames;
+
+            % Check peak table data
+            if any(cellfun(@(x) obj.settings.table.(['show', x]), str))
+                isVisible = 0;
+                isChecked = 'off';
+            else
+                isVisible = 1;
+                isChecked = 'on';
+            end
+            
+            % Update menu and settings
+            for i = 1:length(str)
+                obj.settings.table.(['show', str{i}]) = isVisible;
+                obj.menu.(['tablePeak', str{i}]).Checked = isChecked; 
+            end
+            
+            statusText = 'Show peak table data: ';
+            obj.setStatusBarText(statusText);
+            
+            % Update table
+            obj.updateTableHeader();
+            obj.updateTableProperties();
+            obj.updateTablePeakData();
+            
+            obj.setStatusBarText([statusText, isChecked]);
+            
+        end
+        
         function clearTableData(obj, varargin)
             
             obj.table.main.Data = [];
@@ -3776,6 +3807,13 @@ classdef ChromatographyGUI < handle
                         str = ['Peak Auto-Detection: ', obj.menu.peakOptionsAutoDetect.Checked];
                         obj.setStatusBarText(str);
                         
+                    end
+                    
+                % 't' - show/hide peak data in table
+                case obj.settings.keyboard.togglePeakColumns
+                    
+                    if isempty(evt.Modifier)
+                        obj.showPeakTableData();
                     end
                     
                 % 'z' - toggle zoom mode

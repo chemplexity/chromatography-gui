@@ -63,6 +63,8 @@ obj.settings.keyboard.toggleZoom         = 'z';
 obj.settings.keyboard.toggleXAxisMode    = 'x';
 obj.settings.keyboard.toggleYAxisMode    = 'y';
 
+obj.settings.keyboard.togglePeakColumns  = 't';
+
 % ------------------------------------------
 % GUI Properties
 % ------------------------------------------
