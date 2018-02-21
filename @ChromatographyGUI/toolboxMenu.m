@@ -286,7 +286,8 @@ obj.menu.peakOptionsAreaFit.Callback    = {@peakAreaMenuCallback, obj};
 % Options --> Other
 % ---------------------------------------
 obj.menu.optionsImport = newMenu(obj.menu.otherOptions, 'Import');
-obj.menu.options.export = newMenu(obj.menu.otherOptions, 'Export');
+obj.menu.optionsExport = newMenu(obj.menu.otherOptions, 'Export');
+obj.menu.optionsMisc   = newMenu(obj.menu.otherOptions, 'Miscellaneous');
 
 % ---------------------------------------
 % Options --> Other --> Import
@@ -300,7 +301,7 @@ obj.menu.optionsAsyncLoad.Callback = {@menuOptionCheckedCallback, obj};
 % ---------------------------------------
 % Options --> Other --> Export
 % ---------------------------------------
-obj.menu.export.figure = newMenu(obj.menu.options.export, 'Figure');
+obj.menu.export.figure = newMenu(obj.menu.optionsExport, 'Figure');
 
 % ---------------------------------------
 % Options --> Other --> Export --> Figure
@@ -317,6 +318,16 @@ for i = 1:length(obj.menu.export.dpi.Children)
 end
 
 % ---------------------------------------
+% Options --> Other --> Peak List
+% ---------------------------------------
+obj.menu.options.otherPeakList    = newMenu(obj.menu.optionsMisc, 'Peak List');
+obj.menu.options.mouseScrollWheel = newMenu(obj.menu.options.otherPeakList, 'Mouse Scroll Wheel');
+
+obj.menu.options.mouseScrollWheel.Tag = 'mouseScrollWheel';
+
+obj.menu.options.mouseScrollWheel.Callback = {@menuOptionCheckedCallback, obj};
+
+% ---------------------------------------
 % Help Menu
 % ---------------------------------------
 obj.menu.help.website = newMenu(obj.menu.help.main, 'Project Website');
@@ -326,7 +337,7 @@ obj.menu.help.website.Callback = @obj.toolboxWebsite;
 end
 
 % ---------------------------------------
-% Load Agilent
+% Load Agilent (*.D)
 % ---------------------------------------
 function loadAgilentCallback(~, ~, obj)
 
@@ -335,19 +346,18 @@ options.depth = 3;
 options.verbose = 'waitbar';
 options.content = 'all';
 
-if isfield(obj.settings, 'other')
-    if isfield(obj.settings.other, 'asyncMode')
-        
-        if obj.settings.other.asyncMode
-            options.content = 'header';
-        else
-            options.content = 'all';
-        end
-        
+if isfield(obj.settings, 'other') && isfield(obj.settings.other, 'asyncMode')
+    
+    if obj.settings.other.asyncMode
+        options.content = 'header';
+    else
+        options.content = 'all';
     end
+    
+else
+    options.content = 'all';
 end
 
-% Load data
 try
     data = importAgilent(...
         'depth', options.depth,...
@@ -363,6 +373,12 @@ if ~isempty(data) && isstruct(data)
     data(cellfun(@isempty, {data.file_path})) = [];
     data(cellfun(@isempty, {data.file_name})) = [];
     data([data.file_size] == 0) = [];
+    
+    exclude = {'blk', 'blank', 'gc blank', 'gc blk'};
+
+    for i = 1:length(exclude)
+        data(cellfun(@(x) strcmpi(x, exclude{i}), {data.sample_name})) = [];
+    end
     
     if isempty(data)
         return
@@ -1187,6 +1203,10 @@ if strcmpi(evt.EventName, 'Action')
             x = src.Parent.Children;
             set(x(~strcmpi(src.Label, {x.Label})), 'checked', 'off');
             src.Checked = 'on';
+            
+        case 'mouseScrollWheel'
+            obj.settings.other.useMouseScrollWheel = src.UserData;
+            obj.setStatusBarText(['Mouse Scroll-Wheel: ', src.Checked]);
             
     end
     

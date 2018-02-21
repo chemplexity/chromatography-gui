@@ -4,10 +4,11 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180212-dev';
+        version     = '0.0.9.20180216-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
+        language    = ChromatographyGUI.getLanguage();
         screensize  = ChromatographyGUI.getScreenSize();
         datetime    = ChromatographyGUI.getDatetime();
         
@@ -17,6 +18,14 @@ classdef ChromatographyGUI < handle
         
         data
         peaks
+        
+    end
+    
+    properties (Hidden = true)
+        
+        % ---------------------------------------
+        % GUI
+        % ---------------------------------------
         figure
         menu
         panel
@@ -25,10 +34,6 @@ classdef ChromatographyGUI < handle
         controls
         settings        
         statusbar
-
-    end
-    
-    properties (Hidden = true)
         
         % ---------------------------------------
         % Paths
@@ -2042,7 +2047,7 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
+            if obj.settings.java.useJavaTable && ~isempty(obj.java.table)
                 
                 for i = 1:length(x)
                     obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
@@ -2109,7 +2114,7 @@ classdef ChromatographyGUI < handle
                     
             end
             
-            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
+            if obj.settings.java.useJavaTable && ~isempty(obj.java.table)
                 obj.java.table.setValueAt(java.lang.String(x), row-1, col-1);
             else
                 obj.table.main.Data{row, col} = x;
@@ -2168,7 +2173,7 @@ classdef ChromatographyGUI < handle
                 
             end
             
-            if obj.settings.other.useJavaTable && ~isempty(obj.java.table)
+            if obj.settings.java.useJavaTable && ~isempty(obj.java.table)
                 
                 for i = 1:length(x)
                     obj.java.table.setValueAt(java.lang.String(x{i}), row-1, i-1);
@@ -2906,7 +2911,7 @@ classdef ChromatographyGUI < handle
                     
                     idx = (col+m) + (n*xi);
                     
-                    if obj.settings.other.useJavaTable
+                    if obj.settings.java.useJavaTable
                         obj.java.table.setValueAt(' ', row-1, idx-1);
                     else
                         obj.table.main.Data{row, idx} = [];
@@ -2942,7 +2947,7 @@ classdef ChromatographyGUI < handle
                     str = obj.peaks.(lower(x{i})){row,col};
                     idx = (col+m) + (n*xi);
                     
-                    if obj.settings.other.useJavaTable
+                    if obj.settings.java.useJavaTable
                         
                         if isnumeric(str)
                             str = sprintf(obj.settings.table.precision, str);
@@ -3492,7 +3497,9 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function mouseScrollWheelCallback(obj, src, evt)
 
-            if ~isprop(src, 'CurrentObject')
+            if ~obj.settings.other.useMouseScrollWheel
+                return
+            elseif ~isprop(src, 'CurrentObject')
                 return
             elseif isa(src.CurrentObject, 'matlab.ui.control.Table')
                 return
@@ -3536,7 +3543,6 @@ classdef ChromatographyGUI < handle
         % ---------------------------------------
         function keyboardInterruptCallback(obj, varargin)
             
-            %obj.figure.WindowKeyPressFcn = @obj.keyboardCallback;
             obj.figure.KeyPressFcn = [];
             drawnow();
             
@@ -4073,6 +4079,16 @@ classdef ChromatographyGUI < handle
                 x = 'UNKNOWN';
             end
             
+        end
+        
+        function x = getLanguage()
+            
+            x = get(0, 'Language');
+            
+            if isempty(x) || ~ischar(x)
+                x = 'unknown';
+            end
+                
         end
         
         function x = getFont()

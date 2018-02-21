@@ -232,13 +232,17 @@ obj.settings.export.height = 600;
 % Other Options
 obj.settings.other.asyncMode = 1;
 obj.settings.other.getFileChecksum = 1;
+obj.settings.other.useMouseScrollWheel = 1;
 
 % Java Options
 obj.settings.java.fixTableScrollpane = 1;
-obj.settings.other.useJavaTable = 0;
+obj.settings.java.useJavaTable = 0;
 
 end
 
+% ------------------------------------------
+% Load Settings (.MAT)
+% ------------------------------------------
 function loadSettings(obj, mode, varargin)
 
 switch mode
@@ -281,6 +285,9 @@ end
 
 end
 
+% ------------------------------------------
+% Autosave Settings (.MAT)
+% ------------------------------------------
 function autosaveSettings(obj, varargin)
 
 % Settings data
@@ -301,6 +308,9 @@ exportMAT(settings,...
 
 end
 
+% ------------------------------------------
+% Manual Save Settings (.MAT)
+% ------------------------------------------
 function saveSettings(obj, varargin)
 
 % Settings data
@@ -321,6 +331,9 @@ exportMAT(settings,...
 
 end
 
+% ------------------------------------------
+% Apply Settings
+% ------------------------------------------
 function applySettings(obj, varargin)
 
 % UIControl --> Show Baseline
@@ -495,6 +508,13 @@ if isfield(obj.settings, 'export') && isfield(obj.settings.export, 'dpi')
     
 end
 
+% Menu --> Options --> Other --> Misc --> Peak List --> Mouse Scroll Wheel
+if obj.settings.other.useMouseScrollWheel
+    obj.menu.options.mouseScrollWheel.Checked = 'on';
+else
+    obj.menu.options.mouseScrollWheel.Checked = 'off';
+end
+
 % Menu --> View --> Zoom
 if strcmpi(obj.settings.showZoom, 'on')
     obj.menu.view.zoom.Checked = 'on';
@@ -526,6 +546,9 @@ obj.updatePlot();
 
 end
 
+% ------------------------------------------
+% Verify Settings (check fields in struct)
+% ------------------------------------------
 function verifySettings(obj, varargin)
 
 if isempty(varargin)

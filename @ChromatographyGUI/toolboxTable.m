@@ -57,11 +57,11 @@ catch
 end
 
 if ~isempty(obj.java.table) && ismethod(obj.java.table, 'setValueAt')
-    obj.settings.other.useJavaTable = 1;
+    obj.settings.java.useJavaTable = 1;
 end
 
 % Disable setting
-obj.settings.other.useJavaTable = 0;
+obj.settings.java.useJavaTable = 0;
 
 % ---------------------------------------
 % Update Table
