@@ -43,19 +43,11 @@ obj.table.main = uitable(...
     'keypressfcn',           {@tableKeyDownCallback, obj});
 
 % ---------------------------------------
-% Java Table
+% Java Table 
 % ---------------------------------------
-try
-    obj.java.scrollpane = findjobj(obj.table.main);
-    obj.java.viewport = obj.java.scrollpane.getViewport;
-    obj.java.table = obj.java.viewport.getView;
-    set(obj.java.table, 'mouseclickedcallback', @obj.tableButtonDownCallback);
-catch
-    obj.java.scrollpane = [];
-    obj.java.viewport = [];
-    obj.java.table = [];
-end
+obj.javaTableButtonDownCallback();
 
+% Check if JavaTable is available
 if ~isempty(obj.java.table) && ismethod(obj.java.table, 'setValueAt')
     obj.settings.java.useJavaTable = 1;
 end

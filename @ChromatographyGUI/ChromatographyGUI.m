@@ -4,7 +4,7 @@ classdef ChromatographyGUI < handle
         
         name        = 'Chromatography Toolbox';
         url         = 'https://github.com/chemplexity/chromatography-gui';
-        version     = '0.0.9.20180216-dev';
+        version     = '0.0.9.20190711-dev';
         
         platform    = ChromatographyGUI.getPlatform();
         environment = ChromatographyGUI.getEnvironment();
@@ -1443,6 +1443,36 @@ classdef ChromatographyGUI < handle
         function exit(obj, varargin)
             
             obj.closeRequest();
+            
+        end
+        
+        % ---------------------------------------
+        % Callback - mouse double click
+        % ---------------------------------------
+        function tableButtonDownCallback(obj, ~, evt)
+            
+            if ~ismethod(evt, 'getButton')
+                return
+            elseif ~ismethod(evt, 'getClickCount')
+                return
+            end
+            
+            if evt.getButton == 1 && evt.getClickCount == 2
+                
+                if isempty(obj.table.selection)
+                    return
+                end
+                
+                idx = obj.view.row;
+                row = obj.table.selection(1,1);
+                
+                if row == idx
+                    return
+                elseif row >= 1 && row <= length(obj.data)
+                    obj.selectSample(row-idx);
+                end
+                
+            end
             
         end
         
@@ -3218,6 +3248,89 @@ classdef ChromatographyGUI < handle
             end
             
         end
+
+        % ---------------------------------------
+        % Java Table - callback for mouse double click
+        % ---------------------------------------
+        function javaTableButtonDownCallback(obj, varargin)
+            
+            % Get Java handles for data table
+            obj.java.scrollpane = [];
+            obj.java.viewport = [];
+            obj.java.table = [];
+            
+            % Set warning message
+            warningMessage = @(str) fprintf(['\n[WARNING] ', str, ' Non-essential UITable properties may be disabled...\n']);
+
+            try
+                
+                % Get Java scrollpane handle
+                obj.java.scrollpane = findjobj(obj.table.main);
+                
+                % Get Java viewport handle 
+                if length(obj.java.scrollpane) >= 1
+                    
+                    % Fix for MATLAB >= 2019a
+                    for i = 1:length(obj.java.scrollpane) 
+                        if ismethod(obj.java.scrollpane(i), 'getViewport')
+                            obj.java.viewport = obj.java.scrollpane(i).getViewport;
+                            break
+                        end
+                    end
+                    
+                end
+                
+                % Warning: Java handle for scrollpane not found
+                if isempty(obj.java.scrollpane)
+                    warningMessage('Unable to find Java scrollpane handle.');
+                    return
+                end
+                
+                % Warning: Java handle for viewport not found
+                if isempty(obj.java.viewport)
+                    obj.java.scrollpane = [];
+                    warningMessage('Unable to find Java viewport handle.');
+                    return
+                end
+                    
+                % Get Java table handle
+                if ~isempty(obj.java.viewport)
+                    
+                    for i = 1:length(obj.java.viewport) 
+                        if ismethod(obj.java.viewport(i), 'getView')
+                            obj.java.table = obj.java.viewport(i).getView;
+                            break
+                        end
+                    end
+                    
+                end
+                
+                % Warning: Java handle for table not found
+                if isempty(obj.java.table)
+                    obj.java.scrollpane = [];
+                    obj.java.viewport = [];
+                    warningMessage('Unable to find Java table handle.');
+                    return
+                end
+                
+                % Set mouse double click callback for UITable
+                if ~isempty(obj.java.table)
+                    set(obj.java.table(1), 'mouseclickedcallback', @obj.tableButtonDownCallback);
+                    %if ismethod(obj.java.table(i), 'getName')
+                    %   if string(obj.java.table(i).getName) == obj.table.main.Tag
+                    %       set(obj.java.table, 'mouseclickedcallback', @obj.tableButtonDownCallback);
+                    %   end
+                    %end
+                end
+                
+            catch
+                
+                % Warning: Unknown error while fetching Java handles 
+                warningMessage('An error occured while fetching Java handles for UITable.');
+            
+            end
+            
+        end
         
         % ---------------------------------------
         % Java - set scrollpane position
@@ -3415,36 +3528,6 @@ classdef ChromatographyGUI < handle
                     obj.clearPeak();
                 else
                     obj.toolboxPeakFit(x, y, 'selectionType', 'auto');
-                end
-                
-            end
-            
-        end
-        
-        % ---------------------------------------
-        % Callback - mouse double click
-        % ---------------------------------------
-        function tableButtonDownCallback(obj, ~, evt)
-            
-            if ~ismethod(evt, 'getButton')
-                return
-            elseif ~ismethod(evt, 'getClickCount')
-                return
-            end
-            
-            if evt.getButton == 1 && evt.getClickCount == 2
-                
-                if isempty(obj.table.selection)
-                    return
-                end
-                
-                idx = obj.view.row;
-                row = obj.table.selection(1,1);
-                
-                if row == idx
-                    return
-                elseif row >= 1 && row <= length(obj.data)
-                    obj.selectSample(row-idx);
                 end
                 
             end
