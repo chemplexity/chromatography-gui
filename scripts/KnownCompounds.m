@@ -12,7 +12,7 @@ mass_spectra_test_data = struct(...
     'intensity');
 
 %% Load data file
-file = 'data file path';
+file = 'Porabond 200 - 400.D';
 data = ImportAgilent(file);
 
 %% Data pre-processing (centroid, baseline removal)

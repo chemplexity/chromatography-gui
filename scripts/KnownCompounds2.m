@@ -12,7 +12,7 @@ mass_spectra_test_data = struct(...
     'intensity');
 
 %% Load data file
-file = 'data file path';
+file = 'Pure_water_extract.D';
 data = ImportAgilent(file);
 
 %% Data pre-processing (centroid, baseline removal)
