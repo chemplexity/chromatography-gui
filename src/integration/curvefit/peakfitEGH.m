@@ -46,11 +46,12 @@ function peak = peakfitEGH(varargin)
 % ---------------------------------------
 % Defaults
 % ---------------------------------------
-default.center   = 0;
-default.width    = 1;
-default.minArea  = 1E-5;
-default.area     = 'rawdata';
-default.override = 0;
+default.center      = 0;
+default.width       = 1;
+default.minArea     = 1E-5;
+default.area        = 'rawdata';
+default.override    = 0;
+default.sensitivity = 250;
 
 % ---------------------------------------
 % Variables
@@ -71,24 +72,26 @@ p = inputParser;
 addRequired(p, 'x', @ismatrix);
 addRequired(p, 'y', @ismatrix);
 
-addParameter(p, 'center',   default.center);
-addParameter(p, 'width',    default.width);
-addParameter(p, 'minarea',  default.minArea);
-addParameter(p, 'area',     default.area);
-addParameter(p, 'override', default.override);
+addParameter(p, 'center',      default.center);
+addParameter(p, 'width',       default.width);
+addParameter(p, 'minarea',     default.minArea);
+addParameter(p, 'area',        default.area);
+addParameter(p, 'override',    default.override);
+addParameter(p, 'sensitivity', default.sensitivity);
 
 parse(p, varargin{:});
 
 % ---------------------------------------
 % Parse
 % ---------------------------------------
-x          = p.Results.x;
-y          = p.Results.y;
-center     = p.Results.center;
-width      = p.Results.width;
-minArea    = p.Results.minarea;
-targetArea = p.Results.area;
-override   = p.Results.override;
+x           = p.Results.x;
+y           = p.Results.y;
+center      = p.Results.center;
+width       = p.Results.width;
+minArea     = p.Results.minarea;
+targetArea  = p.Results.area;
+override    = p.Results.override;
+sensitivity = p.Results.sensitivity;
 
 % ---------------------------------------
 % Validate
@@ -143,7 +146,7 @@ elseif center - width/2 < min(x)
 end
 
 if ~override
-    center = findPeakCenter(x,y,center);
+    center = findPeakCenter(x, y, center, sensitivity);
 end
 
 if ~override && width ~= 0.05
@@ -671,13 +674,13 @@ end
 end
 
 
-function peakCenter = findPeakCenter(x,y,peakCenter)
+function peakCenter = findPeakCenter(x, y, peakCenter, peakSensitivity)
 
 % Select Peak
 px = peakfindNN(x, y,...
     'xmin', peakCenter - 2.5,...
     'xmax', peakCenter + 2.5,...
-    'sensitivity', 250);
+    'sensitivity', peakSensitivity);
 
 if ~isempty(px)
     
@@ -694,9 +697,10 @@ if ~isempty(px)
     else
         peakCenter = px(ii,1);
     end
-    
-else
-    peakCenter = findPeakCenter(x, y, peakCenter);
+
+elseif peakSensitivity > 0 && peakSensitivity < 10000
+    peakSensitivity = peakSensitivity * 1.5;
+    peakCenter = findPeakCenter(x, y, peakCenter, peakSensitivity);
 end
 
 xi = find(x >= peakCenter, 1);

@@ -1145,7 +1145,7 @@ end
 % ---------------------------------------
 function zoomMenuCallback(src, evt, obj)
 
-if strcmpi(evt.EventName, 'Action')
+if strcmpi(evt.EventName, 'Action') || strcmpi(evt.EventName, 'MenuSelected')
     
     switch src.Checked
         
@@ -1167,7 +1167,7 @@ end
 % ---------------------------------------
 function menuOptionCheckedCallback(src, evt, obj)
 
-if strcmpi(evt.EventName, 'Action')
+if strcmpi(evt.EventName, 'Action') || strcmpi(evt.EventName, 'MenuSelected')
     
     switch src.Checked
         
@@ -1219,7 +1219,7 @@ end
 % ---------------------------------------
 function peakViewMenuCallback(src, evt, obj)
 
-if strcmpi(evt.EventName, 'Action')
+if strcmpi(evt.EventName, 'Action') || strcmpi(evt.EventName, 'MenuSelected')
     
     switch src.Checked
         
@@ -1284,7 +1284,7 @@ end
 % ---------------------------------------
 function plotViewMenuCallback(src, evt, obj)
 
-if strcmpi(evt.EventName, 'Action')
+if strcmpi(evt.EventName, 'Action') || strcmpi(evt.EventName, 'MenuSelected')
     
     switch src.Checked
         
