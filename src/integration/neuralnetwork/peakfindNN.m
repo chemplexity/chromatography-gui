@@ -219,7 +219,13 @@ if inputShift == 0
     yInput = reshape(y, inputSize, [])';
     yOffset = 0;
 else
-    yInput = reshape(circshift(y, inputShift, 1), inputSize, [])';
+
+    if verLessThan('matlab', 'R2016b')
+        yInput = reshape(circshift(y, [0, inputShift]), inputSize, [])';
+    else
+        yInput = reshape(circshift(y, inputShift, 1), inputSize, [])';
+    end
+
     yInput(1,:) = [];
     yOffset = inputShift - inputSize;
 end
