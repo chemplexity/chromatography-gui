@@ -215,17 +215,19 @@ function [peaks, rawdata] = getpeaks(x, y, peaks, inputSize, inputShift)
 
 minOutput = 0.95;
 
+if size(x,1) == 1 && size(x,2) ~= 1
+    x = x';
+end
+
+if size(y,1) == 1 && size(y,2) ~= 1
+    y = y';
+end
+
 if inputShift == 0
     yInput = reshape(y, inputSize, [])';
     yOffset = 0;
 else
-
-    if verLessThan('matlab', 'R2016b')
-        yInput = reshape(circshift(y, [0, inputShift]), inputSize, [])';
-    else
-        yInput = reshape(circshift(y, inputShift, 1), inputSize, [])';
-    end
-
+    yInput = reshape(circshift(y, inputShift), inputSize, [])';
     yInput(1,:) = [];
     yOffset = inputShift - inputSize;
 end
@@ -384,6 +386,14 @@ if f0 > sampleRate
 elseif f0 < sampleRate
     x0 = min(x):1/sampleRate:max(x);
     y0 = interp1(x,y,x0);
+end
+
+if size(x0,1) == 1 && size(x0,2) ~= 1
+    x0 = x0';
+end
+
+if size(y0,1) == 1 && size(y0,2) ~= 1
+    y0 = y0';
 end
 
 end
