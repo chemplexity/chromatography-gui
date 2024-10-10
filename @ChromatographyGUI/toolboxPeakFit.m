@@ -16,7 +16,7 @@ end
 default.y              = [];
 default.selectionType  = [];
 default.peakOverride   = [];
-default.peakWindow     = 3;
+default.peakWindow     = 1;
 default.peakModel      = obj.settings.peakModel;
 default.areaOf         = obj.settings.peakAreaOf;
 default.row            = obj.view.row;
